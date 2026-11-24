@@ -9,6 +9,10 @@ import com.ai.assistance.operit.data.stats.ProviderUsageSnapshot
 import com.ai.assistance.operit.util.stream.Stream
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import com.ai.assistance.operit.data.model.TokenRequestLogEntity
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertFalse
 import org.junit.Assert.fail
 import org.junit.Test
@@ -22,13 +26,24 @@ class ColdStreamCancellationTest {
         val context = mock<Context>()
         whenever(context.applicationContext).thenReturn(context)
         val delegate = RecordingAIService()
-        val service = TokenTrackingAIService(delegate, context, "config")
+        val logs = mutableListOf<TokenRequestLogEntity>()
+        val service = TokenTrackingAIService(
+            delegate, context, "config", beginRecording = { 4L },
+            recordingSink = { log, fact, epoch ->
+                logs += log
+                assertNull(fact)
+                assertEquals(4L, epoch)
+                true
+            },
+        )
 
         val response = startRequest(service, context)
         service.cancelStreaming()
 
         assertCancelled(response)
         assertFalse(delegate.collected)
+        assertEquals(1, logs.size)
+        assertEquals(TokenRequestLogEntity.CANCELLED, logs.single().status)
     }
 
     @Test
@@ -36,13 +51,18 @@ class ColdStreamCancellationTest {
         val context = mock<Context>()
         whenever(context.applicationContext).thenReturn(context)
         val delegate = RecordingAIService()
-        val service = TokenTrackingAIService(delegate, context, "config")
+        val writes = AtomicInteger()
+        val service = TokenTrackingAIService(
+            delegate, context, "config", beginRecording = { error("不记账请求不能读取数据库代次") },
+            recordingSink = { _, _, _ -> writes.incrementAndGet(); true },
+        )
 
         val response = startRequest(service, context, recordTokenUsage = false)
         service.cancelStreaming()
 
         assertCancelled(response)
         assertFalse(delegate.collected)
+        assertEquals(0, writes.get())
     }
 
     @Test

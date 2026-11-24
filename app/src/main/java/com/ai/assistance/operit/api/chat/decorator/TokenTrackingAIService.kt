@@ -4,7 +4,10 @@ import android.content.Context
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.data.config.model.ModelOption
 import com.ai.assistance.operit.data.config.model.ModelParameter
+import com.ai.assistance.operit.data.model.TokenRequestLogEntity
 import com.ai.assistance.operit.data.model.TokenUsageRecordEntity
+import com.ai.assistance.operit.data.stats.TokenRequestSource
+import java.util.UUID
 import com.ai.assistance.operit.core.tools.prompt.ToolPrompt
 import com.ai.assistance.operit.data.stats.ProviderUsageSnapshot
 import com.ai.assistance.operit.data.stats.TokenUsageRepository
@@ -25,13 +28,15 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import com.ai.assistance.operit.api.chat.AIService
 
-/** Records successful formal-inference requests with provider-confirmed usage. */
+/** 请求日志与成功用量分离；只有提供商确认的成功用量进入原账本。 */
 class TokenTrackingAIService(
     private val delegate: AIService,
     context: Context,
     private val configId: String,
+    private val beginRecording: suspend () -> Long = TokenUsageRepository.getInstance(context.applicationContext)::beginRequest,
+    private val recordingSink: suspend (TokenRequestLogEntity, TokenUsageRecordEntity?, Long) -> Boolean =
+        TokenUsageRepository.getInstance(context.applicationContext)::recordRequest,
 ) : AIService {
-    private val repository = TokenUsageRepository.getInstance(context.applicationContext)
     private val activeRequests = ConcurrentHashMap.newKeySet<RequestTracker>()
     private val cancellationLock = Any()
     private var cancellationEpoch = 0L
@@ -75,13 +80,13 @@ class TokenTrackingAIService(
         recordTokenUsage: Boolean,
         onUsageFinalized: (suspend (attempt: Int?) -> Unit)?,
     ): Stream<String> {
-        val request = RequestTracker(configId = configId, providerModel = providerModel)
         val requestEpoch = synchronized(cancellationLock) { cancellationEpoch }
+        val epoch = if (recordTokenUsage) beginRecording() else 0L
+        val source = if (recordTokenUsage) currentCoroutineContext()[TokenRequestSource] else null
+        val request = RequestTracker(configId, providerModel, epoch, source, recordTokenUsage)
         val onStarted: () -> Unit = {
             synchronized(cancellationLock) {
-                if (cancellationEpoch != requestEpoch) {
-                    request.cancel()
-                }
+                if (cancellationEpoch != requestEpoch) request.cancel()
                 activeRequests.add(request)
                 Unit
             }
@@ -92,9 +97,8 @@ class TokenTrackingAIService(
                 Unit
             }
         }
-        val inner =
-            if (!recordTokenUsage) {
-                delegate.sendMessage(
+        try {
+            val inner = delegate.sendMessage(
                     context = context,
                     chatHistory = chatHistory,
                     modelParameters = modelParameters,
@@ -104,44 +108,32 @@ class TokenTrackingAIService(
                     availableTools = availableTools,
                     preserveThinkInHistory = preserveThinkInHistory,
                     onTokensUpdated = onTokensUpdated,
-                    onUsageReported = onUsageReported,
+                    onUsageReported = if (recordTokenUsage) {
+                        { usage, attempt ->
+                            request.onUsage(usage, attempt)
+                            forwardUsageObserver(onUsageReported, usage, attempt)
+                        }
+                    } else onUsageReported,
                     onNonFatalError = onNonFatalError,
                     enableRetry = enableRetry,
-                    recordTokenUsage = false,
-                    onUsageFinalized = onUsageFinalized,
+                    recordTokenUsage = recordTokenUsage,
+                    onUsageFinalized = if (recordTokenUsage) {
+                        { attempt ->
+                            request.onSuccess(attempt)
+                            forwardUsageFinalizedObserver(onUsageFinalized, attempt)
+                        }
+                    } else onUsageFinalized,
                 )
-            } else {
-                delegate.sendMessage(
-                    context = context,
-                    chatHistory = chatHistory,
-                    modelParameters = modelParameters,
-                    enableThinking = enableThinking,
-                    thinkingOptionId = thinkingOptionId,
-                    stream = stream,
-                    availableTools = availableTools,
-                    preserveThinkInHistory = preserveThinkInHistory,
-                    onTokensUpdated = onTokensUpdated,
-                    onUsageReported = { usage, attempt ->
-                        request.onUsage(usage, attempt)
-                        forwardUsageObserver(onUsageReported, usage, attempt)
-                    },
-                    onNonFatalError = onNonFatalError,
-                    enableRetry = enableRetry,
-                    recordTokenUsage = true,
-                    onUsageFinalized = { attempt ->
-                        request.onSuccess(attempt)
-                        forwardUsageFinalizedObserver(onUsageFinalized, attempt)
-                    },
-                )
-            }
-        return wrapStream(
-            inner = inner,
-            request = request,
-            onStarted = onStarted,
-            onFinished = onFinished,
-        )
+            return wrapStream(inner, request, onStarted, onFinished)
+        } catch (error: CancellationException) {
+            request.cancel()
+            persist(recordingSink, request, TokenRequestLogEntity.CANCELLED)
+            throw error
+        } catch (error: Exception) {
+            persist(recordingSink, request, TokenRequestLogEntity.FAILED)
+            throw error
+        }
     }
-
     override suspend fun testConnection(context: Context): Result<String> =
         delegate.testConnection(context)
 
@@ -181,15 +173,15 @@ class TokenTrackingAIService(
         onFinished: () -> Unit,
     ): Stream<String> =
         if (inner is TextStreamEventCarrier) {
-            TrackingRevisableStream(inner, inner.eventChannel, request, repository, onStarted, onFinished)
+            TrackingRevisableStream(inner, inner.eventChannel, request, recordingSink, onStarted, onFinished)
         } else {
-            TrackingStream(inner, request, repository, onStarted, onFinished)
+            TrackingStream(inner, request, recordingSink, onStarted, onFinished)
         }
 
     private class TrackingStream(
         private val inner: Stream<String>,
         private val request: RequestTracker,
-        private val repository: TokenUsageRepository,
+        private val recordingSink: suspend (TokenRequestLogEntity, TokenUsageRecordEntity?, Long) -> Boolean,
         private val onStarted: () -> Unit,
         private val onFinished: () -> Unit,
     ) : Stream<String> {
@@ -200,15 +192,7 @@ class TokenTrackingAIService(
         override fun clearBuffer() = inner.clearBuffer()
 
         override suspend fun collect(collector: StreamCollector<String>) {
-            try {
-                onStarted()
-                request.throwIfCancelled()
-                inner.collect { value -> collector.emit(value) }
-                currentCoroutineContext().ensureActive()
-                persist(repository, request, request.finish())
-            } finally {
-                onFinished()
-            }
+            collectTracked(inner, collector, request, recordingSink, onStarted, onFinished)
         }
     }
 
@@ -216,7 +200,7 @@ class TokenTrackingAIService(
         private val inner: Stream<String>,
         override val eventChannel: SharedStream<TextStreamEvent>,
         private val request: RequestTracker,
-        private val repository: TokenUsageRepository,
+        private val recordingSink: suspend (TokenRequestLogEntity, TokenUsageRecordEntity?, Long) -> Boolean,
         private val onStarted: () -> Unit,
         private val onFinished: () -> Unit,
     ) : RevisableTextStream {
@@ -227,23 +211,22 @@ class TokenTrackingAIService(
         override fun clearBuffer() = inner.clearBuffer()
 
         override suspend fun collect(collector: StreamCollector<String>) {
-            try {
-                onStarted()
-                request.throwIfCancelled()
-                inner.collect { value -> collector.emit(value) }
-                currentCoroutineContext().ensureActive()
-                persist(repository, request, request.finish())
-            } finally {
-                onFinished()
-            }
+            collectTracked(inner, collector, request, recordingSink, onStarted, onFinished)
         }
     }
 
-    private class RequestTracker(
+    internal class RequestTracker(
         private val configId: String,
         private val providerModel: String,
+        val epoch: Long,
+        private val source: TokenRequestSource?,
+        val recordingEnabled: Boolean = true,
     ) {
+        private val requestId = UUID.randomUUID().toString()
         private val startedAtMs = System.currentTimeMillis()
+        private val startedAtNs = System.nanoTime()
+        private var firstTokenLatencyMs: Long? = null
+        private var successFinalized = false
         private val lock = Any()
         private val attempts = linkedMapOf<Int, ProviderUsageSnapshot>()
         private val finished = AtomicBoolean(false)
@@ -252,14 +235,16 @@ class TokenTrackingAIService(
 
         fun onUsage(usage: ProviderUsageSnapshot, attempt: Int) {
             synchronized(lock) {
-                val key = attempt.coerceAtLeast(1)
+                if (attempt < 1) return
+                val key = attempt
                 attempts[key] = merge(attempts[key], usage)
             }
         }
 
         fun onSuccess(attempt: Int?) {
             synchronized(lock) {
-                successfulAttempt = attempt?.coerceAtLeast(1)
+                successFinalized = true
+                successfulAttempt = attempt?.takeIf { it > 0 }
             }
         }
 
@@ -271,7 +256,7 @@ class TokenTrackingAIService(
             if (cancelled.get()) throw CancellationException("AI request was cancelled")
         }
 
-        fun finish(): TokenUsageRecordEntity? {
+        private fun successFact(): TokenUsageRecordEntity? {
             if (cancelled.get()) return null
             val snapshot =
                 synchronized(lock) {
@@ -302,6 +287,7 @@ class TokenTrackingAIService(
                 return null
             }
             return TokenUsageRecordEntity(
+                requestId = requestId,
                 occurredAtMs = startedAtMs,
                 configId = configId,
                 provider = providerModel.substring(0, separator),
@@ -316,7 +302,63 @@ class TokenTrackingAIService(
             )
         }
 
-        fun markPersisted(): Boolean = !cancelled.get() && finished.compareAndSet(false, true)
+        fun onText(value: String) {
+            if (value.isEmpty()) return
+            synchronized(lock) {
+                if (firstTokenLatencyMs == null) firstTokenLatencyMs = elapsedMs()
+            }
+        }
+
+        private fun elapsedMs(): Long = (System.nanoTime() - startedAtNs) / 1_000_000L
+
+        fun finish(terminalStatus: String?): RequestCompletion? = synchronized(lock) {
+            if (!finished.compareAndSet(false, true)) return@synchronized null
+            val status = when {
+                cancelled.get() -> TokenRequestLogEntity.CANCELLED
+                terminalStatus != null -> terminalStatus
+                successFinalized -> TokenRequestLogEntity.SUCCESS
+                else -> TokenRequestLogEntity.COMPLETED
+            }
+            val usageAttempt = if (status == TokenRequestLogEntity.SUCCESS) successfulAttempt else attempts.keys.maxOrNull()
+            val snapshot = usageAttempt?.let(attempts::get)
+            val separator = providerModel.indexOf(':')
+            require(separator > 0 && separator < providerModel.lastIndex)
+            val fact = if (status == TokenRequestLogEntity.SUCCESS) successFact() else null
+            val output = snapshot?.outputTokens?.let { reported ->
+                if (snapshot.reasoningIncludedInOutput == false)
+                    snapshot.reasoningTokens?.let { saturatedAdd(reported, it) }
+                else reported
+            }
+            RequestCompletion(
+                TokenRequestLogEntity(
+                    requestId = requestId,
+                    startedAtMs = startedAtMs,
+                    endedAtMs = System.currentTimeMillis(),
+                    durationMs = elapsedMs(),
+                    firstTokenLatencyMs = firstTokenLatencyMs,
+                    configId = configId,
+                    provider = providerModel.substring(0, separator),
+                    model = providerModel.substring(separator + 1),
+                    functionType = source?.functionType?.name,
+                    executionModel = source?.executionModel,
+                    status = status,
+                    successfulAttempt = successfulAttempt,
+                    observedAttemptNumbers = (attempts.keys + listOfNotNull(successfulAttempt))
+                        .distinct().sorted().takeIf { it.isNotEmpty() }?.joinToString(","),
+                    usageAttempt = usageAttempt,
+                    uncachedInputTokens = snapshot?.uncachedInputTokens,
+                    cachedInputTokens = snapshot?.cachedInputTokens,
+                    cacheWriteTokens = snapshot?.cacheWriteTokens,
+                    totalInputTokens = snapshot?.totalInputTokens,
+                    outputTokens = output,
+                    reasoningTokens = snapshot?.reasoningTokens,
+                    reasoningIncludedInOutput = snapshot?.reasoningIncludedInOutput,
+                    cacheWriteSeparateBilling = snapshot?.cacheWriteSeparateBilling,
+                    usageSource = snapshot?.source,
+                ),
+                fact,
+            )
+        }
 
         private fun merge(
             previous: ProviderUsageSnapshot?,
@@ -334,26 +376,55 @@ class TokenTrackingAIService(
         }
     }
 
+    internal data class RequestCompletion(val log: TokenRequestLogEntity, val fact: TokenUsageRecordEntity?)
+
     companion object {
         private const val TAG = "TokenTrackingAIService"
 
-        private suspend fun persist(
-            repository: TokenUsageRepository,
+        private suspend fun collectTracked(
+            inner: Stream<String>,
+            collector: StreamCollector<String>,
             request: RequestTracker,
-            record: TokenUsageRecordEntity?,
+            recordingSink: suspend (TokenRequestLogEntity, TokenUsageRecordEntity?, Long) -> Boolean,
+            onStarted: () -> Unit,
+            onFinished: () -> Unit,
         ) {
-            if (record != null && request.markPersisted()) persist(repository, record)
+            try {
+                onStarted()
+                request.throwIfCancelled()
+                inner.collect { value ->
+                    if (request.recordingEnabled) request.onText(value)
+                    collector.emit(value)
+                }
+                currentCoroutineContext().ensureActive()
+                request.throwIfCancelled()
+                persist(recordingSink, request, null)
+            } catch (error: CancellationException) {
+                request.cancel()
+                persist(recordingSink, request, TokenRequestLogEntity.CANCELLED)
+                throw error
+            } catch (error: Exception) {
+                persist(recordingSink, request, TokenRequestLogEntity.FAILED)
+                throw error
+            } finally {
+                onFinished()
+            }
         }
 
         private suspend fun persist(
-            repository: TokenUsageRepository,
-            record: TokenUsageRecordEntity,
+            recordingSink: suspend (TokenRequestLogEntity, TokenUsageRecordEntity?, Long) -> Boolean,
+            request: RequestTracker,
+            status: String?,
         ) {
+            if (!request.recordingEnabled) return
+            val completed = request.finish(status) ?: return
             withContext(Dispatchers.IO + NonCancellable) {
                 try {
-                    repository.record(record)
-                } catch (e: Exception) {
-                    AppLogger.e(TAG, "token usage insert failed", e)
+                    recordingSink(completed.log, completed.fact, request.epoch)
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    AppLogger.e(TAG, "token request insert failed", error)
                 }
             }
         }

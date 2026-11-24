@@ -52,6 +52,7 @@ import com.ai.assistance.operit.core.tools.climode.ToolExposureMode
 import com.ai.assistance.operit.core.tools.packTool.runtime.PackageManager
 import com.ai.assistance.operit.core.tools.permissions.PermissionCapabilitySession
 import com.ai.assistance.operit.data.model.FunctionType
+import com.ai.assistance.operit.data.stats.TokenRequestSource
 import com.ai.assistance.operit.data.model.InputProcessingState
 import com.ai.assistance.operit.core.config.PromptFunctionType
 import com.ai.assistance.operit.core.tools.protocol.ToolInvocation
@@ -753,17 +754,20 @@ class EnhancedAIService private constructor(context: Context) {
         val modelParameters = getModelParametersForFunction(functionType)
         val output = StringBuilder()
 
-        serviceForFunction
-            .sendMessage(
-                context = context,
-                chatHistory = turns,
-                modelParameters = modelParameters,
-                enableThinking = enableThinking,
-                stream = false,
-                availableTools = emptyList(),
-                preserveThinkInHistory = true,
-                recordTokenUsage = recordTokenUsage
-            )
+        // 来源仅作用于本次发送，思考、工具和正文共享同一次请求用途。
+        withContext(TokenRequestSource(functionType)) {
+            serviceForFunction
+                .sendMessage(
+                    context = context,
+                    chatHistory = turns,
+                    modelParameters = modelParameters,
+                    enableThinking = enableThinking,
+                    stream = false,
+                    availableTools = emptyList(),
+                    preserveThinkInHistory = true,
+                    recordTokenUsage = recordTokenUsage
+                )
+        }
             .collect { chunk ->
                 output.append(chunk)
             }
@@ -1328,23 +1332,30 @@ class EnhancedAIService private constructor(context: Context) {
                             request = { voiceRequestHistory, attemptNotice ->
                                 usageRequestHistory = voiceRequestHistory
 
-                                serviceForFunction.sendMessage(
-                                        context = this@EnhancedAIService.context,
-                                        chatHistory = voiceRequestHistory,
-                                        modelParameters = modelParameters,
-                                        enableThinking = enableThinking,
-                                        thinkingOptionId = execContext.thinkingOptionIdOverride,
-                                        stream = stream,
-                                        availableTools = availableTools,
-                                        onTokensUpdated = { input, cachedInput, output ->
-                                            requestReportedTokens = true
-                                            currentRequestInputTokenCount = input.coerceAtLeast(0)
-                                            currentRequestOutputTokenCount = output.coerceAtLeast(0)
-                                            currentRequestCachedInputTokenCount = cachedInput.coerceAtLeast(0)
-                                            _perRequestTokenCounts.value = Pair(input, output)
-                                        },
-                                         onNonFatalError = attemptNotice,
-                                )
+                                withContext(
+                                    TokenRequestSource(
+                                        functionType = if (execContext.delegatedTask) null else functionType,
+                                        executionModel = if (execContext.delegatedTask) requireNotNull(execContext.pinnedModelName) else null,
+                                    )
+                                ) {
+                                    serviceForFunction.sendMessage(
+                                            context = this@EnhancedAIService.context,
+                                            chatHistory = voiceRequestHistory,
+                                            modelParameters = modelParameters,
+                                            enableThinking = enableThinking,
+                                            thinkingOptionId = execContext.thinkingOptionIdOverride,
+                                            stream = stream,
+                                            availableTools = availableTools,
+                                            onTokensUpdated = { input, cachedInput, output ->
+                                                requestReportedTokens = true
+                                                currentRequestInputTokenCount = input.coerceAtLeast(0)
+                                                currentRequestOutputTokenCount = output.coerceAtLeast(0)
+                                                currentRequestCachedInputTokenCount = cachedInput.coerceAtLeast(0)
+                                                _perRequestTokenCounts.value = Pair(input, output)
+                                            },
+                                             onNonFatalError = attemptNotice,
+                                    )
+                                }
                             },
                             onHistoryResolved = { textHistory ->
                                 execContext.conversationHistory.clear()
@@ -2737,23 +2748,30 @@ class EnhancedAIService private constructor(context: Context) {
                     context.turnInputInbox, { context.samplingReplayMetadata = it },
                 ) {
                     val responseStream =
-                            serviceForFunction.sendMessage(
-                                    context = this@EnhancedAIService.context,
-                                    chatHistory = currentChatHistory,
-                                    modelParameters = modelParameters,
-                                    enableThinking = enableThinking,
-                                    thinkingOptionId = context.thinkingOptionIdOverride,
-                                    stream = stream,
-                                    availableTools = availableTools,
-                                    onTokensUpdated = { input, cachedInput, output ->
-                                        requestReportedTokens = true
-                                        currentRequestInputTokenCount = input.coerceAtLeast(0)
-                                        currentRequestOutputTokenCount = output.coerceAtLeast(0)
-                                        currentRequestCachedInputTokenCount = cachedInput.coerceAtLeast(0)
-                                        _perRequestTokenCounts.value = Pair(input, output)
-                                    },
-                                     onNonFatalError = onNonFatalError,
-                            )
+                            withContext(
+                                TokenRequestSource(
+                                    functionType = if (context.delegatedTask) null else functionType,
+                                    executionModel = if (context.delegatedTask) requireNotNull(context.pinnedModelName) else null,
+                                )
+                            ) {
+                                serviceForFunction.sendMessage(
+                                        context = this@EnhancedAIService.context,
+                                        chatHistory = currentChatHistory,
+                                        modelParameters = modelParameters,
+                                        enableThinking = enableThinking,
+                                        thinkingOptionId = context.thinkingOptionIdOverride,
+                                        stream = stream,
+                                        availableTools = availableTools,
+                                        onTokensUpdated = { input, cachedInput, output ->
+                                            requestReportedTokens = true
+                                            currentRequestInputTokenCount = input.coerceAtLeast(0)
+                                            currentRequestOutputTokenCount = output.coerceAtLeast(0)
+                                            currentRequestCachedInputTokenCount = cachedInput.coerceAtLeast(0)
+                                            _perRequestTokenCounts.value = Pair(input, output)
+                                        },
+                                         onNonFatalError = onNonFatalError,
+                                )
+                            }
 
                     // 更新状态为接收中
                     if (!isSubTask) {

@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.core.tools.builtin.filesystem
+import com.ai.assistance.operit.data.stats.TokenRequestSource
 
 import android.content.Context
 import com.ai.assistance.operit.core.files.transfer.FileCopyObserver
@@ -217,14 +218,16 @@ open class StandardFileSystemTools(protected val context: Context) {
         val modelParameters = getGrepModelParameters()
         val sb = StringBuilder()
         val stream =
-            service.sendMessage(
-                context = context,
-                chatHistory = listOf(PromptTurn(kind = PromptTurnKind.USER, content = prompt)),
-                modelParameters = modelParameters,
-                enableThinking = false,
-                stream = false,
-                availableTools = null
-            )
+            withContext(TokenRequestSource(FunctionType.GREP)) {
+                service.sendMessage(
+                    context = context,
+                    chatHistory = listOf(PromptTurn(kind = PromptTurnKind.USER, content = prompt)),
+                    modelParameters = modelParameters,
+                    enableThinking = false,
+                    stream = false,
+                    availableTools = null
+                )
+            }
         stream.collect { chunk -> sb.append(chunk) }
         return sb.toString().trim()
     }

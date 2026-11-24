@@ -1491,12 +1491,19 @@ private fun tokenStatsIdentityKey(
     identity: com.ai.assistance.operit.data.stats.TokenStatsIdentityBreakdown,
 ): String = "${identity.configId}\u001f${identity.provider}\u001f${identity.model}"
 
-private fun priceDraftForIdentity(
+internal fun priceDraftForIdentity(
     identity: com.ai.assistance.operit.data.stats.TokenStatsIdentityBreakdown,
     priceSettings: List<TokenStatsPriceSetting>,
+): TokenStatsPriceDraft = priceDraftForIdentity(identity.configId, identity.provider, identity.model, priceSettings)
+
+internal fun priceDraftForIdentity(
+    configId: String,
+    provider: String,
+    model: String,
+    priceSettings: List<TokenStatsPriceSetting>,
 ): TokenStatsPriceDraft {
-    val providerModel = normalizeProviderModel("${identity.provider}:${identity.model}")
-    val priceScope = tokenStatsPriceScopeForConfigId(identity.configId)
+    val providerModel = normalizeProviderModel("${provider}:${model}")
+    val priceScope = tokenStatsPriceScopeForConfigId(configId)
     val providerSettings =
         priceSettings.firstOrNull {
             it.scope == TokenStatsPriceScope.PROVIDER_MODEL &&
@@ -1508,7 +1515,7 @@ private fun priceDraftForIdentity(
                 it.scope == TokenStatsPriceScope.CONFIG &&
                     normalizeProviderModel(it.providerModel)
                         .equals(providerModel, ignoreCase = true) &&
-                    it.configId == identity.configId
+                    it.configId == configId
             }?.toModelPriceSettings()
         } else {
             null
@@ -1520,9 +1527,9 @@ private fun priceDraftForIdentity(
         )
     return TokenStatsPriceDraft(
         scope = priceScope,
-        provider = normalizeProviderTypeId(identity.provider),
-        model = identity.model,
-        configId = identity.configId.takeIf { priceScope == TokenStatsPriceScope.CONFIG },
+        provider = normalizeProviderTypeId(provider),
+        model = model,
+        configId = configId.takeIf { priceScope == TokenStatsPriceScope.CONFIG },
         billingMode = resolved.billingMode,
         currency = resolved.currency,
         inputPricePerMillion = resolved.inputPricePerMillion,

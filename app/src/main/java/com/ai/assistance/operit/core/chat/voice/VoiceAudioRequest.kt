@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.core.chat.voice
+import com.ai.assistance.operit.data.stats.TokenRequestSource
 
 import android.content.Context
 import com.ai.assistance.operit.R
@@ -195,16 +196,18 @@ internal class VoiceAudioRequest(
                 check(lease.modelConfig.enableDirectAudioProcessing)
                 val instructions = context.getString(R.string.voice_message_understanding_prompt)
                 val content = StringBuilder()
-                lease.service.sendMessage(
-                    context = context,
-                    chatHistory = listOf(
-                        PromptTurn(PromptTurnKind.SYSTEM, instructions),
-                        PromptTurn(PromptTurnKind.USER, audioLink(voice)),
-                    ),
-                    modelParameters = lease.modelParameters,
-                    stream = false,
-                    availableTools = null,
-                ).collect { content.append(it) }
+                withContext(TokenRequestSource(FunctionType.AUDIO_RECOGNITION)) {
+                    lease.service.sendMessage(
+                        context = context,
+                        chatHistory = listOf(
+                            PromptTurn(PromptTurnKind.SYSTEM, instructions),
+                            PromptTurn(PromptTurnKind.USER, audioLink(voice)),
+                        ),
+                        modelParameters = lease.modelParameters,
+                        stream = false,
+                        availableTools = null,
+                    )
+                }.collect { content.append(it) }
                 VoiceAnalysisCodec.decode(ChatUtils.removeThinkingContent(content.toString()).trim())
             } finally {
                 withContext(NonCancellable) { lease.close() }
