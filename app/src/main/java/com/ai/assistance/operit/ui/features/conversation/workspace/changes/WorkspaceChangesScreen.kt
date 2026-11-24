@@ -108,11 +108,16 @@ internal fun WorkspaceChangesScreen(
     val repository = remember(directory, environment, refresh) { directory?.let { WorkspaceGitRepository(context, it, environment) } }
     val historical = source == ChangeReviewSource.OPERATIONS || source == ChangeReviewSource.LAST_TURN
     // 历史记录携带快照版本，无关文件写入无需使已看过的差异和语法颜色失效。
-    val cache = remember(chatId, directory, environment, source, base, if (historical) 0L else revision, refresh) { WorkspaceReviewCache() }
+    val cache = remember(chatId, directory, environment, source, base, if (historical) 0L else revision, refresh, isVisible) { WorkspaceReviewCache() }
     val request = listOf(chatId, directory, environment, source, base, revision, refresh, userMessages)
     var loadedRequest by remember { mutableStateOf<List<Any?>?>(null) }
     LaunchedEffect(isVisible, request) {
-        if (!isVisible || request == loadedRequest) return@LaunchedEffect
+        // 外部清理不会递增记录版本，重新打开时必须核对快照并丢弃已缓存的差异。
+        if (!isVisible) {
+            loadedRequest = null
+            return@LaunchedEffect
+        }
+        if (request == loadedRequest) return@LaunchedEffect
         loading = true
         error = null
         if (source == ChangeReviewSource.BRANCH || source == ChangeReviewSource.WORKING_TREE) git = null
@@ -148,6 +153,8 @@ internal fun WorkspaceChangesScreen(
             throw cancelled
         } catch (failure: Exception) {
             AppLogger.e("WorkspaceChanges", "读取变更目录失败", failure)
+            files = emptyList()
+            selectedId = null
             error = failure.message ?: failure.javaClass.simpleName
         } finally { loading = false }
     }
@@ -248,8 +255,8 @@ internal fun WorkspaceChangesScreen(
                             }
                         }
                     }
-                    else if (error != null) Text(checkNotNull(error), Modifier.padding(10.dp), color = colors.error, fontSize = 11.sp)
-                    else if (!loading && filtered.isEmpty()) Text(stringResource(if (query.isNotBlank()) R.string.workspace_changes_no_matches
+                    else if (error != null && !historical) Text(checkNotNull(error), Modifier.padding(10.dp), color = colors.error, fontSize = 11.sp)
+                    else if (!loading && filtered.isEmpty() && (!historical || query.isNotBlank())) Text(stringResource(if (query.isNotBlank()) R.string.workspace_changes_no_matches
                         else if (source == ChangeReviewSource.OPERATIONS || source == ChangeReviewSource.LAST_TURN) R.string.workspace_changes_empty_records else R.string.workspace_changes_empty_git),
                         Modifier.padding(10.dp), fontSize = 11.sp, color = colors.onSurfaceVariant)
                     else ChangeFileList(filtered, selected?.id, if (query.isBlank()) collapsed else emptySet(), { collapsed = it }, fileListState, onSelect = ::selectFile)
@@ -263,7 +270,7 @@ internal fun WorkspaceChangesScreen(
             }
             val file = selected?.takeIf { loadedRequest == request }
             Column(Modifier.weight(1f).fillMaxHeight()) {
-                chatId?.let(observationErrors::get)?.let { message ->
+                if (!historical) chatId?.let(observationErrors::get)?.let { message ->
                     Text(stringResource(R.string.workspace_changes_observation_error, message),
                         Modifier.fillMaxWidth().padding(8.dp), color = colors.error, fontSize = 11.sp)
                 }
@@ -284,7 +291,10 @@ internal fun WorkspaceChangesScreen(
                     }
                     HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.4f))
                     Box(Modifier.fillMaxSize().padding(12.dp), contentAlignment = Alignment.Center) {
-                        Text(error ?: stringResource(R.string.workspace_changes_choose_file), fontSize = 12.sp, color = if (error == null) colors.onSurfaceVariant else colors.error)
+                        val emptyMessage = if (historical && (error != null || (!loading && files.isEmpty()))) {
+                            stringResource(R.string.workspace_changes_no_readable_records)
+                        } else error ?: stringResource(R.string.workspace_changes_choose_file)
+                        Text(emptyMessage, fontSize = 12.sp, color = if (historical || error == null) colors.onSurfaceVariant else colors.error)
                     }
                 }
             }
@@ -458,12 +468,13 @@ private fun ChangeFileDetail(
             result != null && !result.content.isText -> {
                 val data = result.content
                 Text(stringResource(when {
+                    data.snapshotsCleared -> R.string.workspace_changes_no_readable_records
                     data.beforeKind == SnapshotKind.TOO_LARGE || data.afterKind == SnapshotKind.TOO_LARGE -> R.string.workspace_changes_too_large
                     data.beforeKind == SnapshotKind.UNAVAILABLE || data.afterKind == SnapshotKind.UNAVAILABLE -> R.string.workspace_changes_unavailable
                     data.beforeKind == SnapshotKind.DIRECTORY || data.afterKind == SnapshotKind.DIRECTORY -> R.string.workspace_changes_directory
                     else -> R.string.workspace_changes_binary
                 }), Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                data.detail?.let { Text(it, Modifier.padding(horizontal = 12.dp), fontSize = 10.sp) }
+                if (!data.snapshotsCleared) data.detail?.let { Text(it, Modifier.padding(horizontal = 12.dp), fontSize = 10.sp) }
             }
         }
     }

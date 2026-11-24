@@ -7,6 +7,8 @@ import com.ai.assistance.operit.ui.common.markdown.responseProcessItemVisible
 import com.ai.assistance.operit.ui.common.markdown.completedProcessEnd
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import androidx.compose.ui.platform.LocalContext
+import com.ai.assistance.operit.ui.common.markdown.XmlRenderPluginRegistry
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.isWaifuStandaloneNode
 import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor
 import androidx.compose.runtime.collectAsState
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardStateStore
@@ -71,6 +73,7 @@ internal data class ChatTimelineEntry(
     val key: String,
     val messageIndex: Int,
     val slice: ChatMessageSlice? = null,
+    val waifuProcess: Boolean = false,
 )
 
 internal class ChatMessageAppearance {
@@ -86,6 +89,9 @@ internal data class ChatMessageSlice(
     val state: StreamMarkdownRendererState,
     val grouper: ThinkToolsXmlNodeGrouper,
     val appearance: ChatMessageAppearance,
+    val standaloneContent: Boolean = false,
+    val shellFirst: Boolean = first,
+    val shellLast: Boolean = last,
 )
 
 internal val LocalChatMessageSlice = staticCompositionLocalOf<ChatMessageSlice?> { null }
@@ -117,6 +123,7 @@ internal fun rememberChatTimelineEntries(
     val context = LocalContext.current
     val preferences = remember(context) { DisplayPreferencesManager.getInstance(context) }
     val collapseCompletedProcess by preferences.collapseCompletedProcess.collectAsState(initial = true)
+    val xmlRegistryVersion by XmlRenderPluginRegistry.changeVersion.collectAsState()
     val occurrences = mutableMapOf<Long, Int>()
     val entriesByMessage = buildList<List<ChatTimelineEntry>> {
         messages.forEachIndexed { index, message ->
@@ -166,8 +173,13 @@ internal fun rememberChatTimelineEntries(
                     }
                     val nodeKeys = remember(nodes) { markdownNodeIdentityKeys(nodes) }
                     val cardStore = remember(nodeKeys, cardValues) { MarkdownCardStateStore(nodeKeys, cardValues) }
-                    var wasSplit by remember { mutableStateOf(false) }
-                    val contentNeedsSplit = wasSplit || shouldSplitChatMessage(visibleNodes)
+                    val standaloneNodes = remember(nodes, waifuEnabled, xmlRegistryVersion) {
+                        if (waifuEnabled) nodes.indices.filter { isWaifuStandaloneNode(nodes[it], XmlRenderPluginRegistry::supports) }.toSet()
+                        else emptySet()
+                    }
+                    var wasSplit by remember(waifuEnabled) { mutableStateOf(false) }
+                    // 混合消息也按节点去除特殊块的外壳，正文继续使用原聊天样式。
+                    val contentNeedsSplit = wasSplit || shouldSplitChatMessage(visibleNodes) || standaloneNodes.isNotEmpty()
                     val split = contentNeedsSplit || processEnd >= 0 || isWaifuProcess
                     SideEffect { wasSplit = contentNeedsSplit }
                     val mode = if (stream == null) MarkdownRenderMode.STATIC else MarkdownRenderMode.STREAMING
@@ -227,12 +239,14 @@ internal fun rememberChatTimelineEntries(
                             else -> rows.map { row -> ChatMarkdownFragment(state, nodes, grouper, mode, row, cardStore) }
                         }
                     }
-                    val entries = remember(messageKey, index, fragments, split, state, grouper, appearance) {
+                    val entries = remember(messageKey, index, fragments, split, state, grouper, appearance, standaloneNodes, isWaifuProcess) {
+                        fun standaloneAt(index: Int) = (fragments.getOrNull(index)?.row as? ThinkToolsRow.Content)?.let { it.index in standaloneNodes } == true
                         fragments.mapIndexed { blockIndex, fragment ->
                             val blockKey = if (blockIndex == 0) "first" else fragment.row!!.key
                             ChatTimelineEntry(
                                 key = "$messageKey/$blockKey",
                                 messageIndex = index,
+                                waifuProcess = isWaifuProcess,
                                 slice = ChatMessageSlice(
                                     first = blockIndex == 0,
                                     last = blockIndex == fragments.lastIndex,
@@ -241,6 +255,10 @@ internal fun rememberChatTimelineEntries(
                                     state = state,
                                     grouper = grouper,
                                     appearance = appearance,
+                                    standaloneContent = standaloneAt(blockIndex),
+                                    // 独立卡片两侧的正文各自闭合外壳，消息首尾身份仍用于标题、统计和操作。
+                                    shellFirst = blockIndex == 0 || standaloneAt(blockIndex - 1),
+                                    shellLast = blockIndex == fragments.lastIndex || standaloneAt(blockIndex + 1),
                                 ),
                             )
                         }
