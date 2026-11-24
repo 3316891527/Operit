@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="summary_preparing_continuation">Summary saved. Preparing to continue…</string>
+    <string name="summary_continuation_wait_failed">The summary was saved, but the previous turn has not finished. Automatic continuation could not start.</string>
+</resources>

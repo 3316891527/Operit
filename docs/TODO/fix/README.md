@@ -8,6 +8,8 @@
 
 ## 计划索引
 
+- [总结完成后的自动续聊交接](summary-auto-continuation/index.md)
+
 - [Waifu 连续过程分段与无气泡展示](waifu-continuous-process/index.md)
 - [不支持的思考档位保存导致崩溃](thinking-option-crash/index.md)
 - [快照导入后重绑主题脚本](snapshot-theme-script-paths/index.md)
