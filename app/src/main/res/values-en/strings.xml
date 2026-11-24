@@ -9612,4 +9612,7 @@
     <string name="voice_message_finishing">Finishing recording…</string>
     <string name="studio_background_blur_hint">Only the background is blurred; text and controls stay sharp.</string>
     <string name="studio_background_blur_inherit_hint">Add a separate background fill or layer to adjust blur. Inherited backgrounds use the source setting.</string>
+    <string name="workspace_history_previous_page">Previous</string>
+    <string name="workspace_history_next_page">Next</string>
+    <string name="workspace_history_page_range">%1$d–%2$d / %3$d</string>
 </resources>

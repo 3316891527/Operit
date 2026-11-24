@@ -21,20 +21,15 @@ internal class WorkspaceFileMonitor internal constructor(
     private val context: Context,
     private val terminalOwns: (File) -> Boolean = TerminalFileJournal::observesActiveFile,
 ) {
-    private data class EventOrigin(val name: String, val terminalOwned: Boolean) {
-        fun merge(other: EventOrigin) = EventOrigin(
-            if (name == other.name) name else "filesystem", terminalOwned || other.terminalOwned,
-        )
-    }
     private data class Binding(val chatId: String, val location: ChangeLocation)
-    private class State(val binding: Binding, val key: String, val local: File?) {
-        var before: Map<String, ObservedWorkspaceFile> = emptyMap()
+    private class State(val binding: Binding, val key: String, val local: File?, val index: TerminalObservationIndex) {
         var initialized = false
         var baselineLoaded = false
+        var pendingOperation: String? = null
+        var pendingTime = 0L
         var lastScan = 0L
         var observer: DepthLimitedFileObserver? = null
         @Volatile var restartObserver = false
-        val dirty = linkedMapOf<String, EventOrigin>()
     }
     internal data class ToolScope(val id: String, val chatId: String?, val name: String, val command: Boolean)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -52,7 +47,7 @@ internal class WorkspaceFileMonitor internal constructor(
             for (signal in changes) {
                 delay(150)
                 WorkspaceChangeStore.operationMutex.withLock {
-                    states.values.toList().filter { synchronized(it) { it.dirty.isNotEmpty() } }
+                    states.values.toList().filter { it.index.hasPending() }
                         .forEach { inspect(it, source(it)) }
                 }
             }
@@ -81,7 +76,7 @@ internal class WorkspaceFileMonitor internal constructor(
                     val key = key(binding)
                     owners[ownerId] = key
                     if (key !in states) {
-                        val state = State(binding, key, hostFile(binding.location)?.canonicalFile)
+                        val state = State(binding, key, hostFile(binding.location)?.canonicalFile, store.workspaceIndex(key))
                         states[key] = state
                         inspect(state, "filesystem")
                     }
@@ -119,17 +114,12 @@ internal class WorkspaceFileMonitor internal constructor(
     /** 文件工具已经固化的同份快照同步进观察基线，避免随后通知重复记录。调用方持有操作锁。 */
     fun acknowledge(records: List<FileChangeRecord>) {
         for (state in states.values) {
-            val updates = records.filter { it.chatId == state.binding.chatId }.mapNotNull { record ->
-                relativeChangePath(state.binding.location, record.location)?.let { it to record }
+            if (!state.baselineLoaded) continue
+            for (record in records) {
+                if (record.chatId != state.binding.chatId) continue
+                val path = relativeChangePath(state.binding.location, record.location) ?: continue
+                state.index.acknowledge(path, record.after, initializing = !state.initialized)
             }
-            if (updates.isEmpty() || !state.baselineLoaded) continue
-            val next = state.before.toMutableMap()
-            for ((relative, record) in updates) {
-                if (record.after.kind == SnapshotKind.ABSENT) next.remove(relative)
-                else if (record.after.kind != SnapshotKind.DIRECTORY) next[relative] = ObservedWorkspaceFile("", record.after)
-            }
-            state.before = next
-            store.saveObservedFiles(state.key, next)
         }
     }
 
@@ -141,6 +131,7 @@ internal class WorkspaceFileMonitor internal constructor(
             inspect(state, source(state))
             state.observer?.stop()
             states.remove(state.key)
+            store.releaseWorkspaceIndex(state.key)
             failures.update { it - state.binding.chatId }
         }
     }
@@ -169,32 +160,37 @@ internal class WorkspaceFileMonitor internal constructor(
             shouldIgnore = { path, _ -> !observedWorkspacePath(path) || isHistoryStorage(File(root, path)) },
             onChange = { event ->
                 if (event.relativePath.isEmpty()) state.restartObserver = true
-                val origin = EventOrigin(source(state), terminalOwns(File(root, event.relativePath)))
-                synchronized(state) {
-                    state.dirty.merge(event.relativePath, origin) { previous, current -> previous.merge(current) }
+                val origin = source(state)
+                val owned = terminalOwns(File(root, event.relativePath))
+                try {
+                    state.index.enqueue(event.relativePath, TerminalPendingChange(
+                        TerminalChangeOrigin(state.binding.chatId, origin, null, null), owned), mergeCreated = true)
+                    changes.trySend(Unit)
+                } catch (error: Exception) {
+                    AppLogger.e("WorkspaceFileMonitor", "工作区事件入队失败", error)
+                    failures.update { it + (state.binding.chatId to (error.message ?: error.javaClass.simpleName)) }
                 }
-                changes.trySend(Unit)
             }).also { it.start() }
     }
 
     private suspend fun inspect(state: State, origin: String) {
-        // 先取走本批通知；扫描期间新收到的同一路径必须留给下一批，不能一并清空。
-        val pending = synchronized(state) { state.dirty.toMap().also { state.dirty.clear() } }
+        val pending = state.index.takePending()
         try {
             if (!state.baselineLoaded) {
-                val saved = store.observedFiles(state.key)
-                state.before = saved.orEmpty()
-                state.initialized = saved != null
+                state.initialized = state.index.initialized()
                 state.baselineLoaded = true
             }
             ensureObserver(state)
-            val next = scan(state, pending.keys)
-            if (state.initialized) saveChanges(state, next, origin, pending)
-            val saveBaseline = !state.initialized || state.before != next || state.binding.chatId in failures.value
+            val selected = if (state.initialized && pending.isNotEmpty() && state.local != null) pending.keys else null
+            state.index.beginScan(selected).use { scan ->
+                scan(state, pending.keys, scan, selected)
+                if (state.initialized) saveChanges(state, scan, origin, pending)
+                scan.commit(completeInitialization = true)
+            }
             state.initialized = true
-            state.before = next
-            if (saveBaseline) store.saveObservedFiles(state.key, next)
+            state.pendingOperation = null
             state.lastScan = System.currentTimeMillis()
+            if (state.index.hasPending()) changes.trySend(Unit)
             failures.update { it - state.binding.chatId }
         } catch (cancelled: CancellationException) { restoreEvents(state, pending); throw cancelled }
         catch (error: Exception) {
@@ -204,60 +200,62 @@ internal class WorkspaceFileMonitor internal constructor(
         }
     }
 
-    private fun restoreEvents(state: State, pending: Map<String, EventOrigin>) = synchronized(state) {
-        pending.forEach { (path, source) -> state.dirty.merge(path, source) { current, previous ->
-            current.merge(previous)
-        } }
+    private fun restoreEvents(state: State, pending: Map<String, TerminalPendingChange>) {
+        pending.forEach { (path, event) -> state.index.enqueue(path, event, older = true, mergeCreated = true) }
     }
 
-    private fun saveChanges(state: State, next: Map<String, ObservedWorkspaceFile>, origin: String, pending: Map<String, EventOrigin>) {
-        val paths = observedWorkspaceChanges(state.before, next).filterNot { path ->
-            // 归属随通知保存，执行结束后处理的旧通知也不能再次生成 filesystem 记录。
-            (state.local != null && terminalOwns(File(state.local, path))) || pending.any { (parent, event) ->
-                event.terminalOwned && (parent.isEmpty() || path == parent || path.startsWith("$parent/"))
+    private fun saveChanges(state: State, scan: TerminalObservationIndex.Scan, origin: String, pending: Map<String, TerminalPendingChange>) {
+        val operation = state.pendingOperation ?: UUID.randomUUID().toString().also {
+            state.pendingOperation = it
+            state.pendingTime = WorkspaceChangeStore.nextTimestamp()
+        }
+        val time = state.pendingTime
+        var afterPath: String? = null
+        while (true) {
+            val page = scan.differences(afterPath)
+            if (page.isEmpty()) break
+            val records = page.mapNotNull { difference ->
+                val path = difference.path
+                if (difference.beforeSnapshot == difference.afterSnapshot &&
+                    (difference.afterSnapshot.kind !in setOf(SnapshotKind.TOO_LARGE, SnapshotKind.UNAVAILABLE) || difference.before?.stamp == difference.after?.stamp)) return@mapNotNull null
+                val events = state.index.pendingAncestors(path).toMutableMap()
+                pending.forEach { (parent, event) -> if (parent.isEmpty() || path == parent || path.startsWith("$parent/")) events[parent] = event }
+                if ((state.local != null && terminalOwns(File(state.local, path))) || events.values.any { it.createdInPlace }) return@mapNotNull null
+                val eventSource = events.maxByOrNull { it.key.length }?.value?.origin?.toolName ?: origin
+                val record = FileChangeRecord(UUID.randomUUID().toString(), operation, state.binding.chatId, time,
+                    eventSource, state.binding.location.copy(path = changePath(state.binding.location.path + "/" + path)),
+                    difference.beforeSnapshot, difference.afterSnapshot)
+                val content = store.content(record)
+                if (reviewDiffAutomatic(content)) WorkspaceDiff.compare(checkNotNull(content.before), checkNotNull(content.after)).let {
+                    record.copy(additions = it.additions, deletions = it.deletions)
+                } else record
             }
+            store.mergeOperation(operation, records) { it }
+            afterPath = page.last().path
         }
-        if (paths.isEmpty()) return
-        val operation = UUID.randomUUID().toString()
-        val time = WorkspaceChangeStore.nextTimestamp()
-        val records = paths.map { path ->
-            val before = state.before[path]?.snapshot ?: ChangeSnapshot(SnapshotKind.ABSENT)
-            val after = next[path]?.snapshot ?: ChangeSnapshot(SnapshotKind.ABSENT)
-            val eventSource = pending[path]?.name ?: pending.entries.filter { (parent, _) ->
-                parent.isEmpty() || path.startsWith("$parent/")
-            }.maxByOrNull { it.key.length }?.value?.name ?: origin
-            val record = FileChangeRecord(UUID.randomUUID().toString(), operation, state.binding.chatId, time,
-                eventSource, state.binding.location.copy(path = changePath(state.binding.location.path + "/" + path)), before, after)
-            val content = store.content(record)
-            if (reviewDiffAutomatic(content)) WorkspaceDiff.compare(checkNotNull(content.before), checkNotNull(content.after)).let {
-                record.copy(additions = it.additions, deletions = it.deletions)
-            } else record
-        }
-        store.save(records)
     }
 
-    private suspend fun scan(state: State, forced: Set<String>): Map<String, ObservedWorkspaceFile> {
+    private suspend fun scan(state: State, forced: Set<String>, target: TerminalObservationIndex.Scan, paths: Set<String>?) {
         check(WorkspaceChangeAccess.backend(context, state.binding.location.environment) == state.binding.location.backend) { "Workspace backend changed" }
-        return if (state.local != null) {
-            check(state.initialized || state.local.isDirectory) { "Workspace is not a readable directory: ${state.binding.location.path}" }
-            observeLocalWorkspace(state.local, state.before, forced, ::isHistoryStorage, ::snapshotBytes)
-        } else scanRemote(state)
+        if (state.local != null) {
+            check(state.initialized || state.local.isDirectory) { "Workspace is not a readable directory" }
+            scanLocalWorkspace(state.local, { path -> state.index.file(path)?.let { ObservedWorkspaceFile(it.stamp, it.snapshot) } }, forced,
+                ::isHistoryStorage, { path, file -> target.put(path, TerminalObservedFile(file.stamp, file.snapshot)) }, { snapshotBytes(it, target) }, paths)
+        } else scanRemote(state, target)
     }
 
-    private suspend fun scanRemote(state: State): Map<String, ObservedWorkspaceFile> {
+    private suspend fun scanRemote(state: State, target: TerminalObservationIndex.Scan) {
         val access = WorkspaceChangeAccess(context)
-        val result = linkedMapOf<String, ObservedWorkspaceFile>()
         if (state.binding.location.environment in setOf("linux", "android")) {
             val command = WorkspaceGitCommand(context, state.binding.location.path, state.binding.location.environment, state.binding.location.backend)
             try {
-                val entries = command.fileInventory()
-                for ((path, stamp) in entries) {
-                    val previous = state.before[path]
+                command.forEachInventoryFile { path, stamp ->
+                    val previous = state.index.file(path)
                     val size = stamp.substringAfter(':').substringBefore(':').toLong()
                     val snapshot = if (previous?.stamp == stamp) previous.snapshot
                         else if (size > CHANGE_SNAPSHOT_LIMIT) ChangeSnapshot(SnapshotKind.TOO_LARGE, size)
-                        else snapshotBytes(command.workspaceFileBytes(state.binding.location.path.trimEnd('/') + "/" + path))
-                    result[path] = ObservedWorkspaceFile(stamp, snapshot)
+                        else snapshotBytes(command.workspaceFileBytes(state.binding.location.path.trimEnd('/') + "/" + path), target)
+                    target.put(path, TerminalObservedFile(stamp, snapshot))
                 }
             } finally { withContext(NonCancellable) { command.close() } }
         } else {
@@ -268,22 +266,20 @@ internal class WorkspaceFileMonitor internal constructor(
                     val child = location.copy(path = changePath(location.path + "/" + entry.name))
                     if (entry.isDirectory) visit(child, "$path/") else {
                         val snapshot = access.snapshot(child)
-                        check(snapshot.kind != SnapshotKind.UNAVAILABLE && snapshot.kind != SnapshotKind.ABSENT) {
-                            snapshot.detail ?: "Cannot read changed file: $path"
-                        }
-                        result[path] = ObservedWorkspaceFile("", snapshot)
+                        check(snapshot.kind != SnapshotKind.UNAVAILABLE && snapshot.kind != SnapshotKind.ABSENT) { snapshot.detail ?: "Cannot read changed file: $path" }
+                        snapshot.blob?.let(target::pinBlob)
+                        target.put(path, TerminalObservedFile("", snapshot))
                     }
                 }
             }
             visit(state.binding.location, "")
         }
-        return result
     }
 
-    private fun snapshotBytes(bytes: ByteArray): ChangeSnapshot = if (bytes.size > CHANGE_SNAPSHOT_LIMIT)
+    private fun snapshotBytes(bytes: ByteArray, scan: TerminalObservationIndex.Scan): ChangeSnapshot = if (bytes.size > CHANGE_SNAPSHOT_LIMIT)
         ChangeSnapshot(SnapshotKind.TOO_LARGE, bytes.size.toLong()) else ChangeSnapshot(
             if (decodeChangeText(bytes) == null) SnapshotKind.BINARY else SnapshotKind.TEXT,
-            bytes.size.toLong(), store.putBlob(bytes))
+            bytes.size.toLong(), store.putBlob(bytes, scan))
 
     private fun isHistoryStorage(file: File): Boolean = changePathContains(historyRoot, file.absolutePath)
 
@@ -301,7 +297,7 @@ internal class WorkspaceFileMonitor internal constructor(
 
     internal suspend fun close() = withContext(NonCancellable + Dispatchers.IO) {
         WorkspaceChangeStore.operationMutex.withLock {
-            states.values.forEach { it.observer?.stop() }
+            states.values.forEach { it.observer?.stop(); store.releaseWorkspaceIndex(it.key) }
             states.clear()
             owners.clear()
             synchronized(sources) { sources.clear() }

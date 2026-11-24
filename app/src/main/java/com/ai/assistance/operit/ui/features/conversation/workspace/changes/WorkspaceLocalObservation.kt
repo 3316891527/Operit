@@ -19,11 +19,24 @@ internal fun observeLocalWorkspace(
     snapshotBytes: (ByteArray) -> ChangeSnapshot,
 ): Map<String, ObservedWorkspaceFile> {
     val result = linkedMapOf<String, ObservedWorkspaceFile>()
+    scanLocalWorkspace(root, { before[it] }, forced, excluded, { path, file -> result[path] = file }, snapshotBytes)
+    return result
+}
+
+internal fun scanLocalWorkspace(
+    root: File,
+    before: (String) -> ObservedWorkspaceFile?,
+    forced: Set<String>,
+    excluded: (File) -> Boolean,
+    onFile: (String, ObservedWorkspaceFile) -> Unit,
+    snapshotBytes: (ByteArray) -> ChangeSnapshot,
+    paths: Set<String>? = null,
+) {
     val rootPath = root.toPath()
-    if (Files.notExists(rootPath, LinkOption.NOFOLLOW_LINKS)) return result
+    if (Files.notExists(rootPath, LinkOption.NOFOLLOW_LINKS)) return
     check(Files.isDirectory(rootPath, LinkOption.NOFOLLOW_LINKS)) { "Workspace is not a directory: $root" }
     fun stamp(attrs: BasicFileAttributes) = "${attrs.lastModifiedTime()}:${attrs.size()}:${attrs.fileKey()}"
-    Files.walkFileTree(rootPath, object : SimpleFileVisitor<Path>() {
+    val visitor = object : SimpleFileVisitor<Path>() {
         override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
             val path = rootPath.relativize(dir).toString().replace(File.separatorChar, '/')
             return if (observedWorkspacePath(path) && !excluded(dir.toFile())) FileVisitResult.CONTINUE else FileVisitResult.SKIP_SUBTREE
@@ -31,8 +44,8 @@ internal fun observeLocalWorkspace(
         override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
             val path = rootPath.relativize(file).toString().replace(File.separatorChar, '/')
             if (!observedWorkspacePath(path) || excluded(file.toFile())) return FileVisitResult.CONTINUE
-            val prior = before[path]
-            val needsRead = forced.any { it.isEmpty() || path == it || path.startsWith("$it/") }
+            val prior = before(path)
+            val needsRead = anyObservationAncestor(path, forced::contains)
             val snapshot = if (prior != null && prior.stamp == stamp(attrs) && !needsRead) prior.snapshot else when {
                 attrs.isSymbolicLink -> snapshotBytes(Files.readSymbolicLink(file).toString().toByteArray(Charsets.UTF_8))
                 !attrs.isRegularFile -> ChangeSnapshot(SnapshotKind.UNAVAILABLE, detail = "Not a regular file")
@@ -53,9 +66,19 @@ internal fun observeLocalWorkspace(
                     snapshotBytes(bytes)
                 }
             }
-            result[path] = ObservedWorkspaceFile(stamp(attrs), snapshot)
+            onFile(path, ObservedWorkspaceFile(stamp(attrs), snapshot))
             return FileVisitResult.CONTINUE
         }
-    })
-    return result
+    }
+    for (name in selectedObservationPaths(paths)) {
+        val path = rootPath.resolve(name).normalize()
+        var parent = path.parent
+        var linkedParent = false
+        while (parent != null && parent.startsWith(rootPath)) {
+            if (Files.isSymbolicLink(parent)) linkedParent = true
+            if (parent == rootPath) break
+            parent = parent.parent
+        }
+        if (!linkedParent && !Files.notExists(path, LinkOption.NOFOLLOW_LINKS)) Files.walkFileTree(path, visitor)
+    }
 }

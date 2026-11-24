@@ -50,15 +50,23 @@ internal class SnapshotPackIndex(private val database: TerminalIndexDatabase) {
 
     fun seal(name: String) = database.execute("UPDATE snapshot_volumes SET sealed=1 WHERE name=?", listOf(name))
 
-    fun commit(entry: SnapshotPackEntry, end: Long, sealed: Boolean, createVolume: Boolean) {
+    fun commit(entry: SnapshotPackEntry, end: Long, sealed: Boolean, createVolume: Boolean) =
+        commitBatch(listOf(entry), end, sealed, createVolume) {}
+
+    fun <T> commitBatch(entries: List<SnapshotPackEntry>, end: Long, sealed: Boolean, createVolume: Boolean, publish: () -> T): T {
         try {
-            database.transaction {
-                if (createVolume) addVolume(SnapshotPackVolume(entry.volume, end, 0, sealed))
-                database.execute("INSERT OR REPLACE INTO snapshot_objects(hash,volume,offset,length,live) VALUES(?,?,?,?,1)",
-                    listOf(entry.hash, entry.volume, entry.offset, entry.length))
-                if (!createVolume) database.execute("UPDATE snapshot_volumes SET committed=?,sealed=? WHERE name=?", listOf(end, if (sealed) 1 else 0, entry.volume))
+            val result = database.transaction {
+                if (entries.isNotEmpty()) {
+                    val volume = entries.first().volume
+                    if (createVolume) addVolume(SnapshotPackVolume(volume, end, 0, sealed))
+                    for (entry in entries) database.execute("INSERT OR REPLACE INTO snapshot_objects(hash,volume,offset,length,live) VALUES(?,?,?,?,1)",
+                        listOf(entry.hash, entry.volume, entry.offset, entry.length))
+                    if (!createVolume) database.execute("UPDATE snapshot_volumes SET committed=?,sealed=? WHERE name=?", listOf(end, if (sealed) 1 else 0, volume))
+                }
+                publish()
             }
-            cache[entry.hash] = entry
+            for (entry in entries) cache[entry.hash] = entry
+            return result
         } catch (error: Exception) { cache.clear(); throw error }
     }
 
