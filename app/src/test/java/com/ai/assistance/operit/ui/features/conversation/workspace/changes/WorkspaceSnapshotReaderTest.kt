@@ -4,6 +4,8 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.security.MessageDigest
 import org.junit.Assert.*
+import org.junit.Before
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -11,6 +13,9 @@ import org.junit.rules.TemporaryFolder
 class WorkspaceSnapshotReaderTest {
     @get:Rule val temporary = TemporaryFolder()
     private val objects get() = File(temporary.root, "objects")
+    private lateinit var storage: SnapshotPackStore
+    @Before fun openStorage() { storage = SnapshotPackStore(objects) { JdbcTerminalIndexDatabase(File(temporary.root, "index.sqlite")) } }
+    @After fun closeStorage() { storage.close() }
     private fun blob(text: String): ChangeSnapshot {
         objects.mkdirs()
         val hash = MessageDigest.getInstance("SHA-256").digest(text.toByteArray()).joinToString("") { "%02x".format(it) }
@@ -24,7 +29,7 @@ class WorkspaceSnapshotReaderTest {
     @Test fun intactSnapshotsKeepTheirExactText() {
         val before = blob("旧内容\n")
         val after = blob("新内容\n")
-        val data = WorkspaceSnapshotReader(objects).content(before, after)
+        val data = WorkspaceSnapshotReader(storage).content(before, after)
         assertEquals("旧内容\n", data.before)
         assertEquals("新内容\n", data.after)
         assertTrue(data.isText)
@@ -33,7 +38,7 @@ class WorkspaceSnapshotReaderTest {
 
     @Test fun removingTheWholeObjectsDirectoryLeavesNoReadableRecords() {
         val change = record("file", blob("旧"), blob("新"))
-        val reader = WorkspaceSnapshotReader(objects)
+        val reader = WorkspaceSnapshotReader(storage)
         assertTrue(objects.deleteRecursively())
         assertTrue(reader.readableRecords(listOf(change)).isEmpty())
         val data = reader.content(change.before, change.after)
@@ -51,12 +56,12 @@ class WorkspaceSnapshotReaderTest {
         val oldMissing = record("before", missing, kept)
         val newMissing = record("after", kept, missing)
         assertTrue(File(objects, checkNotNull(missing.blob)).delete())
-        assertEquals(listOf(complete), WorkspaceSnapshotReader(objects).readableRecords(listOf(oldMissing, complete, newMissing)))
+        assertEquals(listOf(complete), WorkspaceSnapshotReader(storage).readableRecords(listOf(oldMissing, complete, newMissing)))
     }
 
     @Test fun cleanupBetweenListingAndOpeningDoesNotProduceAnEmptyFileDiff() {
         val change = record("file", blob("旧"), blob("新"))
-        val reader = WorkspaceSnapshotReader(objects)
+        val reader = WorkspaceSnapshotReader(storage)
         assertEquals(listOf(change), reader.readableRecords(listOf(change)))
         assertTrue(File(objects, checkNotNull(change.before.blob)).delete())
         val data = reader.content(change.before, change.after)
@@ -70,7 +75,7 @@ class WorkspaceSnapshotReaderTest {
 
     @Test fun recreatingObjectsAllowsNewCapturesWithoutRecreatingTheReader() {
         val change = record("file", blob("旧"), blob("新"))
-        val reader = WorkspaceSnapshotReader(objects)
+        val reader = WorkspaceSnapshotReader(storage)
         objects.deleteRecursively()
         assertTrue(reader.readableRecords(listOf(change)).isEmpty())
         val before = blob("下一次旧内容")
@@ -83,7 +88,7 @@ class WorkspaceSnapshotReaderTest {
     @Test fun trulyAbsentFilesStillRepresentAdditionsAndDeletions() {
         val absent = ChangeSnapshot(SnapshotKind.ABSENT)
         val text = blob("创建的内容")
-        val reader = WorkspaceSnapshotReader(objects)
+        val reader = WorkspaceSnapshotReader(storage)
         val added = reader.content(absent, text)
         val removed = reader.content(text, absent)
         assertEquals("", added.before)
@@ -96,7 +101,7 @@ class WorkspaceSnapshotReaderTest {
 
     @Test fun removedBinarySnapshotsAlsoHaveTheClearedState() {
         val binary = blob("bytes").copy(kind = SnapshotKind.BINARY)
-        val reader = WorkspaceSnapshotReader(objects)
+        val reader = WorkspaceSnapshotReader(storage)
         assertFalse(reader.content(binary, binary).snapshotsCleared)
         File(objects, checkNotNull(binary.blob)).delete()
         val data = reader.content(binary, binary)
@@ -109,13 +114,13 @@ class WorkspaceSnapshotReaderTest {
         val file = File(objects, checkNotNull(text.blob))
         assertTrue(file.delete())
         assertTrue(file.mkdir())
-        assertThrows(FileNotFoundException::class.java) { WorkspaceSnapshotReader(objects).content(text, text) }
+        assertThrows(FileNotFoundException::class.java) { WorkspaceSnapshotReader(storage).content(text, text) }
     }
 
     @Test fun cleanupSuppressesInternalDetailsButPreservesOtherUnavailableReasons() {
         val text = blob("content")
         val unavailable = ChangeSnapshot(SnapshotKind.UNAVAILABLE, detail = "限额已达到")
-        val reader = WorkspaceSnapshotReader(objects)
+        val reader = WorkspaceSnapshotReader(storage)
         assertEquals("限额已达到", reader.content(unavailable, text).detail)
         File(objects, checkNotNull(text.blob)).delete()
         val data = reader.content(unavailable, text)
@@ -127,11 +132,21 @@ class WorkspaceSnapshotReaderTest {
         val before = blob("旧")
         val after = blob("新")
         val change = record("file", before, after)
-        val reader = WorkspaceSnapshotReader(objects)
+        val reader = WorkspaceSnapshotReader(storage)
         assertEquals(listOf(change), reader.readableRecords(listOf(change)))
         File(objects, checkNotNull(after.blob)).delete()
         assertTrue(reader.readableRecords(listOf(change)).isEmpty())
         blob("新")
         assertEquals(listOf(change), reader.readableRecords(listOf(change)))
+    }
+
+    @Test fun deletedPackedSnapshotsUseTheSameClearedStateAsLegacyFiles() {
+        val hash = storage.put("分卷内容".toByteArray())
+        val text = ChangeSnapshot(SnapshotKind.TEXT, blob = hash)
+        val reader = WorkspaceSnapshotReader(storage)
+        assertTrue(reader.content(text, text).isText)
+        objects.listFiles().orEmpty().filter { it.extension == "pack" }.forEach { assertTrue(it.delete()) }
+        assertTrue(reader.content(text, text).snapshotsCleared)
+        assertTrue(reader.readableRecords(listOf(record("packed", text, text))).isEmpty())
     }
 }
