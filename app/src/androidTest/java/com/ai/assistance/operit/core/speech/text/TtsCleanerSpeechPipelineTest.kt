@@ -4,7 +4,7 @@ import com.ai.assistance.operit.data.chat.serialization.MessageSectionStorage
 import com.ai.assistance.operit.data.model.MessageEntity
 import com.ai.assistance.operit.data.model.MessageSection
 import com.ai.assistance.operit.util.logging.AppLogger
-import com.ai.assistance.operit.util.WaifuMessageProcessor
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ai.assistance.operit.util.stream.Stream

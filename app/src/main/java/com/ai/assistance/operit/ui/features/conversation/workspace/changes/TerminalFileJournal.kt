@@ -37,7 +37,7 @@ internal class TerminalFileJournal internal constructor(
     internal class Execution(val origin: TerminalChangeOrigin) {
         val operationId: String = UUID.randomUUID().toString()
         @Volatile var acceptsEvents = true
-        internal var tracked = emptyList<ChangeLocation>()
+
     }
     private val excludedDirectories = listOf(
         File(context.filesDir, "workspace_changes"), context.cacheDir, File(context.filesDir, "logs"),
@@ -81,21 +81,19 @@ internal class TerminalFileJournal internal constructor(
         val alreadyWatching = prepared
         val observation = prepareForUse(origin.chatId, workingDirectory)
         val snapshots = scope.async {
-            if (!observation.await()) return@async emptyList()
+            if (!observation.await()) return@async
             if (alreadyWatching) awaitEventsFor(origin.chatId)
             val captureContext = currentCoroutineContext()
             WorkspaceChangeStore.operationMutex.withLock {
-                if (closed) return@withLock emptyList()
-                val tracked = store.trackedLocalFiles(origin.chatId)
+                if (closed) return@withLock
                 captureContext.ensureActive()
-                queueTrackedPaths(tracked, source(), watchParent = true)
+                queueTrackedFiles(origin.chatId, source(), watchParent = true, checkCancelled = { captureContext.ensureActive() })
                 inspectPending { captureContext.ensureActive() }
-                tracked
             }
         }
         try {
             // 固定等待窗口内完成命令前快照。观察器初始化独立在后台继续。
-            execution.tracked = withTimeoutOrNull(commandPreparationWaitMs) { snapshots.await() }.orEmpty()
+            withTimeoutOrNull(commandPreparationWaitMs) { snapshots.await() }
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (error: Exception) { report(origin.chatId, error) }
         finally { snapshots.cancel() }
@@ -148,7 +146,7 @@ internal class TerminalFileJournal internal constructor(
             val captureContext = currentCoroutineContext()
             WorkspaceChangeStore.operationMutex.withLock {
                 if (executions[execution.origin.executionId] === execution) {
-                    queueTrackedPaths(execution.tracked, origin)
+                    queueTrackedFiles(execution.origin.chatId, origin, checkCancelled = { captureContext.ensureActive() })
                 }
                 inspectPending { captureContext.ensureActive() }
             }
@@ -157,6 +155,17 @@ internal class TerminalFileJournal internal constructor(
         finally {
             executions.remove(execution.origin.executionId, execution)
             AppLogger.d("TerminalFileJournal", "终端命令 ${execution.origin.executionId} 观察收尾=${(System.nanoTime() - started) / 1_000_000}ms")
+        }
+    }
+
+    private fun queueTrackedFiles(chatId: String, origin: TerminalChangeOrigin?, watchParent: Boolean = false, checkCancelled: () -> Unit = {}) {
+        var offset = 0
+        while (true) {
+            checkCancelled()
+            val page = store.trackedLocalFilesPage(chatId, offset)
+            if (page.isEmpty()) break
+            queueTrackedPaths(page, origin, watchParent)
+            offset += page.size
         }
     }
 
@@ -392,18 +401,7 @@ internal class TerminalFileJournal internal constructor(
             recorded(saved)
             return
         }
-        // 长任务可逐批更新界面，同一次执行的同一文件保留最早 before 和最新 after。
-        val next = store.operationRecords(execution.operationId).associateBy { it.location.historyLocation().key }.toMutableMap()
-        for (record in changes) {
-            val key = record.location.historyLocation().key
-            val prior = next[key]
-            val merged = if (prior == null) record.copy(operationId = execution.operationId) else record.copy(
-                id = prior.id, operationId = execution.operationId, timestamp = prior.timestamp, before = prior.before)
-            val comparable = merged.before.kind !in setOf(SnapshotKind.TOO_LARGE, SnapshotKind.UNAVAILABLE)
-            if (comparable && merged.before == merged.after) next.remove(key)
-            else next[key] = statistics(merged)
-        }
-        store.replaceOperation(execution.operationId, next.values.toList())
+        store.mergeOperation(execution.operationId, changes, ::statistics)
         recorded(changes)
     }
 

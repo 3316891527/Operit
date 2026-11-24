@@ -1,9 +1,10 @@
-package com.ai.assistance.operit.util
+package com.ai.assistance.operit.ui.features.conversation.chat.waifu
 
+import com.ai.assistance.operit.util.assertPropagatedException
 import com.ai.assistance.operit.util.logging.AppLogger
 
-import com.ai.assistance.operit.util.WaifuSegmentUpdate.Append
-import com.ai.assistance.operit.util.WaifuSegmentUpdate.Retain
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuSegmentUpdate.Append
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuSegmentUpdate.Retain
 import com.ai.assistance.operit.util.stream.MutableSharedStream
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.TextStreamEvent

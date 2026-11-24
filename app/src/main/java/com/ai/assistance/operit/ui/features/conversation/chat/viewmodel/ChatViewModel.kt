@@ -92,7 +92,7 @@ import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreference
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.character.ActivePrompt
-import com.ai.assistance.operit.util.WaifuMessageProcessor
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor
 import com.ai.assistance.operit.ui.features.conversation.workspace.WorkspaceBackupManager
 import com.ai.assistance.operit.ui.features.conversation.workspace.CommandConfig
 import com.ai.assistance.operit.ui.features.conversation.workspace.WorkspaceCommandExecutionState

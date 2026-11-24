@@ -70,6 +70,7 @@ fun AiMessageComposable(
     enableDialogs: Boolean = true,  // 新增参数：是否启用弹窗功能，默认启用
 ) {
     val slice = LocalChatMessageSlice.current
+    val waifuLayout = com.ai.assistance.operit.ui.features.conversation.chat.waifu.LocalWaifuMessageLayout.current
     val themedTextColor = themeScriptContentColor("assistantMessage", textColor)
     val context = LocalContext.current
     val displayPreferencesManager = remember { DisplayPreferencesManager.getInstance(context) }
@@ -154,7 +155,7 @@ fun AiMessageComposable(
                     }
         ) {
         // 一条消息的标题只显示在首块，后续块保持相同内容缩进。
-        if (slice?.first != false) {
+        if (slice?.first != false && waifuLayout == null) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -221,7 +222,7 @@ fun AiMessageComposable(
                     xmlRenderer = xmlRenderer,
                     nodeGrouper = nodeGrouper,
                     enableDialogs = enableDialogs,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (waifuLayout == null) 16.dp else 0.dp),
                     state = rendererState,
                 )
             } else {
@@ -237,7 +238,7 @@ fun AiMessageComposable(
                     xmlRenderer = xmlRenderer,
                     nodeGrouper = nodeGrouper,
                     enableDialogs = enableDialogs,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (waifuLayout == null) 16.dp else 0.dp),
                     state = rendererState,
                 )
             }

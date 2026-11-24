@@ -124,7 +124,7 @@ private fun WorkspaceHubContent(
         try {
             val chatId = currentChat?.id
             outputPath = if (chatId == null) null else withContext(Dispatchers.IO) {
-                changeStore.records(chatId = chatId).lastOrNull()?.location?.path
+                changeStore.latestRecord(chatId)?.location?.path
             }
             outputsLoaded = true
         } catch (cancelled: CancellationException) {

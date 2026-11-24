@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.util
+package com.ai.assistance.operit.ui.features.conversation.chat.waifu
 
 import android.content.Context
 import androidx.compose.ui.graphics.Color
@@ -311,8 +311,8 @@ class WaifuMessageProcessorTest {
             renderedContent.contains("<plan id=\"1\">先检查 1. 内容</plan>")
         )
         assertTrue(
-            "Waifu 表情标签应保留：$segments",
-            renderedContent.contains("<emotion>happy</emotion>")
+            "内部表情控制标签不作为插件正文展示：$segments",
+            renderedContent.contains("<emotion").not()
         )
         assertTrue("内部状态标签仍应过滤：$segments", renderedContent.contains("<status").not())
         assertTrue("未注册 XML 仍应过滤：$segments", renderedContent.contains("<note").not())

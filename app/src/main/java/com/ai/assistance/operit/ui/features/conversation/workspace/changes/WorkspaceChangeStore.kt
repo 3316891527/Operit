@@ -3,9 +3,14 @@ package com.ai.assistance.operit.ui.features.conversation.workspace.changes
 import android.content.Context
 import android.util.AtomicFile
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
-import java.security.MessageDigest
+import com.ai.assistance.operit.util.logging.AppLogger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -14,14 +19,24 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
-/** 每次操作单独原子落盘，内容按哈希去重，不依赖聊天气泡或当前工作区绑定。 */
-internal class WorkspaceChangeStore(context: Context) {
-    private val root = File(context.filesDir, "workspace_changes/v1")
+/** 内容分卷与增量记录共用位置库连接，操作归属不依赖当前工作区绑定。 */
+internal class WorkspaceChangeStore(
+    private val root: File,
+    private val openDatabase: (File, Boolean) -> TerminalIndexDatabase,
+    syncDirectory: (File) -> Unit,
+    private val historyStorage: String,
+) {
+    constructor(context: Context) : this(File(context.filesDir, "workspace_changes/v1"),
+        { file, durable -> AndroidTerminalIndexDatabase(file, durable) }, ::syncSnapshotDirectory,
+        com.ai.assistance.operit.terminal.provider.filesystem.PRootMountMapping.currentEmulatedStoragePath())
     private val objects = File(root, "objects")
+    private val blobStore = SnapshotPackStore(objects, syncDirectory = syncDirectory) { openDatabase(File(root, "objects-v2.sqlite"), true) }
+    private val snapshotReader = WorkspaceSnapshotReader(blobStore)
+    private val maintenance = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val compactRequests = kotlinx.coroutines.channels.Channel<Unit>(kotlinx.coroutines.channels.Channel.CONFLATED)
     private val operations = File(root, "operations")
     private val observations = File(root, "observations")
     private val terminalObservations = File(root, "terminal-observations")
@@ -29,86 +44,108 @@ internal class WorkspaceChangeStore(context: Context) {
     private val baselineIo = Any()
     private val terminalBaselineIo = Any()
     private val terminalIndexes = linkedMapOf<String, TerminalObservationIndex>()
+    private val workspaceIndexes = linkedMapOf<String, TerminalObservationIndex>()
     private val json = Json { encodeDefaults = true }
     private val revisionState = MutableStateFlow(0L)
     private val statistics = object : LinkedHashMap<String, Pair<Int, Int>>(128, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<Int, Int>>): Boolean = size > 512
     }
     val revision = revisionState.asStateFlow()
-    private var trackedRevision = -1L
-    private var trackedChat: String? = null
-    private var trackedLocations = emptyList<ChangeLocation>()
+    private var historyIndex: WorkspaceHistoryIndex? = null
+    private var operationsImported = false
 
-    /** 终端核对本对话记录过的本地文件，包含 Android 与 Ubuntu 共用的存储。 */
-    @Synchronized
-    fun trackedLocalFiles(chatId: String): List<ChangeLocation> {
-        if (chatId.isBlank()) return emptyList()
-        if (trackedChat != chatId || trackedRevision != revisionState.value) {
-            trackedLocations = records(chatId).asSequence()
-                .filter { it.location.backend == "linux:local" || it.location.backend == "android" }
-                .associateBy { it.location.historyLocation().key }.values
-                .filter { it.after.kind == SnapshotKind.TEXT || it.after.kind == SnapshotKind.BINARY }
-                .map { it.location }
-            trackedRevision = revisionState.value
-            trackedChat = chatId
-        }
-        return trackedLocations
+    private fun <T> withHistory(read: (WorkspaceHistoryIndex) -> T): T = blobStore.withDatabase { database ->
+        val index = historyIndex ?: WorkspaceHistoryIndex(database, historyStorage).also { historyIndex = it }
+        if (!operationsImported) { index.importLegacy(operations); operationsImported = true }
+        read(index)
     }
+
+    init {
+        // 分页删除只保留一个回收请求，不能为每页创建一个等待卷锁的协程。
+        maintenance.launch {
+            for (request in compactRequests) {
+                val cancellation = coroutineContext
+                try { blobStore.compact(checkCancelled = { cancellation.ensureActive() }) }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) { AppLogger.e("WorkspaceChanges", "回收快照卷空间失败，已提交索引保留", error) }
+            }
+        }
+        // 首次使用按对象迁移旧内容，不在界面线程扫描或持有完整对象清单。
+        maintenance.launch {
+            val cancellation = coroutineContext
+            try {
+                blobStore.migrateLegacy(checkCancelled = { cancellation.ensureActive() }, onBatch = { Thread.yield() })
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { AppLogger.e("WorkspaceChanges", "迁移历史快照失败，未迁移的原文件保留", error) }
+        }
+    }
+
+    /** 当前页只含位置，不在执行对象或 Store 中保留对话的全量文件列表。 */
+    @Synchronized
+    fun trackedLocalFilesPage(chatId: String, offset: Int): List<ChangeLocation> =
+        if (chatId.isBlank()) emptyList() else withHistory { it.trackedPage(chatId, offset) }
 
     @Synchronized
     fun putBlob(bytes: ByteArray, terminalScan: TerminalObservationIndex.Scan? = null): String {
-        val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
-        // 冷启动会计算许多小文件的哈希，逐字节创建格式化器的开销会落到命令启动路径。
-        val alphabet = "0123456789abcdef"
-        val hex = CharArray(digest.size * 2)
-        for ((index, byte) in digest.withIndex()) {
-            val value = byte.toInt() and 255
-            hex[2 * index] = alphabet[value ushr 4]
-            hex[2 * index + 1] = alphabet[value and 15]
-        }
-        val hash = String(hex)
-        val target = File(objects, hash)
-        if (!target.exists()) writeAtomic(target, bytes)
+        val hash = blobStore.put(bytes, batched = true)
         terminalScan?.pinBlob(hash)
         return hash
     }
 
     @Synchronized
+    fun flushBlobs(hashes: Set<String> = emptySet()) {
+        blobStore.flush()
+        check(hashes.all(blobStore::contains)) { "Captured snapshots were not committed" }
+    }
+
+    @Synchronized
     fun save(records: List<FileChangeRecord>) {
         if (records.isEmpty()) return
-        writeAtomic(File(operations, "${records.first().operationId}.json"), json.encodeToString(records).toByteArray(Charsets.UTF_8))
+        withHistory { history -> blobStore.commit { records.forEach(history::put) } }
         revisionState.update { it + 1 }
     }
 
-    /** 长任务每批保存完整操作清单，同一次执行不会丢掉先前批次的其他文件。 */
+    /** 每批仅查找本批路径，合并保留最早身份、时间和 before，不重读同次任务的其他文件。 */
+    @Synchronized
+    fun mergeOperation(operationId: String, records: List<FileChangeRecord>, statistics: (FileChangeRecord) -> FileChangeRecord) {
+        require(java.util.UUID.fromString(operationId).toString() == operationId)
+        if (records.isEmpty()) return
+        withHistory { history -> blobStore.commit {
+            history.mergeOperation(operationId, records, statistics)
+        } }
+        this.statistics.clear()
+        revisionState.update { it + 1 }
+    }
+
+    /** 整次替换只供明确的调用方使用；终端生产路径采用 mergeOperation。 */
     @Synchronized
     fun replaceOperation(operationId: String, records: List<FileChangeRecord>) {
         require(java.util.UUID.fromString(operationId).toString() == operationId)
         require(records.all { it.operationId == operationId })
-        if (records.isEmpty()) {
-            val file = File(operations, "$operationId.json")
-            if (!file.exists()) return
-            AtomicFile(file).delete()
-            check(!file.exists()) { "Cannot remove empty terminal operation" }
-        } else {
-            writeAtomic(File(operations, "$operationId.json"), json.encodeToString(records).toByteArray(Charsets.UTF_8))
-        }
+        withHistory { history -> blobStore.commit {
+            history.deleteOperation(operationId)
+            records.forEach(history::put)
+        } }
         statistics.clear()
         revisionState.update { it + 1 }
     }
 
     @Synchronized
-    fun operationRecords(operationId: String): List<FileChangeRecord> {
-        require(java.util.UUID.fromString(operationId).toString() == operationId)
-        val file = File(operations, "$operationId.json")
-        return if (file.exists()) json.decodeFromString(file.readText(Charsets.UTF_8)) else emptyList()
-    }
+    fun operationRecords(operationId: String): List<FileChangeRecord> = withHistory { history -> buildList {
+        var offset = 0
+        while (true) {
+            val page = history.operationPage(operationId, offset)
+            if (page.isEmpty()) break
+            addAll(page)
+            offset += page.size
+        }
+    } }
 
     @Synchronized
     fun terminalIndex(key: String): TerminalObservationIndex {
         require(Regex("[0-9a-f]{64}").matches(key))
         return terminalIndexes.getOrPut(key) {
-            TerminalObservationIndex(AndroidTerminalIndexDatabase(File(terminalObservations, "$key.sqlite")))
+            TerminalObservationIndex(openDatabase(File(terminalObservations, "$key.sqlite"), false), beforeStageCommit = ::flushBlobs)
         }
     }
 
@@ -116,6 +153,7 @@ internal class WorkspaceChangeStore(context: Context) {
     fun releaseTerminalIndex(key: String) { terminalIndexes.remove(key)?.close() }
 
     /** 迁移成功后才移除旧清单；异常保留源文件并由日志层报告。 */
+    @Synchronized
     fun importTerminalBaseline(key: String, checkCancelled: () -> Unit) {
         val index = terminalIndex(key)
         synchronized(terminalBaselineIo) {
@@ -134,30 +172,108 @@ internal class WorkspaceChangeStore(context: Context) {
         }
     }
 
-    fun observedFiles(key: String): Map<String, ObservedWorkspaceFile>? = synchronized(baselineIo) {
+    @Synchronized
+    fun workspaceIndex(key: String): TerminalObservationIndex {
         require(Regex("[0-9a-f]{64}").matches(key))
-        val file = File(observations, "$key.json")
-        if (file.exists()) json.decodeFromString(file.readText(Charsets.UTF_8)) else null
-    }
-
-    fun saveObservedFiles(key: String, files: Map<String, ObservedWorkspaceFile>) = synchronized(baselineIo) {
-        require(Regex("[0-9a-f]{64}").matches(key))
-        writeAtomic(File(observations, "$key.json"), json.encodeToString(files).toByteArray(Charsets.UTF_8))
+        return workspaceIndexes.getOrPut(key) {
+            val index = TerminalObservationIndex(openDatabase(File(observations, "$key.sqlite"), false), beforeStageCommit = ::flushBlobs)
+            try {
+                val legacy = File(observations, "$key.json")
+                if (!index.legacyImported()) {
+                    if (legacy.exists()) index.beginScan().use { scan ->
+                        com.google.gson.stream.JsonReader(legacy.bufferedReader(Charsets.UTF_8)).use { reader ->
+                            reader.beginObject()
+                            while (reader.hasNext()) {
+                                val path = reader.nextName()
+                                val observed = json.decodeFromString<ObservedWorkspaceFile>(com.google.gson.JsonParser.parseReader(reader).toString())
+                                scan.put(path, TerminalObservedFile(observed.stamp, observed.snapshot))
+                            }
+                            reader.endObject()
+                            check(reader.peek() == com.google.gson.stream.JsonToken.END_DOCUMENT)
+                        }
+                        scan.commit(completeInitialization = true, imported = true)
+                    } else index.markLegacyImported()
+                }
+                if (legacy.exists()) java.nio.file.Files.delete(legacy.toPath())
+                index
+            } catch (error: Exception) { index.close(); throw error }
+        }
     }
 
     @Synchronized
-    fun records(chatId: String? = null, directory: String? = null, backend: String? = null): List<FileChangeRecord> =
-        operations.listFiles().orEmpty().asSequence().filter { it.extension == "json" }.flatMap { file ->
-            json.decodeFromString<List<FileChangeRecord>>(file.readText(Charsets.UTF_8)).asSequence()
-        }.filter { record ->
-            val inScope = if (directory == null) {
-                backend == null || record.location.backend == backend
-            } else {
-                val scope = ChangeLocation(directory, record.location.environment, backend ?: record.location.backend)
-                relativeChangePath(scope, record.location) != null
+    fun releaseWorkspaceIndex(key: String) { workspaceIndexes.remove(key)?.close() }
+
+    /** 兼容明确需要列表的内部调用；历史界面和采集均使用有界分页接口。 */
+    @Synchronized
+    fun records(chatId: String? = null, directory: String? = null, backend: String? = null): List<FileChangeRecord> = withHistory { history ->
+        val query = WorkspaceHistoryQuery(chatId, directory?.let { ChangeLocation(it, "android", backend ?: "android") }, backend)
+        buildList {
+            var offset = 0
+            while (true) {
+                val page = history.recordsPage(query, offset, ascending = true)
+                if (page.isEmpty()) break
+                addAll(page)
+                offset += page.size
             }
-            (chatId == null || record.chatId == chatId) && inScope
-        }.sortedWith(compareBy<FileChangeRecord> { it.timestamp }.thenBy { it.id }).toList()
+        }
+    }
+
+    @Synchronized
+    fun latestRecord(chatId: String): FileChangeRecord? = withHistory { it.latestRecord(chatId) }
+
+    @Synchronized
+    fun historyQuery(chatId: String?, directory: ChangeLocation?, lastTurn: Boolean, userMessages: List<Long>, search: String): WorkspaceHistoryQuery? {
+        if (!lastTurn) return WorkspaceHistoryQuery(chatId = chatId, directory = directory, search = search)
+        if (chatId == null) return null
+        val latest = withHistory { it.latestTimestamp(chatId) } ?: return null
+        val starts = userMessages.distinct().sorted()
+        val from = starts.lastOrNull { it <= latest } ?: return null
+        return WorkspaceHistoryQuery(chatId, directory, from = from, until = starts.firstOrNull { it > from }, search = search)
+    }
+
+    @Synchronized
+    fun historyPage(query: WorkspaceHistoryQuery, offset: Int): WorkspaceHistoryPage {
+        blobStore.refreshAvailability()
+        return withHistory { history ->
+            val total = history.summaryCount(query)
+            val boundedOffset = if (total == 0) 0 else minOf(offset, ((total - 1) / WorkspaceHistoryIndex.PAGE_SIZE) * WorkspaceHistoryIndex.PAGE_SIZE)
+            val files = history.summaries(query, boundedOffset).mapNotNull { summary ->
+                val first = summary.first
+                val latest = summary.latest
+                val endpoints = if (first.id == latest.id) listOf(latest) else listOf(latest, first)
+                if (snapshotReader.readableRecords(endpoints).size != endpoints.size) return@mapNotNull null
+                val counts = if (summary.count == 1 && latest.additions != null && latest.deletions != null)
+                    latest.additions to latest.deletions else statistics[first.id + ":" + latest.id]
+                ReviewFile(
+                    id = latest.location.historyLocation(historyStorage).key, location = latest.location,
+                    displayPath = query.directory?.let { checkNotNull(relativeChangePath(it, latest.location, historyStorage)) } ?: latest.location.path,
+                    status = when { first.before.kind == SnapshotKind.ABSENT -> "A"; latest.after.kind == SnapshotKind.ABSENT -> "D"; else -> "M" },
+                    additions = counts?.first ?: 0, deletions = counts?.second ?: 0,
+                    binary = first.before.kind == SnapshotKind.BINARY || latest.after.kind == SnapshotKind.BINARY,
+                    records = endpoints, aggregateRecords = true, statisticsAvailable = counts != null,
+                    historyQuery = query.copy(search = "", file = latest.location), historyCount = summary.count)
+            }
+            WorkspaceHistoryPage(files, total, boundedOffset)
+        }
+    }
+
+    @Synchronized
+    fun recordPage(query: WorkspaceHistoryQuery, offset: Int): WorkspaceRecordPage = withHistory { history ->
+        val total = history.count(query, readable = true)
+        val boundedOffset = if (total == 0) 0 else minOf(offset, ((total - 1) / WorkspaceHistoryIndex.PAGE_SIZE) * WorkspaceHistoryIndex.PAGE_SIZE)
+        WorkspaceRecordPage(history.recordsPage(query, boundedOffset, readable = true), total, boundedOffset)
+    }
+
+    @Synchronized
+    fun historyRecord(id: String, query: WorkspaceHistoryQuery? = null): FileChangeRecord? = withHistory { it.record(id, query) }
+
+    @Synchronized
+    fun prepareFileRemoval(location: ChangeLocation, chatId: String?): WorkspaceRecordRemoval = withHistory { history ->
+        val query = WorkspaceHistoryQuery(chatId = chatId, file = location)
+        val boundary = history.latestCursor(query)
+        val bounded = query.copy(through = boundary)
+        WorkspaceRecordRemoval(bounded, if (boundary == null) 0 else history.count(bounded))
+    }
 
     @Synchronized
     fun content(record: FileChangeRecord): ReviewContent = content(record.before, record.after)
@@ -168,21 +284,12 @@ internal class WorkspaceChangeStore(context: Context) {
         return content(records.first().before, records.last().after)
     }
 
-    private fun content(before: ChangeSnapshot, after: ChangeSnapshot): ReviewContent = ReviewContent(
-        before = text(before), after = text(after), beforeKind = before.kind, afterKind = after.kind,
-        detail = listOfNotNull(before.detail, after.detail).distinct().joinToString("\n").takeIf { it.isNotEmpty() },
-    )
-
-    private fun text(snapshot: ChangeSnapshot): String? = when (snapshot.kind) {
-        SnapshotKind.ABSENT -> ""
-        SnapshotKind.TEXT -> File(objects, checkNotNull(snapshot.blob)).readText(Charsets.UTF_8)
-        else -> null
-    }
+    private fun content(before: ChangeSnapshot, after: ChangeSnapshot): ReviewContent = snapshotReader.content(before, after)
 
     @Synchronized
     fun reviewFiles(
         records: List<FileChangeRecord>, directory: ChangeLocation? = null, aggregate: Boolean = false,
-    ): List<ReviewFile> = records.groupBy { it.location.historyLocation().key }.map { (key, unsorted) ->
+    ): List<ReviewFile> = snapshotReader.readableRecords(records).groupBy { it.location.historyLocation(historyStorage).key }.map { (key, unsorted) ->
             val history = unsorted.sortedWith(compareBy<FileChangeRecord> { it.timestamp }.thenBy { it.id })
             val latest = history.last()
             val first = if (aggregate) history.first() else latest
@@ -199,7 +306,7 @@ internal class WorkspaceChangeStore(context: Context) {
             } else null
             ReviewFile(
                 id = key, location = latest.location,
-                displayPath = if (directory == null) latest.location.path else checkNotNull(relativeChangePath(directory, latest.location)),
+                displayPath = if (directory == null) latest.location.path else checkNotNull(relativeChangePath(directory, latest.location, historyStorage)),
                 status = when { before.kind == SnapshotKind.ABSENT -> "A"; after.kind == SnapshotKind.ABSENT -> "D"; else -> "M" },
                 additions = counts?.first ?: 0, deletions = counts?.second ?: 0,
                 binary = before.kind == SnapshotKind.BINARY || after.kind == SnapshotKind.BINARY,
@@ -207,55 +314,84 @@ internal class WorkspaceChangeStore(context: Context) {
             )
         }.sortedBy { it.displayPath }
 
-    /** 删除只影响指定记录，批量工具产生的其他文件以及其他对话的引用继续保留。 */
+    /** 删除在操作锁内按页推进，候选哈希集合不随全部历史增长。 */
     suspend fun removeRecords(ids: Set<String>): Int = operationMutex.withLock {
-        withContext(Dispatchers.IO) { synchronized(this@WorkspaceChangeStore) { removeLocked(ids) } }
+        withContext(Dispatchers.IO) { synchronized(this@WorkspaceChangeStore) {
+            var removed = 0
+            for (page in ids.asSequence().chunked(WorkspaceHistoryIndex.PAGE_SIZE)) {
+                val records = withHistory { history -> page.mapNotNull(history::record) }
+                removed += removePage(records)
+            }
+            removed
+        } }
+    }
+
+    suspend fun removeFileRecords(removal: WorkspaceRecordRemoval): Int = operationMutex.withLock {
+        if (removal.count == 0) return@withLock 0
+        withContext(Dispatchers.IO) {
+            var removed = 0
+            while (true) {
+                coroutineContext.ensureActive()
+                val count = synchronized(this@WorkspaceChangeStore) {
+                    val page = withHistory { it.recordsPage(removal.query) }
+                    removePage(page)
+                }
+                if (count == 0) break
+                removed += count
+            }
+            removed
+        }
     }
 
     @Synchronized
-    fun fileRecords(location: ChangeLocation, chatId: String?): List<FileChangeRecord> {
-        val key = location.historyLocation().key
-        return records(chatId = chatId).filter { it.location.historyLocation().key == key }
-    }
+    fun fileRecords(location: ChangeLocation, chatId: String?): List<FileChangeRecord> = withHistory { history -> buildList {
+        var offset = 0
+        while (true) {
+            val page = history.recordsPage(WorkspaceHistoryQuery(chatId = chatId, file = location), offset, ascending = true)
+            if (page.isEmpty()) break
+            addAll(page)
+            offset += page.size
+        }
+    } }
 
-    private fun removeLocked(ids: Set<String>): Int {
-        if (ids.isEmpty()) return 0
-        val files = operations.listFiles().orEmpty().filter { it.extension == "json" }
-        val inventory = files.associateWith { json.decodeFromString<List<FileChangeRecord>>(it.readText(Charsets.UTF_8)) }
-        val removed = inventory.values.flatten().filter { it.id in ids }
-        if (removed.isEmpty()) return 0
-        var changed = false
-        try {
-            for ((file, records) in inventory) {
-                val kept = records.filterNot { it.id in ids }
-                if (kept.size == records.size) continue
-                if (kept.isEmpty()) {
-                    AtomicFile(file).delete()
-                    if (file.exists()) throw IOException("Cannot delete operation record: ${file.name}")
-                } else writeAtomic(file, json.encodeToString(kept).toByteArray(Charsets.UTF_8))
-                changed = true
-            }
-            val workspaceBaselineBlobs = observations.listFiles().orEmpty().filter { it.extension == "json" }.flatMap { file ->
-                json.decodeFromString<Map<String, ObservedWorkspaceFile>>(file.readText(Charsets.UTF_8)).values.mapNotNull { it.snapshot.blob }
-            }
-            val retained = inventory.values.flatten().filterNot { it.id in ids }
-                .flatMap { listOfNotNull(it.before.blob, it.after.blob) }.toSet() + workspaceBaselineBlobs
-            val possible = removed.flatMap { listOfNotNull(it.before.blob, it.after.blob) }.toSet() - retained
-            val terminalRetained = referencedTerminalBlobs(possible)
-            val candidates = possible - terminalRetained
-            // 采集与清理共用互斥锁，不能删掉进行中操作即将引用的相同内容。
-            for (hash in candidates) {
-                require(Regex("[0-9a-f]{64}").matches(hash)) { "Invalid snapshot object name" }
-                val objectFile = File(objects, hash)
-                if (objectFile.exists() && !objectFile.delete()) throw IOException("Cannot remove unused snapshot: $hash")
-            }
-            return removed.size
-        } finally {
-            if (changed) {
-                statistics.clear()
-                revisionState.update { it + 1 }
+    private fun removePage(records: List<FileChangeRecord>): Int {
+        if (records.isEmpty()) return 0
+        val possible = records.flatMap { listOfNotNull(it.before.blob, it.after.blob) }.toSet()
+        withHistory { history -> blobStore.commit { records.forEach { history.delete(it.id) } } }
+        statistics.clear()
+        revisionState.update { it + 1 }
+        val retained = withHistory { it.referenced(possible) }.toMutableSet()
+        synchronized(baselineIo) {
+            if (observations.exists()) java.nio.file.Files.newDirectoryStream(observations.toPath(), "*.json").use { files ->
+                for (file in files) com.google.gson.stream.JsonReader(java.nio.file.Files.newBufferedReader(file, Charsets.UTF_8)).use { reader ->
+                    reader.beginObject()
+                    while (reader.hasNext()) {
+                        reader.nextName()
+                        val observed = json.decodeFromString<ObservedWorkspaceFile>(com.google.gson.JsonParser.parseReader(reader).toString())
+                        observed.snapshot.blob?.takeIf { it in possible }?.let(retained::add)
+                    }
+                    reader.endObject()
+                    check(reader.peek() == com.google.gson.stream.JsonToken.END_DOCUMENT)
+                }
             }
         }
+        if (observations.exists()) java.nio.file.Files.newDirectoryStream(observations.toPath(), "*.sqlite").use { files ->
+            for (file in files) {
+                val key = file.fileName.toString().removeSuffix(".sqlite")
+                val active = workspaceIndexes[key]
+                if (active != null) {
+                    for (hash in possible) if (hash !in retained && active.containsBlob(hash)) retained += hash
+                } else openDatabase(file.toFile(), false).use { database ->
+                    for (hash in possible) if (hash !in retained && database.query(
+                        "SELECT 1 FROM files WHERE blob=? UNION ALL SELECT 1 FROM preparing WHERE blob=? LIMIT 1", listOf(hash, hash),
+                    ).use { it.next() }) retained += hash
+                }
+            }
+        }
+        retained += referencedTerminalBlobs(possible - retained)
+        blobStore.remove(possible - retained)
+        compactRequests.trySend(Unit)
+        return records.size
     }
 
     /** 仅查询待删哈希，不再为垃圾回收反序列化三十万条终端基线。 */
@@ -269,25 +405,32 @@ internal class WorkspaceChangeStore(context: Context) {
                 })
             }
         }
-        for (file in terminalObservations.listFiles().orEmpty().filter { it.extension == "sqlite" }) {
-            val index = terminalIndex(file.nameWithoutExtension)
-            for (hash in candidates) if (hash !in retained && index.containsBlob(hash)) retained += hash
+        if (terminalObservations.exists()) java.nio.file.Files.newDirectoryStream(terminalObservations.toPath(), "*.sqlite").use { files ->
+            for (file in files) {
+                val key = file.fileName.toString().removeSuffix(".sqlite")
+                val active = terminalIndexes[key]
+                if (active != null) {
+                    for (hash in candidates) if (hash !in retained && active.containsBlob(hash)) retained += hash
+                } else openDatabase(file.toFile(), false).use { database ->
+                    for (hash in candidates) if (hash !in retained && database.query(
+                        "SELECT 1 FROM files WHERE blob=? UNION ALL SELECT 1 FROM preparing WHERE blob=? LIMIT 1", listOf(hash, hash),
+                    ).use { it.next() }) retained += hash
+                }
+            }
         }
         return retained
     }
 
-    private fun writeAtomic(file: File, bytes: ByteArray) = writeAtomic(file) { it.write(bytes) }
-
-    private fun writeAtomic(file: File, write: (FileOutputStream) -> Unit) {
-        check(file.parentFile?.mkdirs() == true || file.parentFile?.isDirectory == true)
-        val atomic = AtomicFile(file)
-        val stream = atomic.startWrite()
-        try {
-            write(stream)
-            atomic.finishWrite(stream)
-        } catch (error: Exception) {
-            atomic.failWrite(stream)
-            throw error
+    internal suspend fun close() = withContext(kotlinx.coroutines.NonCancellable + Dispatchers.IO) {
+        maintenance.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+        maintenance.coroutineContext[kotlinx.coroutines.Job]?.join()
+        compactRequests.close()
+        synchronized(this@WorkspaceChangeStore) {
+            terminalIndexes.values.forEach { it.close() }
+            workspaceIndexes.values.forEach { it.close() }
+            terminalIndexes.clear()
+            workspaceIndexes.clear()
+            blobStore.close()
         }
     }
 
