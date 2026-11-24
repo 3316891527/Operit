@@ -5,7 +5,7 @@ import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 
-/** 只让同一次生成的连续过程和紧接正文共用标题，后续分句继续独立展示。 */
+/** 只让同一次生成的连续过程和紧接正文保持相邻布局，头像由正文自己的片段负责。 */
 internal fun waifuJoinsPrevious(previous: ChatMessage?, message: ChatMessage, enabled: Boolean, previousIsProcess: Boolean): Boolean =
     enabled && previousIsProcess && previous != null && previous.sender == "ai" && message.sender == "ai" &&
         previous.sentAt > 0L && previous.sentAt == message.sentAt &&
@@ -21,4 +21,14 @@ internal fun isWaifuStandaloneNode(node: MarkdownNodeStable, supportsXmlTag: (St
             (tag in setOf("html", "details", "detail", "search") || supportsXmlTag(tag))
     }
     else -> false
+}
+
+/** 头像属于回复正文，思考、工具调用和隐藏协议都不占用头像位置。 */
+internal fun isWaifuReplyNode(node: MarkdownNodeStable): Boolean = when (node.type) {
+    MarkdownProcessorType.PLAIN_TEXT -> node.content.isNotBlank() && !WaifuProcessContent.isProcessOnly(node.content.trim())
+    MarkdownProcessorType.XML_BLOCK -> {
+        val tag = ChatMarkupRegex.normalizeToolLikeTagName(ChatMarkupRegex.extractOpeningTagName(node.content))
+        tag !in WaifuProcessContent.tags && tag !in setOf("meta", "status")
+    }
+    else -> true
 }
