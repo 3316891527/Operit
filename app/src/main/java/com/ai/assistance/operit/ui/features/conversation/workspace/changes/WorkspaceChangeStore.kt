@@ -5,7 +5,13 @@ import android.util.AtomicFile
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.security.MessageDigest
+import com.ai.assistance.operit.util.logging.AppLogger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -22,7 +28,9 @@ import kotlinx.serialization.json.Json
 internal class WorkspaceChangeStore(context: Context) {
     private val root = File(context.filesDir, "workspace_changes/v1")
     private val objects = File(root, "objects")
-    private val snapshotReader = WorkspaceSnapshotReader(objects)
+    private val blobStore = SnapshotPackStore(objects, syncDirectory = ::syncSnapshotDirectory) { AndroidTerminalIndexDatabase(File(root, "objects-v2.sqlite"), durable = true) }
+    private val snapshotReader = WorkspaceSnapshotReader(blobStore)
+    private val maintenance = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val operations = File(root, "operations")
     private val observations = File(root, "observations")
     private val terminalObservations = File(root, "terminal-observations")
@@ -39,6 +47,17 @@ internal class WorkspaceChangeStore(context: Context) {
     private var trackedRevision = -1L
     private var trackedChat: String? = null
     private var trackedLocations = emptyList<ChangeLocation>()
+
+    init {
+        // 首次使用按对象迁移旧内容，不在界面线程扫描或持有完整对象清单。
+        maintenance.launch {
+            val cancellation = coroutineContext
+            try {
+                blobStore.migrateLegacy(checkCancelled = { cancellation.ensureActive() }, onBatch = { Thread.yield() })
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { AppLogger.e("WorkspaceChanges", "迁移历史快照失败，未迁移的原文件保留", error) }
+        }
+    }
 
     /** 终端核对本对话记录过的本地文件，包含 Android 与 Ubuntu 共用的存储。 */
     @Synchronized
@@ -58,18 +77,7 @@ internal class WorkspaceChangeStore(context: Context) {
 
     @Synchronized
     fun putBlob(bytes: ByteArray, terminalScan: TerminalObservationIndex.Scan? = null): String {
-        val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
-        // 冷启动会计算许多小文件的哈希，逐字节创建格式化器的开销会落到命令启动路径。
-        val alphabet = "0123456789abcdef"
-        val hex = CharArray(digest.size * 2)
-        for ((index, byte) in digest.withIndex()) {
-            val value = byte.toInt() and 255
-            hex[2 * index] = alphabet[value ushr 4]
-            hex[2 * index + 1] = alphabet[value and 15]
-        }
-        val hash = String(hex)
-        val target = File(objects, hash)
-        if (!target.exists()) writeAtomic(target, bytes)
+        val hash = blobStore.put(bytes)
         terminalScan?.pinBlob(hash)
         return hash
     }
@@ -236,10 +244,12 @@ internal class WorkspaceChangeStore(context: Context) {
             val terminalRetained = referencedTerminalBlobs(possible)
             val candidates = possible - terminalRetained
             // 采集与清理共用互斥锁，不能删掉进行中操作即将引用的相同内容。
-            for (hash in candidates) {
-                require(Regex("[0-9a-f]{64}").matches(hash)) { "Invalid snapshot object name" }
-                val objectFile = File(objects, hash)
-                if (objectFile.exists() && !objectFile.delete()) throw IOException("Cannot remove unused snapshot: $hash")
+            blobStore.remove(candidates)
+            maintenance.launch {
+                val cancellation = coroutineContext
+                try { blobStore.compact(checkCancelled = { cancellation.ensureActive() }) }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) { AppLogger.e("WorkspaceChanges", "回收快照卷空间失败，已提交索引保留", error) }
             }
             return removed.size
         } finally {

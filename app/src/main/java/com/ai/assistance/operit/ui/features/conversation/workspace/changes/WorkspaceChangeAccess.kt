@@ -14,7 +14,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import kotlinx.coroutines.CancellationException
 
-internal const val CHANGE_SNAPSHOT_LIMIT = 2 * 1024 * 1024
+internal const val CHANGE_SNAPSHOT_LIMIT = SnapshotPackStore.MAX_OBJECT_BYTES
 
 /** 直接复用文件后端读取原始字节，不触发工具生命周期或额外权限弹窗。 */
 internal class WorkspaceChangeAccess(private val context: Context) {

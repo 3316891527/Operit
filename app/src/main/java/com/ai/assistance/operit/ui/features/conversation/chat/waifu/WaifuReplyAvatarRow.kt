@@ -5,10 +5,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -83,9 +79,11 @@ internal fun WaifuReplyAvatarRow(
         if (theme.avatarShape == UserPreferencesManager.AVATAR_SHAPE_SQUARE) RoundedCornerShape(theme.avatarCornerRadius.dp) else CircleShape
     }
     val avatarSize = themeScriptAvatarSize("assistantAvatar", 32.dp)
-    Row(Modifier.fillMaxWidth()) {
-        if (showHeader) {
-            val avatarModifier = Modifier.padding(top = 2.dp).size(avatarSize)
+    WaifuAvatarLayout(
+        avatarSize = avatarSize,
+        showAvatar = showHeader,
+        avatar = {
+            val avatarModifier = Modifier.size(avatarSize)
                 .clip(themeScriptShape("assistantAvatar", avatarShape))
                 .themeScriptDecoration("assistantAvatar", originalShape = avatarShape)
                 .combinedClickable(onClick = {}, onLongClick = { onAvatarLongPress?.invoke(message.roleName) })
@@ -98,11 +96,9 @@ internal fun WaifuReplyAvatarRow(
             } else {
                 Icon(Icons.Default.Assistant, contentDescription = "AI Avatar", tint = Color.Unspecified, modifier = avatarModifier)
             }
-        } else {
-            Spacer(Modifier.size(avatarSize))
-        }
-        Spacer(Modifier.width(8.dp))
-        Column(Modifier.weight(1f)) {
+        },
+    ) {
+        Column {
             if (showHeader) {
                 val title = buildString {
                     if (theme.showRoleName && message.roleName.isNotBlank()) append(message.roleName)

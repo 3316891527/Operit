@@ -422,7 +422,8 @@ fun BubbleAiMessageComposable(
                                     modifier =
                                         Modifier.padding(
                                             start = bubbleContentPaddingLeft.dp,
-                                            top = if (slice?.shellFirst != false) { if (waifuLayout?.joinedToPrevious == true) 4.dp else 12.dp } else 0.dp,
+                                            // 气泡内部保持上下对称；过程与正文的距离由外层时间线控制。
+                                            top = if (slice?.shellFirst != false) 12.dp else 0.dp,
                                             end = bubbleContentPaddingRight.dp,
                                             bottom = if (slice?.shellLast != false) 12.dp else 0.dp,
                                     ),
@@ -443,7 +444,8 @@ fun BubbleAiMessageComposable(
                                     modifier =
                                         Modifier.padding(
                                             start = bubbleContentPaddingLeft.dp,
-                                            top = if (slice?.shellFirst != false) { if (waifuLayout?.joinedToPrevious == true) 4.dp else 12.dp } else 0.dp,
+                                            // 气泡内部保持上下对称；过程与正文的距离由外层时间线控制。
+                                            top = if (slice?.shellFirst != false) 12.dp else 0.dp,
                                             end = bubbleContentPaddingRight.dp,
                                             bottom = if (slice?.shellLast != false) 12.dp else 0.dp,
                                     ),
@@ -644,7 +646,8 @@ fun BubbleAiMessageComposable(
                                     modifier =
                                         Modifier.padding(
                                             start = bubbleContentPaddingLeft.dp,
-                                            top = if (slice?.shellFirst != false) { if (waifuLayout?.joinedToPrevious == true) 4.dp else 12.dp } else 0.dp,
+                                            // 气泡内部保持上下对称；过程与正文的距离由外层时间线控制。
+                                            top = if (slice?.shellFirst != false) 12.dp else 0.dp,
                                             end = bubbleContentPaddingRight.dp,
                                             bottom = if (slice?.shellLast != false) 12.dp else 0.dp,
                                     ),
@@ -667,7 +670,8 @@ fun BubbleAiMessageComposable(
                                     modifier =
                                         Modifier.padding(
                                             start = bubbleContentPaddingLeft.dp,
-                                            top = if (slice?.shellFirst != false) { if (waifuLayout?.joinedToPrevious == true) 4.dp else 12.dp } else 0.dp,
+                                            // 气泡内部保持上下对称；过程与正文的距离由外层时间线控制。
+                                            top = if (slice?.shellFirst != false) 12.dp else 0.dp,
                                             end = bubbleContentPaddingRight.dp,
                                             bottom = if (slice?.shellLast != false) 12.dp else 0.dp,
                                     ),
