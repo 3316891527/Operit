@@ -3,6 +3,7 @@ package com.ai.assistance.operit.ui.features.conversation.workspace.changes
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import java.io.File
+import java.io.IOException
 import android.system.Os
 import android.system.OsConstants
 
@@ -54,6 +55,10 @@ internal class AndroidTerminalIndexDatabase(file: File, durable: Boolean = false
 
 /** 新卷目录项也先同步，避免索引提交后断电丢失尚未持久化的文件名。 */
 internal fun syncSnapshotDirectory(directory: File) {
-    val descriptor = Os.open(directory.path, OsConstants.O_RDONLY or OsConstants.O_DIRECTORY, 0)
-    try { Os.fsync(descriptor) } finally { Os.close(descriptor) }
+    // 公开 SDK 不暴露 O_DIRECTORY，打开后通过同一句柄确认目录类型再同步。
+    val descriptor = Os.open(directory.path, OsConstants.O_RDONLY, 0)
+    try {
+        if (!OsConstants.S_ISDIR(Os.fstat(descriptor).st_mode)) throw IOException("Snapshot sync target is not a directory: $directory")
+        Os.fsync(descriptor)
+    } finally { Os.close(descriptor) }
 }

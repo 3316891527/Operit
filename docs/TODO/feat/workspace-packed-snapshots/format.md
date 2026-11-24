@@ -63,6 +63,12 @@ SQLite 使用 `user_version=2`，未知版本拒绝打开。`snapshot_objects` �
 
 没有达到阈值或单轮预算之外的空隙继续保留，后续删除操作可再次触发压缩。这个实现减少小文件数量，但不提供历史总容量配额，也不改变保留时长。索引墓碑、SQLite 页和未达到阈值的卷内空隙仍占空间。
 
+## Android 目录同步公开 API 修正
+
+首次 Android CI 在 AndroidTerminalIndexDatabase 的目录打开标志处报告 O_DIRECTORY 未解析。该常量没有暴露在公开 Android SDK 中，上轮本地平台替身错误地提供了它，不能作为公开 API 兼容证据。
+
+修正采用 O_RDONLY 打开目录，通过同一句柄的 fstat 与 S_ISDIR 确认目标类型，再执行 fsync，并在 finally 中关闭句柄。仍然要求目录同步成功，不省略持久化步骤。本地使用真实 Android 35 SDK 中的 14 个公开 android.system 类复现旧引用失败，并确认修正后适配器编译通过，不再提供 OsConstants 替身。完整 Android 编译继续由修正提交上的 assembleDebug 和 Android Tests 工作流验证，启动链接登记在 PR #253。
+
 ## 验证范围
 
 存储回归使用真实临时文件和 SQLite 驱动，覆盖轮转、去重、校验、重启、未提交尾部、提交故障、完整与部分清理、迁移取消、共享卷删除、压缩预算与事务切换。Android 文件系统 API 和完整 Compose 编译由 CI 核对，新增的两项头像布局仪器测试尚待设备执行。
