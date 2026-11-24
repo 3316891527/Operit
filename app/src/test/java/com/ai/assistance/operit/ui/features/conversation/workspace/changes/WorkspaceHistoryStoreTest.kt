@@ -178,4 +178,19 @@ class WorkspaceHistoryStoreTest {
         } finally { content?.failOn = null; store.close() }
     }
 
+    @Test fun deletingHistoryDoesNotRemoveASnapshotLeasedByAnInFlightWrite() = runBlocking {
+        val store = open()
+        try {
+            val first = record(store, 1, after = "shared")
+            store.save(listOf(first))
+            val lease = store.openSnapshotLease()
+            val hash = store.putBlob("shared".toByteArray(), lease = lease)
+            try {
+                assertEquals(1, store.removeRecords(setOf(first.id)))
+                val next = record(store, 2, after = "next").copy(before = ChangeSnapshot(SnapshotKind.TEXT, blob = hash))
+                store.save(listOf(next))
+                assertEquals("shared", store.content(next).before)
+            } finally { lease.close() }
+        } finally { store.close() }
+    }
 }
