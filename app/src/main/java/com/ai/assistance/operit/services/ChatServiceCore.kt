@@ -2,6 +2,8 @@ package com.ai.assistance.operit.services
 
 import com.ai.assistance.operit.core.chat.attachment.ImageAttachmentEditTarget
 
+import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.collectLatest
 import android.content.Context
 import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.compose.ui.text.input.TextFieldValue
@@ -171,17 +173,23 @@ class ChatServiceCore(
                     chatHistoryDelegate.chatHistories
                 ) { chatId, histories ->
                     histories.firstOrNull { it.id == chatId }
-                }.collect { chat ->
+                }.distinctUntilChangedBy { chat -> Triple(chat?.id, chat?.workspace, chat?.workspaceEnv) }.collectLatest { chat ->
                     monitor.updateOwner(workspaceTrackerOwnerId, chat?.id, chat?.workspace, chat?.workspaceEnv)
-                    workspaceChangeTracker.updateOwner(
-                        ownerId = workspaceTrackerOwnerId,
-                        chatId = chat?.id,
-                        workspacePath = chat?.workspace,
-                        workspaceEnv = chat?.workspaceEnv
-                    )
+                    // 上下文观察器的目录订阅也在 IO 线程执行，避免切换对话阻塞界面。
+                    withContext(Dispatchers.IO) {
+                        workspaceChangeTracker.updateOwner(
+                            ownerId = workspaceTrackerOwnerId,
+                            chatId = chat?.id,
+                            workspacePath = chat?.workspace,
+                            workspaceEnv = chat?.workspaceEnv
+                        )
+                    }
                 }
             } finally {
-                monitor.clearOwner(workspaceTrackerOwnerId)
+                withContext(NonCancellable + Dispatchers.IO) {
+                    monitor.clearOwner(workspaceTrackerOwnerId)
+                    workspaceChangeTracker.clearOwner(workspaceTrackerOwnerId)
+                }
             }
         }
 

@@ -8,6 +8,8 @@
 
 ## 计划索引
 
+- [只记录当前对话绑定的工作区](workspace-write-monitor-lock/index.md)
+
 - [工作区文件列表的大文件大小显示](workspace-file-size-units/index.md)
 
 - [总结完成后的自动续聊交接](summary-auto-continuation/index.md)
