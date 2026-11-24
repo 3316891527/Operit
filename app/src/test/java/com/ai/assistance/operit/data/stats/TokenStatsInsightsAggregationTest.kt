@@ -99,18 +99,48 @@ class TokenStatsInsightsAggregationTest {
     }
     @Test fun monthlyComparisonUsesCurrentCoverageInsteadOfOtherCalendarBoundaries() {
         val zone = ZoneId.of("UTC")
-        val start = LocalDate.of(2026, 2, 15).atStartOfDay(zone).toInstant().toEpochMilli()
-        val end = LocalDate.of(2026, 4, 15).atStartOfDay(zone).toInstant().toEpochMilli()
-        val current = TokenStatsTimeRange(start, end)
-        val previous = TokenStatsTimeRange(start - current.durationMs, start)
+        fun date(value: String) = LocalDate.parse(value).atStartOfDay(zone).toInstant().toEpochMilli()
+        // 选择分段长度确实不同的周期，避免相邻月份偶合使正确映射也触发失败断言。
+        val current = TokenStatsTimeRange(date("2026-01-15"), date("2026-03-15"))
+        val previous = TokenStatsTimeRange(current.startMs - current.durationMs, current.startMs)
         val bounds = TokenStatsInsightsService.bucketBounds(current, TokenStatsInsightsGranularity.MONTHLY, zone)
         val calendarPrevious = TokenStatsInsightsService.bucketBounds(previous, TokenStatsInsightsGranularity.MONTHLY, zone)
         val aligned = TokenStatsInsightsService.comparisonBucketBounds(current, previous, bounds)
-        assertFalse(calendarPrevious.map { it.second - it.first } == aligned.map { it.second - it.first })
+        val dayMs = TokenStatsTimeRanges.DAY_MS
+        assertEquals(listOf(17L, 28L, 14L).map { it * dayMs }, bounds.map { it.second - it.first })
+        assertEquals(listOf(14L, 31L, 14L).map { it * dayMs }, calendarPrevious.map { it.second - it.first })
+        assertEquals(
+            listOf(
+                date("2025-11-17") to date("2025-12-04"),
+                date("2025-12-04") to date("2026-01-01"),
+                date("2026-01-01") to date("2026-01-15"),
+            ),
+            aligned,
+        )
         assertEquals(bounds.map { it.second - it.first }, aligned.map { it.second - it.first })
         assertEquals(previous.startMs, aligned.first().first)
         assertEquals(previous.endMs, aligned.last().second)
         aligned.zipWithNext().forEach { (a, b) -> assertEquals(a.second, b.first) }
+    }
+    @Test fun monthlyComparisonAllowsMatchingCalendarCoverage() {
+        val zone = ZoneId.of("UTC")
+        fun date(value: String) = LocalDate.parse(value).atStartOfDay(zone).toInstant().toEpochMilli()
+        // 原失败日期两边都是十四、三十一、十四天，相同自然月覆盖是合法结果。
+        val current = TokenStatsTimeRange(date("2026-02-15"), date("2026-04-15"))
+        val previous = TokenStatsTimeRange(current.startMs - current.durationMs, current.startMs)
+        val bounds = TokenStatsInsightsService.bucketBounds(current, TokenStatsInsightsGranularity.MONTHLY, zone)
+        val calendarPrevious = TokenStatsInsightsService.bucketBounds(previous, TokenStatsInsightsGranularity.MONTHLY, zone)
+        val aligned = TokenStatsInsightsService.comparisonBucketBounds(current, previous, bounds)
+        assertEquals(listOf(14L, 31L, 14L).map { it * TokenStatsTimeRanges.DAY_MS }, bounds.map { it.second - it.first })
+        assertEquals(
+            listOf(
+                date("2025-12-18") to date("2026-01-01"),
+                date("2026-01-01") to date("2026-02-01"),
+                date("2026-02-01") to date("2026-02-15"),
+            ),
+            aligned,
+        )
+        assertEquals(calendarPrevious, aligned)
     }
     @Test fun comparisonPreservesDstCoverageAsRealElapsedTime() {
         val zone = ZoneId.of("America/New_York")
