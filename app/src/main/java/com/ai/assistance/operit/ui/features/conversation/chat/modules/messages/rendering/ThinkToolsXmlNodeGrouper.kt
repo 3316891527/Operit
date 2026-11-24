@@ -44,6 +44,7 @@ class ThinkToolsXmlNodeGrouper(
     private val showThinkingProcess: Boolean,
     private val forceExpandGroups: Boolean = false,
     private val toolCollapseMode: ToolCollapseMode = ToolCollapseMode.ALL,
+    private val groupProcessNodes: Boolean = true,
 ) : MarkdownNodeGrouper {
     // 聊天列表可注入消息持有的展开选择，其他完整渲染入口自行持有状态。
     internal var expansionOverrides = mutableStateMapOf<String, Boolean>()
@@ -68,6 +69,8 @@ class ThinkToolsXmlNodeGrouper(
     }
 
     override fun group(nodes: List<MarkdownNodeStable>, rendererId: String): List<MarkdownGroupedItem> {
+        // Waifu 的逻辑过程段持续增长，节点仍逐项懒加载，避免再生成一层折叠分组。
+        if (!groupProcessNodes) return nodes.indices.map { MarkdownGroupedItem.Single(it) }
         val out = ArrayList<MarkdownGroupedItem>(nodes.size)
         val nodeKeys = markdownNodeIdentityKeys(nodes)
         var i = 0

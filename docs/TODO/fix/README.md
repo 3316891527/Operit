@@ -8,6 +8,11 @@
 
 ## 计划索引
 
+- [工作区文件列表的大文件大小显示](workspace-file-size-units/index.md)
+
+- [总结完成后的自动续聊交接](summary-auto-continuation/index.md)
+
+- [Waifu 连续过程分段与无气泡展示](waifu-continuous-process/index.md)
 - [不支持的思考档位保存导致崩溃](thinking-option-crash/index.md)
 - [快照导入后重绑主题脚本](snapshot-theme-script-paths/index.md)
 - [总结后子代理消息恢复导致长会话 OOM](subagent-summary-message-loop/index.md)
@@ -159,3 +164,6 @@
 - [子代理最终报告补写与产出保留](subagent-final-report-recovery/index.md)
 
 - [终端观察基线内存优化](terminal-baseline-memory/index.md)
+- [大任务操作历史的增量存储与有界提交](workspace-history-memory/index.md)
+
+- [解除文件监控对工具与目录浏览的阻塞](monitor-tool-blocking/index.md)

@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.util
+package com.ai.assistance.operit.ui.features.conversation.chat.waifu
 
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.stream

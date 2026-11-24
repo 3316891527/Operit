@@ -16,6 +16,7 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.t
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -114,6 +115,10 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.chat.reference.AiReference
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.preferences.WaifuPreferences
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuUnframedMessage
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.waifuJoinsPrevious
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuReplyAvatarRow
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details.MessageGenerationDetails
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details.formatMessageCompletionTime
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details.hasDisplayableMessageTimestamp
@@ -308,6 +313,7 @@ fun ChatArea(
         showThinkingProcess = themeSnapshot.showThinkingProcess,
         showStatusTags = themeSnapshot.showStatusTags,
         toolCollapseMode = toolCollapseMode,
+        waifuEnabled = waifuEnabled,
     )
     val historyHeaderCount = if (hasOlderDisplayHistory) 1 else 0
     val itemMessageIndices = List(historyHeaderCount) { -1 } + timelineEntries.map { it.messageIndex }
@@ -450,7 +456,7 @@ fun ChatArea(
                 }
             }
 
-            items(timelineEntries, key = { it.key }, contentType = { if (it.slice?.split == true) "message-block" else "message" }) { entry ->
+            itemsIndexed(timelineEntries, key = { _, entry -> entry.key }, contentType = { _, entry -> if (entry.slice?.split == true) "message-block" else "message" }) { timelineIndex, entry ->
                 val actualIndex = entry.messageIndex
                 val message = chatHistory[actualIndex]
                 val showGenerationMetadata = showWaifuGenerationMetadata(chatHistory, actualIndex, waifuEnabled)
@@ -461,6 +467,11 @@ fun ChatArea(
                         index = actualIndex,
                         currentChatId = currentChatId,
                         message = message,
+                        waifuEnabled = waifuEnabled,
+                        waifuJoinedToPrevious = waifuJoinsPrevious(
+                            timelineEntries.getOrNull(timelineIndex - 1)?.let { chatHistory[it.messageIndex] }, message, waifuEnabled,
+                            previousIsProcess = timelineEntries.getOrNull(timelineIndex - 1)?.waifuProcess == true,
+                        ),
                         enableDialogs = enableDialogs,
                         userMessageColor = userMessageColor,
                         aiMessageColor = aiMessageColor,
@@ -513,7 +524,11 @@ fun ChatArea(
                         bubbleAiContentPaddingRight = bubbleAiContentPaddingRight,
                     )
                 }
-                if (entry.slice?.last != false) Spacer(modifier = Modifier.height(8.dp))
+                if (entry.slice?.last != false) {
+                    val next = timelineEntries.getOrNull(timelineIndex + 1)?.let { chatHistory[it.messageIndex] }
+                    val connected = next != null && waifuJoinsPrevious(message, next, waifuEnabled, previousIsProcess = entry.waifuProcess)
+                    Spacer(modifier = Modifier.height(if (connected) 2.dp else 8.dp))
+                }
 
             }
 
@@ -612,6 +627,8 @@ private fun MessageItem(
     index: Int,
     currentChatId: String,
     message: ChatMessage,
+    waifuEnabled: Boolean,
+    waifuJoinedToPrevious: Boolean = false,
     enableDialogs: Boolean,
     userMessageColor: Color,
     aiMessageColor: Color,
@@ -662,6 +679,9 @@ private fun MessageItem(
     bubbleAiContentPaddingLeft: Float = 12f,
     bubbleAiContentPaddingRight: Float = 12f,
 ) {
+    val isWaifuProcess = waifuEnabled && message.sender == "ai" && remember(message.content) {
+        WaifuMessageProcessor.isProcessOnlyMessage(message.content)
+    }
     var showContextMenu by remember { mutableStateOf(false) }
     var showMessageInfoDialog by remember { mutableStateOf(false) }
     var showHiddenUserMessageDialog by remember { mutableStateOf(false) }
@@ -737,14 +757,22 @@ private fun MessageItem(
                         currentChatId, message.timestamp, message.selectedVariantIndex, message.content,
                     )
                 } else null,
-            // 内容仍按原时间线懒加载，主题外壳只接收同一消息的真实首尾。
+            // 消息继续按原身份懒加载，主题外壳在独立卡片两侧分别闭合。
             LocalThemeSurfaceFragments provides (LocalThemeSurfaceFragments.current +
-                ("assistantMessage" to ThemeSurfaceFragment(messageSlice?.first != false, messageSlice?.last != false))),
+                ("assistantMessage" to ThemeSurfaceFragment(messageSlice?.shellFirst != false, messageSlice?.shellLast != false))),
             LocalChatMessageSlice provides messageSlice,
             LocalMarkdownRenderFragment provides messageSlice?.fragment,
         ) {
+        WaifuReplyAvatarRow(
+            enabled = waifuEnabled && message.sender == "ai",
+            message = message,
+            joinedToPrevious = waifuJoinedToPrevious,
+            onAvatarLongPress = onMentionRoleFromAvatar,
+        ) {
         Column {
-            when (chatStyle) {
+            if (isWaifuProcess || (waifuEnabled && message.sender == "ai" && messageSlice?.standaloneContent == true)) {
+                WaifuUnframedMessage(message = message, textColor = aiTextColor, enableDialogs = enableDialogs, processMode = isWaifuProcess)
+            } else when (chatStyle) {
                 ChatStyle.CURSOR -> {
                     CursorStyleChatMessage(
                         message = message,
@@ -768,12 +796,12 @@ private fun MessageItem(
                         }
                     )
                 }
-
                 ChatStyle.BUBBLE -> {
                     BubbleStyleChatMessage(
                         message = message,
                         userMessageColor = userMessageColor,
                         aiMessageColor = aiMessageColor,
+                        forceShowAiAvatar = waifuEnabled,
                         userTextColor = userTextColor,
                         aiTextColor = aiTextColor,
                         systemMessageColor = systemMessageColor,
@@ -822,6 +850,7 @@ private fun MessageItem(
                     },
                 )
             }
+        }
         }
         }
 

@@ -108,11 +108,22 @@ internal fun WorkspaceChangesScreen(
     val repository = remember(directory, environment, refresh) { directory?.let { WorkspaceGitRepository(context, it, environment) } }
     val historical = source == ChangeReviewSource.OPERATIONS || source == ChangeReviewSource.LAST_TURN
     // 历史记录携带快照版本，无关文件写入无需使已看过的差异和语法颜色失效。
-    val cache = remember(chatId, directory, environment, source, base, if (historical) 0L else revision, refresh) { WorkspaceReviewCache() }
-    val request = listOf(chatId, directory, environment, source, base, revision, refresh, userMessages)
+    val cache = remember(chatId, directory, environment, source, base, if (historical) 0L else revision, refresh, isVisible) { WorkspaceReviewCache() }
+    var query by rememberSaveable(directory, environment, conversation) { mutableStateOf("") }
+    var historyOffset by rememberSaveable(chatId, directory, environment, source, query) { mutableIntStateOf(0) }
+    var historyTotal by remember { mutableIntStateOf(0) }
+    var loadedHistoryQuery by remember { mutableStateOf<WorkspaceHistoryQuery?>(null) }
+    var treeSelection by remember { mutableStateOf<ReviewFile?>(null) }
+    var selectLastOnLoad by remember { mutableStateOf(false) }
+    val request = listOf(chatId, directory, environment, source, base, revision, refresh, userMessages, if (historical) query else null, if (historical) historyOffset else 0)
     var loadedRequest by remember { mutableStateOf<List<Any?>?>(null) }
     LaunchedEffect(isVisible, request) {
-        if (!isVisible || request == loadedRequest) return@LaunchedEffect
+        // 外部清理不会递增记录版本，重新打开时必须核对快照并丢弃已缓存的差异。
+        if (!isVisible) {
+            loadedRequest = null
+            return@LaunchedEffect
+        }
+        if (request == loadedRequest) return@LaunchedEffect
         loading = true
         error = null
         if (source == ChangeReviewSource.BRANCH || source == ChangeReviewSource.WORKING_TREE) git = null
@@ -121,18 +132,16 @@ internal fun WorkspaceChangesScreen(
                 git = null
                 withContext(Dispatchers.IO) {
                     val workspace = if (!conversation && directory != null) WorkspaceChangeAccess(context).location(directory, environment) else null
-                    val records = when {
-                        source == ChangeReviewSource.LAST_TURN && chatId != null -> {
-                            val turn = latestTurnRecords(store.records(chatId = chatId), userMessages)
-                            if (workspace == null) turn else turn.filter { relativeChangePath(workspace, it.location) != null }
-                        }
-                        source == ChangeReviewSource.LAST_TURN -> emptyList()
-                        conversation && chatId != null -> store.records(chatId = chatId)
-                        conversation -> emptyList()
-                        workspace != null -> store.records(directory = workspace.path, backend = workspace.backend)
-                        else -> emptyList()
-                    }
-                    store.reviewFiles(records, workspace, aggregate = true)
+                    val history = if ((conversation || source == ChangeReviewSource.LAST_TURN) && chatId == null || !conversation && source != ChangeReviewSource.LAST_TURN && workspace == null) null else
+                        store.historyQuery(if (conversation || source == ChangeReviewSource.LAST_TURN) chatId else null, workspace,
+                            source == ChangeReviewSource.LAST_TURN, userMessages, query)
+                    val page = history?.let { store.historyPage(it, historyOffset) } ?: WorkspaceHistoryPage(emptyList(), 0, 0)
+                    Triple(page, history, page.files)
+                }.let { (page, history, result) ->
+                    historyTotal = page.total
+                    historyOffset = page.offset
+                    loadedHistoryQuery = history
+                    result
                 }
             } else {
                 val review = checkNotNull(repository).load(source == ChangeReviewSource.BRANCH, base)
@@ -141,22 +150,29 @@ internal fun WorkspaceChangesScreen(
                 if (source == ChangeReviewSource.BRANCH && base == null && review.upstream != null && review.references.any { it.name == review.upstream }) base = review.upstream
                 review.files
             }
+            val previousTree = treeSelection?.takeIf { it.id == selectedId }
+            treeSelection = if (historical && previousTree != null && loadedHistoryQuery != null) withContext(Dispatchers.IO) {
+                store.historyPage(checkNotNull(loadedHistoryQuery).copy(file = previousTree.location, search = ""), 0).files.singleOrNull()
+            } else null
             files = loadedFiles
-            if (loadedFiles.none { it.id == selectedId }) selectedId = loadedFiles.firstOrNull()?.id
+            if (treeSelection == null && loadedFiles.none { it.id == selectedId }) selectedId = (if (selectLastOnLoad) loadedFiles.lastOrNull() else loadedFiles.firstOrNull())?.id
+            selectLastOnLoad = false
             loadedRequest = request
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
             AppLogger.e("WorkspaceChanges", "读取变更目录失败", failure)
+            files = emptyList()
+            selectedId = null
             error = failure.message ?: failure.javaClass.simpleName
         } finally { loading = false }
     }
     var projectTree by rememberSaveable { mutableStateOf(false) }
-    var query by rememberSaveable(directory, environment, conversation) { mutableStateOf("") }
     var showFiles by rememberSaveable(directory, environment, conversation) { mutableStateOf(true) }
     var sidebarWidth by rememberSaveable { mutableFloatStateOf(0f) }
     var collapsed by remember(directory, environment, conversation) { mutableStateOf(emptySet<String>()) }
     fun selectFile(file: ReviewFile) {
+        treeSelection = null
         selectedId = file.id
         val parts = file.displayPath.trimStart('/').split('/')
         val parents = (1 until parts.size).map { "directory:" + file.location.backend + ":" + parts.take(it).joinToString("/") }.toSet()
@@ -164,9 +180,23 @@ internal fun WorkspaceChangesScreen(
     }
     val fileListState = rememberLazyListState()
     val fileStates = key(chatId, directory, environment, conversation) { rememberSaveableStateHolder() }
+    // 淘汰顺序随状态一同恢复，界面重建后仍能清理此前保存的文件详情。
+    val savedFileKeys = rememberSaveable(chatId, directory, environment, conversation) { arrayListOf<String>() }
+    LaunchedEffect(selectedId, source, base) {
+        selectedId?.let { id ->
+            val key = source.name + ":" + base.orEmpty() + ":" + id
+            savedFileKeys.remove(key)
+            savedFileKeys.add(key)
+            while (savedFileKeys.size > 12) {
+                val oldest = savedFileKeys.first()
+                savedFileKeys.remove(oldest)
+                fileStates.removeState(oldest)
+            }
+        }
+    }
     val options = rememberSaveable(saver = WorkspaceDiffOptions.Saver) { WorkspaceDiffOptions() }
-    val filtered = remember(files, query) { files.filter { it.displayPath.contains(query.trim(), ignoreCase = true) } }
-    val selected = filtered.firstOrNull { it.id == selectedId } ?: filtered.firstOrNull()
+    val filtered = remember(files, query, historical) { if (historical) files else files.filter { it.displayPath.contains(query.trim(), ignoreCase = true) } }
+    val selected = treeSelection ?: filtered.firstOrNull { it.id == selectedId } ?: filtered.firstOrNull()
     val currentIndex = filtered.indexOfFirst { it.id == selected?.id }
     val colors = MaterialTheme.colorScheme
     val density = LocalDensity.current
@@ -208,7 +238,7 @@ internal fun WorkspaceChangesScreen(
                         }
                         }
                         Spacer(Modifier.width(4.dp))
-                        ChangeDiffStats(files.sumOf { it.additions }, files.sumOf { it.deletions }, known = files.all { it.statisticsAvailable })
+                        ChangeDiffStats(files.sumOf { it.additions }, files.sumOf { it.deletions }, known = (!historical || historyTotal <= files.size) && files.all { it.statisticsAvailable })
                     }
                     if (source == ChangeReviewSource.BRANCH) {
                         var basesOpen by remember { mutableStateOf(false) }
@@ -228,6 +258,10 @@ internal fun WorkspaceChangesScreen(
                     HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.35f))
                     ChangeFileFilter(query, { query = it })
                     HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.35f))
+                    if (historical && historyTotal > WorkspaceHistoryIndex.PAGE_SIZE) HistoryPageNavigation(
+                        historyOffset, files.size, historyTotal, loading,
+                        { selectLastOnLoad = true; historyOffset = (historyOffset - WorkspaceHistoryIndex.PAGE_SIZE).coerceAtLeast(0) },
+                        { historyOffset += WorkspaceHistoryIndex.PAGE_SIZE })
                     if (loading) LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp))
                     if (projectTree && directory != null) ChangeProjectTree(directory, environment, query, selected?.id, refresh) { location ->
                         val target = if (historical) location.historyLocation() else location
@@ -238,7 +272,10 @@ internal fun WorkspaceChangesScreen(
                             previewError = null
                             previewJob = scope.launch {
                                 try {
-                                    onPreviewFile(location)
+                                    val historyFile = if (historical) loadedHistoryQuery?.let { history ->
+                                        withContext(Dispatchers.IO) { store.historyPage(history.copy(file = location, search = ""), 0).files.singleOrNull() }
+                                    } else null
+                                    if (historyFile != null) { treeSelection = historyFile; selectedId = historyFile.id } else onPreviewFile(location)
                                 } catch (cancelled: CancellationException) {
                                     throw cancelled
                                 } catch (failure: Exception) {
@@ -248,8 +285,8 @@ internal fun WorkspaceChangesScreen(
                             }
                         }
                     }
-                    else if (error != null) Text(checkNotNull(error), Modifier.padding(10.dp), color = colors.error, fontSize = 11.sp)
-                    else if (!loading && filtered.isEmpty()) Text(stringResource(if (query.isNotBlank()) R.string.workspace_changes_no_matches
+                    else if (error != null && !historical) Text(checkNotNull(error), Modifier.padding(10.dp), color = colors.error, fontSize = 11.sp)
+                    else if (!loading && filtered.isEmpty() && (!historical || query.isNotBlank())) Text(stringResource(if (query.isNotBlank()) R.string.workspace_changes_no_matches
                         else if (source == ChangeReviewSource.OPERATIONS || source == ChangeReviewSource.LAST_TURN) R.string.workspace_changes_empty_records else R.string.workspace_changes_empty_git),
                         Modifier.padding(10.dp), fontSize = 11.sp, color = colors.onSurfaceVariant)
                     else ChangeFileList(filtered, selected?.id, if (query.isBlank()) collapsed else emptySet(), { collapsed = it }, fileListState, onSelect = ::selectFile)
@@ -263,7 +300,7 @@ internal fun WorkspaceChangesScreen(
             }
             val file = selected?.takeIf { loadedRequest == request }
             Column(Modifier.weight(1f).fillMaxHeight()) {
-                chatId?.let(observationErrors::get)?.let { message ->
+                if (!historical) chatId?.let(observationErrors::get)?.let { message ->
                     Text(stringResource(R.string.workspace_changes_observation_error, message),
                         Modifier.fillMaxWidth().padding(8.dp), color = colors.error, fontSize = 11.sp)
                 }
@@ -273,9 +310,16 @@ internal fun WorkspaceChangesScreen(
                         summaryLabel = if (source == ChangeReviewSource.LAST_TURN) R.string.workspace_changes_turn_summary else R.string.workspace_changes_record_summary,
                         onRecordError = { previewError = it },
                         onToggleFiles = { showFiles = !showFiles },
-                        onPrevious = { filtered.getOrNull(currentIndex - 1)?.let(::selectFile) },
-                        onNext = { filtered.getOrNull(currentIndex + 1)?.let(::selectFile) },
-                        hasPrevious = currentIndex > 0, hasNext = currentIndex >= 0 && currentIndex < filtered.lastIndex,
+                        onPrevious = {
+                            if (currentIndex > 0) selectFile(filtered[currentIndex - 1])
+                            else if (historical && currentIndex == 0 && historyOffset > 0) { selectLastOnLoad = true; historyOffset -= WorkspaceHistoryIndex.PAGE_SIZE }
+                        },
+                        onNext = {
+                            if (currentIndex >= 0 && currentIndex < filtered.lastIndex) selectFile(filtered[currentIndex + 1])
+                            else if (historical && currentIndex >= 0 && historyOffset + files.size < historyTotal) historyOffset += WorkspaceHistoryIndex.PAGE_SIZE
+                        },
+                        hasPrevious = currentIndex > 0 || historical && currentIndex == 0 && historyOffset > 0,
+                        hasNext = currentIndex >= 0 && (currentIndex < filtered.lastIndex || historical && historyOffset + files.size < historyTotal),
                         onOpenFile = onOpenFile, onRefresh = { refresh++ }, modifier = Modifier.fillMaxSize())
                 } else {
                     Row(Modifier.fillMaxWidth().height(32.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -284,7 +328,10 @@ internal fun WorkspaceChangesScreen(
                     }
                     HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.4f))
                     Box(Modifier.fillMaxSize().padding(12.dp), contentAlignment = Alignment.Center) {
-                        Text(error ?: stringResource(R.string.workspace_changes_choose_file), fontSize = 12.sp, color = if (error == null) colors.onSurfaceVariant else colors.error)
+                        val emptyMessage = if (historical && (error != null || (!loading && files.isEmpty()))) {
+                            stringResource(R.string.workspace_changes_no_readable_records)
+                        } else error ?: stringResource(R.string.workspace_changes_choose_file)
+                        Text(emptyMessage, fontSize = 12.sp, color = if (historical || error == null) colors.onSurfaceVariant else colors.error)
                     }
                 }
             }
@@ -310,15 +357,41 @@ private fun ChangeFileDetail(
     val context = LocalContext.current
     val store = remember(context) { WorkspaceChangeStore.get(context) }
     var recordId by rememberSaveable(file.id) { mutableStateOf<String?>(null) }
-    val effectiveRecordId = recordId?.takeIf { id -> file.records.any { it.id == id } }
+    val effectiveRecordId = recordId?.takeIf { id -> file.historyQuery != null || file.records.any { it.id == id } }
     LaunchedEffect(effectiveRecordId) { if (recordId != effectiveRecordId) recordId = effectiveRecordId }
     // 只有显式选择单次操作时才显示操作来源，汇总和记录条数互不影响。
-    val record = if (effectiveRecordId != null) file.records.first { it.id == effectiveRecordId }
+    var selectedHistoryRecord by remember(file, recordId) { mutableStateOf<FileChangeRecord?>(null) }
+    val record = if (effectiveRecordId != null) file.records.firstOrNull { it.id == effectiveRecordId } ?: selectedHistoryRecord
         else if (file.aggregateRecords) null else file.records.firstOrNull()
     val scope = rememberCoroutineScope()
     var actionJob by remember(file.id) { mutableStateOf<Job?>(null) }
     var actionError by remember(file.id) { mutableStateOf<String?>(null) }
     var opening by remember(file.id) { mutableStateOf(false) }
+    var historyOpen by remember(file.id) { mutableStateOf(false) }
+    var recordOffset by remember(file.id) { mutableIntStateOf(0) }
+    var recordPage by remember(file) { mutableStateOf(WorkspaceRecordPage(emptyList(), file.historyCount, 0)) }
+    var historyLoading by remember(file) { mutableStateOf(false) }
+    LaunchedEffect(file, recordOffset, historyOpen, active) {
+        val history = file.historyQuery ?: return@LaunchedEffect
+        if (!historyOpen || !active) return@LaunchedEffect
+        historyLoading = true
+        try {
+            recordPage = withContext(Dispatchers.IO) { store.recordPage(history, recordOffset) }
+            recordOffset = recordPage.offset
+        }
+        catch (cancelled: CancellationException) { throw cancelled }
+        catch (failure: Exception) { AppLogger.e("WorkspaceChanges", "读取单文件历史失败", failure); actionError = failure.message ?: failure.javaClass.simpleName }
+        finally { historyLoading = false }
+    }
+    LaunchedEffect(file, effectiveRecordId, active) {
+        val id = effectiveRecordId ?: return@LaunchedEffect
+        if (!active || file.historyQuery == null) return@LaunchedEffect
+        try {
+            selectedHistoryRecord = withContext(Dispatchers.IO) { store.historyRecord(id, file.historyQuery) }
+            if (selectedHistoryRecord == null) recordId = null
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (failure: Exception) { AppLogger.e("WorkspaceChanges", "读取选中历史失败", failure); actionError = failure.message ?: failure.javaClass.simpleName }
+    }
     DisposableEffect(file.id, active) { onDispose { actionJob?.cancel() } }
     val cacheKey = remember(file, effectiveRecordId) { ReviewCacheKey(file, effectiveRecordId) }
     var loaded by remember(cache, cacheKey) { mutableStateOf(cache[cacheKey]) }
@@ -333,6 +406,7 @@ private fun ChangeFileDetail(
         try {
             val content = loaded?.content ?: withContext(Dispatchers.IO) {
                 when {
+                    effectiveRecordId != null && file.historyQuery != null -> store.content(checkNotNull(store.historyRecord(effectiveRecordId, file.historyQuery)))
                     record != null -> store.content(record)
                     file.aggregateRecords -> store.content(file.records.asReversed())
                     file.initialContent != null -> file.initialContent
@@ -413,7 +487,6 @@ private fun ChangeFileDetail(
                     known = document != null || (effectiveRecordId == null && file.statisticsAvailable))
             }
             if (file.records.isNotEmpty()) {
-                var historyOpen by remember { mutableStateOf(false) }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.weight(1f)) {
                         TextButton(onClick = { historyOpen = true }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp), modifier = Modifier.height(26.dp)) {
@@ -423,7 +496,16 @@ private fun ChangeFileDetail(
                         }
                         DropdownMenu(expanded = historyOpen, onDismissRequest = { historyOpen = false }) {
                             if (file.aggregateRecords) DropdownMenuItem(text = { Text(stringResource(summaryLabel, changeTime(file.records.first().timestamp)), fontSize = 11.sp) }, onClick = { recordId = null; historyOpen = false })
-                            file.records.forEach { item -> DropdownMenuItem(text = { Text(recordTitle(item), fontSize = 11.sp) }, onClick = { recordId = item.id; historyOpen = false }) }
+                            if (historyLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
+                            val records = if (file.historyQuery == null) file.records else recordPage.records
+                            records.forEach { item -> DropdownMenuItem(text = { Text(recordTitle(item), fontSize = 11.sp) }, enabled = !historyLoading,
+                                onClick = { selectedHistoryRecord = item; recordId = item.id; historyOpen = false }) }
+                            if (file.historyQuery != null && recordPage.total > WorkspaceHistoryIndex.PAGE_SIZE) {
+                                DropdownMenuItem(text = { Text(stringResource(R.string.workspace_history_previous_page), fontSize = 11.sp) },
+                                    enabled = !historyLoading && recordOffset > 0, onClick = { recordOffset = (recordOffset - WorkspaceHistoryIndex.PAGE_SIZE).coerceAtLeast(0) })
+                                DropdownMenuItem(text = { Text(stringResource(R.string.workspace_history_next_page), fontSize = 11.sp) },
+                                    enabled = !historyLoading && recordOffset + recordPage.records.size < recordPage.total, onClick = { recordOffset += WorkspaceHistoryIndex.PAGE_SIZE })
+                            }
                         }
                     }
                     ChangeRecordActions(file, record, removalChatId, recordScope, onChanged = onRefresh, onError = onRecordError)
@@ -458,12 +540,13 @@ private fun ChangeFileDetail(
             result != null && !result.content.isText -> {
                 val data = result.content
                 Text(stringResource(when {
+                    data.snapshotsCleared -> R.string.workspace_changes_no_readable_records
                     data.beforeKind == SnapshotKind.TOO_LARGE || data.afterKind == SnapshotKind.TOO_LARGE -> R.string.workspace_changes_too_large
                     data.beforeKind == SnapshotKind.UNAVAILABLE || data.afterKind == SnapshotKind.UNAVAILABLE -> R.string.workspace_changes_unavailable
                     data.beforeKind == SnapshotKind.DIRECTORY || data.afterKind == SnapshotKind.DIRECTORY -> R.string.workspace_changes_directory
                     else -> R.string.workspace_changes_binary
                 }), Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                data.detail?.let { Text(it, Modifier.padding(horizontal = 12.dp), fontSize = 10.sp) }
+                if (!data.snapshotsCleared) data.detail?.let { Text(it, Modifier.padding(horizontal = 12.dp), fontSize = 10.sp) }
             }
         }
     }
@@ -570,5 +653,20 @@ private fun ChangeActionError(message: String, onDismiss: () -> Unit) {
         Text(message, Modifier.weight(1f).heightIn(max = 140.dp).verticalScroll(rememberScrollState()).padding(vertical = 6.dp),
             fontSize = 11.sp, color = MaterialTheme.colorScheme.onErrorContainer)
         ChangeIconButton(Icons.Default.Close, stringResource(R.string.close), onDismiss)
+    }
+}
+
+/** 翻页替换当前页，文件树、搜索和详情均不累积已浏览的历史页。 */
+@Composable
+private fun HistoryPageNavigation(offset: Int, count: Int, total: Int, loading: Boolean, previous: () -> Unit, next: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = previous, enabled = !loading && offset > 0, contentPadding = PaddingValues(horizontal = 4.dp)) {
+            Text(stringResource(R.string.workspace_history_previous_page), fontSize = 10.sp)
+        }
+        Text(stringResource(R.string.workspace_history_page_range, if (total == 0) 0 else offset + 1, minOf(offset + count, total), total),
+            Modifier.weight(1f), fontSize = 9.sp, maxLines = 1)
+        TextButton(onClick = next, enabled = !loading && offset + WorkspaceHistoryIndex.PAGE_SIZE < total, contentPadding = PaddingValues(horizontal = 4.dp)) {
+            Text(stringResource(R.string.workspace_history_next_page), fontSize = 10.sp)
+        }
     }
 }

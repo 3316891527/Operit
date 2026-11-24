@@ -131,6 +131,7 @@ internal class WorkspaceChangeRecorder(
             }
         }
         roots.forEach { visit(it, 0) }
+        WorkspaceChangeStore.get(context).flushBlobs()
         return result
     }
 

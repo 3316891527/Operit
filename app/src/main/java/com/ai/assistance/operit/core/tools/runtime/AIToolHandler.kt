@@ -427,12 +427,8 @@ class AIToolHandler private constructor(private val context: Context) {
 
         notifyToolExecutionStarted(tool)
         return try {
-            val result = if (com.ai.assistance.operit.core.chat.tools.ToolExecutionManager.currentToolRuntimeContext() != null) executor.invoke(tool)
-                else kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
-                    val monitor = com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceFileMonitor.get(context)
-                    val source = monitor.beginTool(null, tool.name)
-                    try { executor.invoke(tool) } finally { monitor.endTool(source) }
-                }
+            // 文件浏览器也使用此入口，读取目录不能获取监控的全局操作锁。
+            val result = executor.invoke(tool)
             notifyToolExecutionResult(tool, result)
             result
         } catch (e: Exception) {

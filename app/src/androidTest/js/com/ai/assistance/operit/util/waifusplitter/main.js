@@ -3,11 +3,11 @@
 const { assert, assertEq, test, runTests } = require('../../../../../../lib/harness');
 
 function getWaifuMessageProcessorInstance() {
-  return Java.type('com.ai.assistance.operit.util.WaifuMessageProcessor').INSTANCE;
+  return Java.type('com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor').INSTANCE;
 }
 
 function getStreamingSessionClass() {
-  return Java.type('com.ai.assistance.operit.util.WaifuMessageProcessor$StreamingSession');
+  return Java.type('com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor$StreamingSession');
 }
 
 function normalizeList(value) {

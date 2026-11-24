@@ -7,6 +7,9 @@ import com.ai.assistance.operit.ui.common.markdown.responseProcessItemVisible
 import com.ai.assistance.operit.ui.common.markdown.completedProcessEnd
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import androidx.compose.ui.platform.LocalContext
+import com.ai.assistance.operit.ui.common.markdown.XmlRenderPluginRegistry
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.isWaifuStandaloneNode
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor
 import androidx.compose.runtime.collectAsState
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardStateStore
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.rememberMessageToolExecutions
@@ -53,6 +56,12 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.r
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.ThinkToolsRow
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.ThinkToolsXmlNodeGrouper
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.buildThinkToolsRows
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.buildWaifuProcessRows
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuProcessHeader
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuProcessToolCard
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.waifuProcessRail
+import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeIndex
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalToolTimingIndex
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.isVisibleChatMarkdownNode
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.thinkToolsGroupTitle
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.stream.rememberRevisableTextStream
@@ -64,6 +73,7 @@ internal data class ChatTimelineEntry(
     val key: String,
     val messageIndex: Int,
     val slice: ChatMessageSlice? = null,
+    val waifuProcess: Boolean = false,
 )
 
 internal class ChatMessageAppearance {
@@ -79,6 +89,9 @@ internal data class ChatMessageSlice(
     val state: StreamMarkdownRendererState,
     val grouper: ThinkToolsXmlNodeGrouper,
     val appearance: ChatMessageAppearance,
+    val standaloneContent: Boolean = false,
+    val shellFirst: Boolean = first,
+    val shellLast: Boolean = last,
 )
 
 internal val LocalChatMessageSlice = staticCompositionLocalOf<ChatMessageSlice?> { null }
@@ -105,10 +118,12 @@ internal fun rememberChatTimelineEntries(
     showThinkingProcess: Boolean,
     showStatusTags: Boolean,
     toolCollapseMode: ToolCollapseMode,
+    waifuEnabled: Boolean = false,
 ): List<ChatTimelineEntry> {
     val context = LocalContext.current
     val preferences = remember(context) { DisplayPreferencesManager.getInstance(context) }
     val collapseCompletedProcess by preferences.collapseCompletedProcess.collectAsState(initial = true)
+    val xmlRegistryVersion by XmlRenderPluginRegistry.changeVersion.collectAsState()
     val occurrences = mutableMapOf<Long, Int>()
     val entriesByMessage = buildList<List<ChatTimelineEntry>> {
         messages.forEachIndexed { index, message ->
@@ -119,12 +134,19 @@ internal fun rememberChatTimelineEntries(
                 if (message.sender != "ai") {
                     add(remember(messageKey, index) { listOf(ChatTimelineEntry(messageKey, index)) })
                 } else {
+                    val isWaifuProcess = waifuEnabled && remember(message.content) {
+                        WaifuMessageProcessor.isProcessOnlyMessage(message.content)
+                    }
                     val state = remember { StreamMarkdownRendererState() }
                     val appearance = remember { ChatMessageAppearance() }
                     val cardValues = rememberSaveable(saver = CardValueSaver) { mutableStateMapOf<String, Any?>() }
                     val overrides = rememberSaveable(saver = ExpansionSaver) { mutableStateMapOf<String, Boolean>() }
-                    val grouper = remember(showThinkingProcess, toolCollapseMode) {
-                        ThinkToolsXmlNodeGrouper(showThinkingProcess, toolCollapseMode = toolCollapseMode).also { it.expansionOverrides = overrides }
+                    val grouper = remember(showThinkingProcess, toolCollapseMode, isWaifuProcess) {
+                        ThinkToolsXmlNodeGrouper(
+                            showThinkingProcess,
+                            toolCollapseMode = toolCollapseMode,
+                            groupProcessNodes = !isWaifuProcess,
+                        ).also { it.expansionOverrides = overrides }
                     }
                     val timingSnapshot = rememberMessageToolExecutions(message)
                     grouper.executionTimings = timingSnapshot
@@ -138,7 +160,8 @@ internal fun rememberChatTimelineEntries(
                         StreamMarkdownRenderer(sections = sections, state = state, renderContent = false)
                     }
                     val nodes = state.renderNodes.toList()
-                    val boundary = completedProcessEnd(nodes, collapseCompletedProcess, stream != null)
+                    // Waifu 使用专用过程入口，不叠加普通消息的整段回复折叠标题。
+                    val boundary = completedProcessEnd(nodes, collapseCompletedProcess && !isWaifuProcess, stream != null)
                     val processEnd = if (boundary >= 0 && nodes.take(boundary + 1).any {
                         isVisibleChatMarkdownNode(it, showThinkingProcess, showStatusTags)
                     }) boundary else -1
@@ -150,9 +173,14 @@ internal fun rememberChatTimelineEntries(
                     }
                     val nodeKeys = remember(nodes) { markdownNodeIdentityKeys(nodes) }
                     val cardStore = remember(nodeKeys, cardValues) { MarkdownCardStateStore(nodeKeys, cardValues) }
-                    var wasSplit by remember { mutableStateOf(false) }
-                    val contentNeedsSplit = wasSplit || shouldSplitChatMessage(visibleNodes)
-                    val split = contentNeedsSplit || processEnd >= 0
+                    val standaloneNodes = remember(nodes, waifuEnabled, xmlRegistryVersion) {
+                        if (waifuEnabled) nodes.indices.filter { isWaifuStandaloneNode(nodes[it], XmlRenderPluginRegistry::supports) }.toSet()
+                        else emptySet()
+                    }
+                    var wasSplit by remember(waifuEnabled) { mutableStateOf(false) }
+                    // 混合消息也按节点去除特殊块的外壳，正文继续使用原聊天样式。
+                    val contentNeedsSplit = wasSplit || shouldSplitChatMessage(visibleNodes) || standaloneNodes.isNotEmpty()
+                    val split = contentNeedsSplit || processEnd >= 0 || isWaifuProcess
                     SideEffect { wasSplit = contentNeedsSplit }
                     val mode = if (stream == null) MarkdownRenderMode.STATIC else MarkdownRenderMode.STREAMING
                     val groups = remember(nodes, grouper) { grouper.group(nodes, messageKey) }
@@ -160,9 +188,11 @@ internal fun rememberChatTimelineEntries(
                     val expansionSnapshot = overrides.toMap()
                     val rows = remember(
                         split, groups, nodes, grouper, mode, expansionSnapshot, timingSnapshot,
-                        showThinkingProcess, showStatusTags,
+                        showThinkingProcess, showStatusTags, isWaifuProcess,
                     ) {
-                        if (split && nodes.isNotEmpty()) {
+                        if (isWaifuProcess) {
+                            buildWaifuProcessRows(nodes, expansionSnapshot["waifu-process"] ?: true, showThinkingProcess)
+                        } else if (split && nodes.isNotEmpty()) {
                             buildThinkToolsRows(
                                 groups, nodes, expansionSnapshot,
                                 showThinkingProcess = showThinkingProcess,
@@ -186,6 +216,8 @@ internal fun rememberChatTimelineEntries(
                             val end = when (row) {
                                 is ThinkToolsRow.Header -> row.info.group.endIndexInclusive
                                 is ThinkToolsRow.Content -> row.index
+                                is ThinkToolsRow.WaifuHeader -> nodes.lastIndex
+                                is ThinkToolsRow.WaifuTool -> row.call.resultIndex ?: row.call.index
                             }
                             responseProcessItemVisible(end, processEnd, processExpanded)
                         }
@@ -207,12 +239,14 @@ internal fun rememberChatTimelineEntries(
                             else -> rows.map { row -> ChatMarkdownFragment(state, nodes, grouper, mode, row, cardStore) }
                         }
                     }
-                    val entries = remember(messageKey, index, fragments, split, state, grouper, appearance) {
+                    val entries = remember(messageKey, index, fragments, split, state, grouper, appearance, standaloneNodes, isWaifuProcess) {
+                        fun standaloneAt(index: Int) = (fragments.getOrNull(index)?.row as? ThinkToolsRow.Content)?.let { it.index in standaloneNodes } == true
                         fragments.mapIndexed { blockIndex, fragment ->
                             val blockKey = if (blockIndex == 0) "first" else fragment.row!!.key
                             ChatTimelineEntry(
                                 key = "$messageKey/$blockKey",
                                 messageIndex = index,
+                                waifuProcess = isWaifuProcess,
                                 slice = ChatMessageSlice(
                                     first = blockIndex == 0,
                                     last = blockIndex == fragments.lastIndex,
@@ -221,6 +255,10 @@ internal fun rememberChatTimelineEntries(
                                     state = state,
                                     grouper = grouper,
                                     appearance = appearance,
+                                    standaloneContent = standaloneAt(blockIndex),
+                                    // 独立卡片两侧的正文各自闭合外壳，消息首尾身份仍用于标题、统计和操作。
+                                    shellFirst = blockIndex == 0 || standaloneAt(blockIndex - 1),
+                                    shellLast = blockIndex == fragments.lastIndex || standaloneAt(blockIndex + 1),
                                 ),
                             )
                         }
@@ -304,8 +342,28 @@ private class ChatMarkdownFragment(
                             onClick = { grouper.expansionOverrides[item.info.group.stableKey] = !item.expanded },
                         )
                     }
+                    is ThinkToolsRow.WaifuHeader -> WaifuProcessHeader(
+                        thoughtCount = item.thoughtCount,
+                        toolCount = item.toolCount,
+                        timing = LocalToolTimingIndex.current.group(0, nodes.lastIndex),
+                        expanded = item.expanded,
+                        textColor = textColor,
+                        onToggle = { grouper.expansionOverrides[item.key] = !item.expanded },
+                    )
+                    is ThinkToolsRow.WaifuTool -> {
+                        CompositionLocalProvider(
+                            LocalInsideToolGroup provides true,
+                            LocalMarkdownCardNodeIndex provides item.call.index,
+                        ) {
+                            Box(Modifier.fillMaxWidth().waifuProcessRail(textColor)) {
+                                WaifuProcessToolCard(item.call, nodes, textColor, enableDialogs, state.rendererId + "/waifu/" + item.key)
+                            }
+                        }
+                    }
                     is ThinkToolsRow.Content -> {
-                        Box(Modifier.fillMaxWidth().padding(start = if (item.inGroup) 24.dp else 0.dp)) {
+                        val indentation = if (item.waifuProcess) Modifier.waifuProcessRail(textColor)
+                            else Modifier.padding(start = if (item.inGroup) 24.dp else 0.dp)
+                        Box(Modifier.fillMaxWidth().then(indentation)) {
                             // 已出现的块离屏后重新进入时不重播淡入，避免快速滑动时闪烁。
                             CompositionLocalProvider(LocalInsideToolGroup provides item.inGroup) {
                             AnimatedNode(
