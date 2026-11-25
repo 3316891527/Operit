@@ -4,7 +4,7 @@ import com.ai.assistance.operit.data.theme.script.ThemeScriptContract
 
 /** 只列出实际接入的属性；固定尺寸、位图和原生浮层不展示没有消费入口的控件。 */
 internal enum class StudioSurfaceControl {
-    ContentColor, Stroke, Shape, Padding, MinHeight, Elevation, Typography, AvatarSize, MessageWidth, PopupOffset,
+    ContentColor, Stroke, Shape, Padding, MinHeight, Elevation, Typography, AvatarSize, MessageWidth, PopupOffset, SystemBarIcons,
 }
 
 private val geometryControls = setOf(StudioSurfaceControl.Stroke, StudioSurfaceControl.Shape, StudioSurfaceControl.Padding)
@@ -13,6 +13,7 @@ private val textControls = setOf(StudioSurfaceControl.ContentColor, StudioSurfac
 internal val ThemeStudioSurfaceControls = ThemeScriptContract.surfaceIds.associateWith { id ->
     if (id in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds) emptySet() else if (id in ThemeScriptContract.actionButtonIds) geometryControls + StudioSurfaceControl.ContentColor else when (id) {
         "background" -> emptySet()
+        "statusBar" -> setOf(StudioSurfaceControl.SystemBarIcons)
         "userAvatar", "assistantAvatar" -> geometryControls + StudioSurfaceControl.AvatarSize
         "iconButton" -> geometryControls + StudioSurfaceControl.ContentColor
         "appBar", "navigation", "navigationItem" -> geometryControls + textControls

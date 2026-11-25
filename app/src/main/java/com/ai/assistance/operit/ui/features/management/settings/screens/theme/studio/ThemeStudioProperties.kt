@@ -254,6 +254,7 @@ private fun StudioTextProperties(state: ThemeStudioState, onColor: (String, Stri
 private fun StudioSurfaceProperties(state: ThemeStudioState, onColor: (String, String, String?) -> Unit, onFont: () -> Unit) {
     val target = state.target
     val message = target.id in setOf("userMessage", "assistantMessage")
+    if (target.supports(StudioSurfaceControl.SystemBarIcons)) StudioStatusBarIconProperties(state)
     if (target.id == "input") StudioSection(stringResource(R.string.studio_input_placeholder)) {
         val placeholder = state.surface().placeholder
         OutlinedTextField(

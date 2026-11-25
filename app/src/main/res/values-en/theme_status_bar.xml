@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="theme_area_system_status_bar">System status bar</string>
+    <string name="studio_status_bar_icons">System icons</string>
+    <string name="studio_status_bar_follow_theme">Follow theme</string>
+    <string name="studio_status_bar_dark_icons">Dark icons</string>
+    <string name="studio_status_bar_light_icons">Light icons</string>
+    <string name="studio_status_bar_icons_hint">Android supports light or dark system icons only. The system controls the time, signal, battery and font. Preview time, signal and battery are fixed samples.</string>
+    <string name="studio_status_bar_preview_description">Status bar preview: fixed 9:41 time, full signal and battery samples</string>
+</resources>

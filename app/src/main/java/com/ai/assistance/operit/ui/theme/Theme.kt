@@ -4,6 +4,7 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.Voic
 import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
 
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptHost
+import com.ai.assistance.operit.ui.theme.script.ThemeSystemStatusBar
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -146,7 +147,6 @@ fun OperitTheme(content: @Composable () -> Unit) {
                 window.isStatusBarContrastEnforced = false
                 window.isNavigationBarContrastEnforced = false
             }
-            insetsController.isAppearanceLightStatusBars = !darkTheme
             insetsController.isAppearanceLightNavigationBars = !darkTheme
 
         }
@@ -403,6 +403,7 @@ fun OperitTheme(content: @Composable () -> Unit) {
                     content = { VoiceRecordingOverlayHost(content) },
                 )
             }
+            ThemeSystemStatusBar(darkTheme)
         }
     }
     }
