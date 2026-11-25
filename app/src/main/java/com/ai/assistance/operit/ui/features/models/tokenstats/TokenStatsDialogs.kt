@@ -1,63 +1,33 @@
 package com.ai.assistance.operit.ui.features.models.tokenstats
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.RemoveCircleOutline
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DateRangePicker
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
-import androidx.compose.material3.Switch
-import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDateRangePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.collects.PricingCurrency
-import com.ai.assistance.operit.data.stats.BillingMode
-import com.ai.assistance.operit.data.stats.TokenStatsPriceDraft
-import com.ai.assistance.operit.data.stats.TokenStatsPriceScope
-import com.ai.assistance.operit.data.stats.TokenStatsPriceSetting
-import com.ai.assistance.operit.data.stats.DEFAULT_TOKEN_PEAK_TIME_RANGES
-import com.ai.assistance.operit.data.stats.TokenPeakTimeRange
-import com.ai.assistance.operit.data.stats.TokenPricingRules
+import com.ai.assistance.operit.data.stats.*
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Locale
-
-/**
- * 信息架构重构后弹窗全部回到 M3 默认配色（随主题明暗自动成立），
- * 主色不再作为容器色出现。
- */
 
 internal fun datePickerMillisToLocalDate(utcMidnightMs: Long): java.time.LocalDate =
     Instant.ofEpochMilli(utcMidnightMs).atZone(java.time.ZoneOffset.UTC).toLocalDate()
@@ -72,131 +42,6 @@ internal fun customRangeInclusiveEnd(
     val endMs = endDate.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
     return com.ai.assistance.operit.data.stats.TokenStatsTimeRanges.customRange(startMs, endMs)
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun TokenStatsDateRangeDialog(
-    zone: ZoneId,
-    maxRangeDays: Long,
-    initialRange: com.ai.assistance.operit.data.stats.TokenStatsTimeRange?,
-    onConfirm: (startMs: Long, endMs: Long) -> Boolean,
-    onDismiss: () -> Unit,
-) {
-    var inlineError by remember { mutableStateOf<String?>(null) }
-    val initialStartDateMillis = initialRange
-        ?.startMs
-        ?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }
-        ?.atStartOfDay(java.time.ZoneOffset.UTC)
-        ?.toInstant()
-        ?.toEpochMilli()
-    val initialEndDateMillis = initialRange
-        ?.endMs
-        ?.minus(1L)
-        ?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }
-        ?.atStartOfDay(java.time.ZoneOffset.UTC)
-        ?.toInstant()
-        ?.toEpochMilli()
-    val pickerState = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = initialStartDateMillis,
-        initialSelectedEndDateMillis = initialEndDateMillis,
-    )
-    LaunchedEffect(
-        pickerState.selectedStartDateMillis,
-        pickerState.selectedEndDateMillis,
-    ) {
-        inlineError = null
-    }
-
-    val invalidRangeText = stringResource(R.string.token_stats_custom_range_invalid)
-    val rangeTooLongText = stringResource(R.string.token_stats_custom_range_too_long)
-
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        modifier = Modifier.widthIn(max = 360.dp),
-        confirmButton = {
-            TextButton(
-                enabled =
-                    pickerState.selectedStartDateMillis != null &&
-                        pickerState.selectedEndDateMillis != null,
-                onClick = {
-                    val start = pickerState.selectedStartDateMillis ?: return@TextButton
-                    val end = pickerState.selectedEndDateMillis ?: return@TextButton
-                    val range = customRangeInclusiveEnd(
-                        datePickerMillisToLocalDate(start),
-                        datePickerMillisToLocalDate(end),
-                        zone,
-                    )
-                    val isUnchangedInitialRange = range == initialRange
-                    inlineError =
-                        when (validateCustomRange(range.startMs, range.endMs, zone, maxRangeDays)) {
-                            CustomRangeValidation.INVALID_BOUNDS -> invalidRangeText
-                            CustomRangeValidation.TOO_LONG ->
-                                if (isUnchangedInitialRange) null else rangeTooLongText
-                            CustomRangeValidation.VALID -> null
-                        }
-                    if (inlineError == null && onConfirm(range.startMs, range.endMs)) onDismiss()
-                },
-            ) {
-                Text(stringResource(R.string.token_stats_custom_range_confirm))
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-            ) {
-                Text(stringResource(R.string.settings_cancel))
-            }
-        },
-    ) {
-        Column {
-            DateRangePicker(
-                state = pickerState,
-                title = {
-                    Text(
-                        text = stringResource(R.string.token_stats_date_range),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(start = 24.dp, top = 16.dp),
-                    )
-                },
-                headline = {
-                    Text(
-                        text = formatDatePickerSelection(
-                            pickerState.selectedStartDateMillis,
-                            pickerState.selectedEndDateMillis,
-                        ),
-                        style = MaterialTheme.typography.bodyLarge,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(start = 24.dp, end = 24.dp, bottom = 12.dp),
-                    )
-                },
-                showModeToggle = false,
-            )
-            inlineError?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 24.dp, bottom = 12.dp),
-                )
-            }
-        }
-    }
-}
-
-private fun formatDatePickerSelection(startMillis: Long?, endMillis: Long?): String {
-    if (startMillis == null) return ""
-    val start = datePickerMillisToLocalDate(startMillis).format(datePickerSelectionFormatter)
-    if (endMillis == null) return start
-    val end = datePickerMillisToLocalDate(endMillis).format(datePickerSelectionFormatter)
-    return "$start - $end"
-}
-
-private val datePickerSelectionFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.getDefault())
 
 @Composable
 internal fun PriceSettingsDialog(
@@ -260,8 +105,8 @@ internal fun PriceSettingsDialog(
                 ?: initialDraft.holidayOffPeakPricingEnabled
         )
     }
-    var advancedRulesExpanded by remember { mutableStateOf(false) }
-    var peakExpanded by remember { mutableStateOf(false) }
+    var advancedRulesExpanded by remember { mutableStateOf(true) }
+    var peakExpanded by remember { mutableStateOf(true) }
     var peakPeriods by remember(existing, initialDraft) {
         mutableStateOf(
             (existing?.peakSchedule ?: initialDraft.peakSchedule)
@@ -298,7 +143,7 @@ internal fun PriceSettingsDialog(
             existing?.longContextPricingEnabled ?: initialDraft.longContextPricingEnabled
         )
     }
-    var longContextExpanded by remember { mutableStateOf(false) }
+    var longContextExpanded by remember { mutableStateOf(true) }
     var longContextThreshold by remember(existing, initialDraft) {
         mutableStateOf(
             formatEditableLong(existing?.longContextThreshold ?: initialDraft.longContextThreshold)
@@ -368,238 +213,19 @@ internal fun PriceSettingsDialog(
     val advancedRulesValid =
         billingMode != BillingMode.TOKEN || (peakRulesValid && longContextRulesValid)
     val targetValid = scope != TokenStatsPriceScope.CONFIG || configId.isNotBlank()
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.token_stats_pricing_edit)) },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "$provider · $model",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                )
-                if (scope == TokenStatsPriceScope.CONFIG) {
-                    Text(
-                        text = configurationName.orEmpty(),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-                HorizontalDivider()
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = billingMode == BillingMode.TOKEN,
-                        onClick = {
-                            if (billingMode != BillingMode.TOKEN) {
-                                pricePerRequest = ""
-                                billingMode = BillingMode.TOKEN
-                            }
-                        },
-                        label = { Text(stringResource(R.string.settings_billing_mode_token)) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    FilterChip(
-                        selected = billingMode == BillingMode.COUNT,
-                        onClick = {
-                            if (billingMode != BillingMode.COUNT) {
-                                inputPrice = ""
-                                cachedInputPrice = ""
-                                cacheWritePrice = ""
-                                outputPrice = ""
-                                billingMode = BillingMode.COUNT
-                            }
-                        },
-                        label = { Text(stringResource(R.string.settings_billing_mode_count)) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = currency == PricingCurrency.CNY,
-                        onClick = { currency = PricingCurrency.CNY },
-                        label = { Text(stringResource(R.string.token_stats_currency_cny)) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    FilterChip(
-                        selected = currency == PricingCurrency.USD,
-                        onClick = { currency = PricingCurrency.USD },
-                        label = { Text(stringResource(R.string.token_stats_currency_usd)) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                HorizontalDivider()
-                if (billingMode == BillingMode.TOKEN) {
-                    PriceField(
-                        label = stringResource(R.string.token_stats_pricing_input),
-                        value = inputPrice,
-                        onChange = { inputPrice = it },
-                    )
-                    PriceField(
-                        label = stringResource(R.string.token_stats_pricing_cached),
-                        value = cachedInputPrice,
-                        onChange = { cachedInputPrice = it },
-                    )
-                    PriceField(
-                        label = stringResource(R.string.token_stats_pricing_cache_write),
-                        value = cacheWritePrice,
-                        onChange = { cacheWritePrice = it },
-                    )
-                    PriceField(
-                        label = stringResource(R.string.token_stats_pricing_output),
-                        value = outputPrice,
-                        onChange = { outputPrice = it },
-                    )
-                    HorizontalDivider()
-                    PricingRuleGroup(
-                        title = stringResource(R.string.token_stats_advanced_pricing),
-                        expanded = advancedRulesExpanded,
-                        onExpandedChange = { advancedRulesExpanded = it },
-                    ) {
-                        PricingRuleSection(
-                            title = stringResource(R.string.token_stats_peak_pricing),
-                        enabled = peakPricingEnabled,
-                        expanded = peakExpanded,
-                        onEnabledChange = { peakPricingEnabled = it },
-                        onExpandedChange = { peakExpanded = it },
-                    ) {
-                        PricingRuleSwitch(
-                            title = stringResource(R.string.token_stats_weekend_off_peak),
-                            checked = weekendOffPeakPricingEnabled,
-                            onCheckedChange = { weekendOffPeakPricingEnabled = it },
-                        )
-                        PricingRuleSwitch(
-                            title = stringResource(R.string.token_stats_holiday_off_peak),
-                            checked = holidayOffPeakPricingEnabled,
-                            onCheckedChange = { holidayOffPeakPricingEnabled = it },
-                        )
-                        Text(
-                            text = stringResource(R.string.token_stats_holiday_schedule_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                        Text(
-                            text = stringResource(
-                                R.string.token_stats_pricing_timezone,
-                                TokenPricingRules.PRICING_ZONE.id,
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                        Text(
-                            text = stringResource(R.string.token_stats_peak_periods),
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                        peakPeriods.forEachIndexed { index, period ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                            ) {
-                                TimeField(
-                                    label = stringResource(R.string.token_stats_peak_start),
-                                    value = period.first,
-                                    onChange = { value ->
-                                        peakPeriods = peakPeriods.mapIndexed { itemIndex, item ->
-                                            if (itemIndex == index) item.copy(first = value) else item
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                )
-                                TimeField(
-                                    label = stringResource(R.string.token_stats_peak_end),
-                                    value = period.second,
-                                    onChange = { value ->
-                                        peakPeriods = peakPeriods.mapIndexed { itemIndex, item ->
-                                            if (itemIndex == index) item.copy(second = value) else item
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                )
-                                if (peakPeriods.size > 1) {
-                                    IconButton(
-                                        onClick = {
-                                            peakPeriods = peakPeriods.filterIndexed { itemIndex, _ ->
-                                                itemIndex != index
-                                            }
-                                        },
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.RemoveCircleOutline,
-                                            contentDescription = stringResource(
-                                                R.string.token_stats_remove_peak_period,
-                                            ),
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        TextButton(
-                            onClick = { peakPeriods = peakPeriods + ("09:00" to "12:00") },
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = null)
-                            Text(stringResource(R.string.token_stats_add_peak_period))
-                        }
-                        MultiplierGrid(
-                            firstLabel = stringResource(R.string.token_stats_peak_input_multiplier),
-                            firstValue = peakInputMultiplier,
-                            onFirstChange = { peakInputMultiplier = it },
-                            secondLabel = stringResource(R.string.token_stats_peak_cached_multiplier),
-                            secondValue = peakCachedInputMultiplier,
-                            onSecondChange = { peakCachedInputMultiplier = it },
-                            thirdLabel = stringResource(R.string.token_stats_peak_cache_write_multiplier),
-                            thirdValue = peakCacheWriteMultiplier,
-                            onThirdChange = { peakCacheWriteMultiplier = it },
-                            fourthLabel = stringResource(R.string.token_stats_peak_output_multiplier),
-                            fourthValue = peakOutputMultiplier,
-                            onFourthChange = { peakOutputMultiplier = it },
-                        )
-                    }
-                    PricingRuleSection(
-                        title = stringResource(R.string.token_stats_long_context_pricing),
-                        enabled = longContextPricingEnabled,
-                        expanded = longContextExpanded,
-                        onEnabledChange = { longContextPricingEnabled = it },
-                        onExpandedChange = { longContextExpanded = it },
-                    ) {
-                        PriceField(
-                            label = stringResource(R.string.token_stats_long_context_threshold),
-                            value = longContextThreshold,
-                            onChange = { longContextThreshold = it },
-                            keyboardType = KeyboardType.Number,
-                        )
-                        MultiplierGrid(
-                            firstLabel = stringResource(R.string.token_stats_long_context_input_multiplier),
-                            firstValue = longContextInputMultiplier,
-                            onFirstChange = { longContextInputMultiplier = it },
-                            secondLabel = stringResource(R.string.token_stats_long_context_cached_multiplier),
-                            secondValue = longContextCachedInputMultiplier,
-                            onSecondChange = { longContextCachedInputMultiplier = it },
-                            thirdLabel = stringResource(R.string.token_stats_long_context_cache_write_multiplier),
-                            thirdValue = longContextCacheWriteMultiplier,
-                            onThirdChange = { longContextCacheWriteMultiplier = it },
-                            fourthLabel = stringResource(R.string.token_stats_long_context_output_multiplier),
-                            fourthValue = longContextOutputMultiplier,
-                            onFourthChange = { longContextOutputMultiplier = it },
-                        )
-                        Text(
-                            text = stringResource(R.string.token_stats_long_context_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                    }
-                } else {
-                    PriceField(
-                        label = stringResource(R.string.token_stats_pricing_per_request),
-                        value = pricePerRequest,
-                        onChange = { pricePerRequest = it },
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                enabled = targetValid && allPricesValid && advancedRulesValid,
-                onClick = {
+    StatsSheet(
+        eyebrow = "PRICING",
+        editor = true,
+        title = stringResource(R.string.token_stats_pricing_edit),
+        onDismiss = onDismiss,
+        footer = {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                StatsAction(stringResource(R.string.settings_cancel), onDismiss, Modifier.weight(.6f))
+                StatsPrimaryAction(
+                    text = stringResource(R.string.token_stats_design_save_recalculate),
+                    modifier = Modifier.weight(1f),
+                    enabled = targetValid && allPricesValid && advancedRulesValid,
+                    onClick = {
                     val parse = { raw: String -> raw.trim().toDoubleOrNull() }
                     onSave(
                         TokenStatsPriceDraft(
@@ -651,19 +277,217 @@ internal fun PriceSettingsDialog(
                         )
                     )
                     onDismiss()
-                },
-            ) {
-                Text(stringResource(R.string.settings_save))
+                    },
+                )
             }
         },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-            ) {
-                Text(stringResource(R.string.settings_cancel))
-            }
-        },
-    )
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
+                StatsText(
+                    text = "$provider · $model",
+                    weight = FontWeight.Medium,
+                )
+                if (scope == TokenStatsPriceScope.CONFIG) {
+                    StatsText(
+                        text = configurationName.orEmpty(),
+                    )
+                }
+                StatsDivider()
+                StatsSegment(
+                    options = listOf(stringResource(R.string.settings_billing_mode_token), stringResource(R.string.settings_billing_mode_count)),
+                    selected = if (billingMode == BillingMode.TOKEN) 0 else 1,
+                    onSelect = { index ->
+                        val selectedMode = if (index == 0) BillingMode.TOKEN else BillingMode.COUNT
+                        if (billingMode != selectedMode) {
+                            if (selectedMode == BillingMode.TOKEN) pricePerRequest = ""
+                            else {
+                                inputPrice = ""
+                                cachedInputPrice = ""
+                                cacheWritePrice = ""
+                                outputPrice = ""
+                            }
+                            billingMode = selectedMode
+                        }
+                    },
+                )
+                StatsSegment(
+                    options = listOf(stringResource(R.string.token_stats_currency_cny), stringResource(R.string.token_stats_currency_usd)),
+                    selected = if (currency == PricingCurrency.CNY) 0 else 1,
+                    onSelect = { currency = if (it == 0) PricingCurrency.CNY else PricingCurrency.USD },
+                )
+                StatsDivider()
+                if (billingMode == BillingMode.TOKEN) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+                    PriceField(
+                        label = stringResource(R.string.token_stats_pricing_input),
+                        value = inputPrice,
+                        modifier = Modifier.weight(1f),
+                        onChange = { inputPrice = it },
+                    )
+                    PriceField(
+                        label = stringResource(R.string.token_stats_pricing_cached),
+                        value = cachedInputPrice,
+                        modifier = Modifier.weight(1f),
+                        onChange = { cachedInputPrice = it },
+                    )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+                    PriceField(
+                        label = stringResource(R.string.token_stats_pricing_cache_write),
+                        value = cacheWritePrice,
+                        modifier = Modifier.weight(1f),
+                        onChange = { cacheWritePrice = it },
+                    )
+                    PriceField(
+                        label = stringResource(R.string.token_stats_pricing_output),
+                        value = outputPrice,
+                        modifier = Modifier.weight(1f),
+                        onChange = { outputPrice = it },
+                    )
+                    }
+                    StatsDivider()
+                    PricingRuleGroup(
+                        title = stringResource(R.string.token_stats_advanced_pricing),
+                        expanded = advancedRulesExpanded,
+                        onExpandedChange = { advancedRulesExpanded = it },
+                    ) {
+                        PricingRuleSection(
+                            title = stringResource(R.string.token_stats_peak_pricing),
+                        enabled = peakPricingEnabled,
+                        expanded = peakExpanded,
+                        onEnabledChange = { peakPricingEnabled = it },
+                        onExpandedChange = { peakExpanded = it },
+                    ) {
+                        PricingRuleSwitch(
+                            title = stringResource(R.string.token_stats_weekend_off_peak),
+                            checked = weekendOffPeakPricingEnabled,
+                            onCheckedChange = { weekendOffPeakPricingEnabled = it },
+                        )
+                        PricingRuleSwitch(
+                            title = stringResource(R.string.token_stats_holiday_off_peak),
+                            checked = holidayOffPeakPricingEnabled,
+                            onCheckedChange = { holidayOffPeakPricingEnabled = it },
+                        )
+                        StatsText(
+                            text = stringResource(R.string.token_stats_holiday_schedule_hint),
+                        )
+                        StatsText(
+                            text = stringResource(
+                                R.string.token_stats_pricing_timezone,
+                                TokenPricingRules.PRICING_ZONE.id,
+                            ),
+                        )
+                        StatsText(
+                            text = stringResource(R.string.token_stats_peak_periods),
+                        )
+                        peakPeriods.forEachIndexed { index, period ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            ) {
+                                TimeField(
+                                    label = stringResource(R.string.token_stats_peak_start),
+                                    value = period.first,
+                                    onChange = { value ->
+                                        peakPeriods = peakPeriods.mapIndexed { itemIndex, item ->
+                                            if (itemIndex == index) item.copy(first = value) else item
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                )
+                                TimeField(
+                                    label = stringResource(R.string.token_stats_peak_end),
+                                    value = period.second,
+                                    onChange = { value ->
+                                        peakPeriods = peakPeriods.mapIndexed { itemIndex, item ->
+                                            if (itemIndex == index) item.copy(second = value) else item
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                )
+                                if (peakPeriods.size > 1) {
+                                    IconButton(
+                                        onClick = {
+                                            peakPeriods = peakPeriods.filterIndexed { itemIndex, _ ->
+                                                itemIndex != index
+                                            }
+                                        },
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.RemoveCircleOutline,
+                                            contentDescription = stringResource(
+                                                R.string.token_stats_remove_peak_period,
+                                            ),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        TextButton(
+                            colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = LocalTokenStatsPalette.current.accent),
+                            onClick = { peakPeriods = peakPeriods + ("09:00" to "12:00") },
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = null)
+                            StatsText(stringResource(R.string.token_stats_add_peak_period))
+                        }
+                        MultiplierGrid(
+                            firstLabel = stringResource(R.string.token_stats_design_input),
+                            firstValue = peakInputMultiplier,
+                            onFirstChange = { peakInputMultiplier = it },
+                            secondLabel = stringResource(R.string.token_insights_cached),
+                            secondValue = peakCachedInputMultiplier,
+                            onSecondChange = { peakCachedInputMultiplier = it },
+                            thirdLabel = stringResource(R.string.token_insights_cache_write),
+                            thirdValue = peakCacheWriteMultiplier,
+                            onThirdChange = { peakCacheWriteMultiplier = it },
+                            fourthLabel = stringResource(R.string.token_insights_output),
+                            fourthValue = peakOutputMultiplier,
+                            onFourthChange = { peakOutputMultiplier = it },
+                        )
+                    }
+                    PricingRuleSection(
+                        title = stringResource(R.string.token_stats_long_context_pricing),
+                        enabled = longContextPricingEnabled,
+                        expanded = longContextExpanded,
+                        onEnabledChange = { longContextPricingEnabled = it },
+                        onExpandedChange = { longContextExpanded = it },
+                    ) {
+                        PriceField(
+                            label = stringResource(R.string.token_stats_long_context_threshold),
+                            value = longContextThreshold,
+                            onChange = { longContextThreshold = it },
+                            keyboardType = KeyboardType.Number,
+                        )
+                        MultiplierGrid(
+                            firstLabel = stringResource(R.string.token_stats_design_input),
+                            firstValue = longContextInputMultiplier,
+                            onFirstChange = { longContextInputMultiplier = it },
+                            secondLabel = stringResource(R.string.token_insights_cached),
+                            secondValue = longContextCachedInputMultiplier,
+                            onSecondChange = { longContextCachedInputMultiplier = it },
+                            thirdLabel = stringResource(R.string.token_insights_cache_write),
+                            thirdValue = longContextCacheWriteMultiplier,
+                            onThirdChange = { longContextCacheWriteMultiplier = it },
+                            fourthLabel = stringResource(R.string.token_insights_output),
+                            fourthValue = longContextOutputMultiplier,
+                            onFourthChange = { longContextOutputMultiplier = it },
+                        )
+                        StatsText(
+                            text = stringResource(R.string.token_stats_long_context_hint),
+                        )
+                    }
+                    }
+                } else {
+                    PriceField(
+                        label = stringResource(R.string.token_stats_pricing_per_request),
+                        value = pricePerRequest,
+                        onChange = { pricePerRequest = it },
+                    )
+                }
+
+        }
+    }
 }
 
 @Composable
@@ -678,9 +502,8 @@ private fun PricingRuleGroup(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
-            Text(
+            StatsText(
                 text = title,
-                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = { onExpandedChange(!expanded) }) {
@@ -708,12 +531,11 @@ private fun PricingRuleSwitch(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
     ) {
-        Text(
+        StatsText(
             text = title,
-            style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f),
         )
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        StatsPricingSwitch(checked, onCheckedChange)
     }
 }
 
@@ -726,30 +548,31 @@ private fun PricingRuleSection(
     onExpandedChange: (Boolean) -> Unit,
     content: @Composable () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f),
-            )
-            Switch(checked = enabled, onCheckedChange = onEnabledChange)
-            IconButton(
-                enabled = enabled,
-                onClick = { onExpandedChange(!expanded) },
-            ) {
-                Icon(
-                    imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                    contentDescription = null,
-                )
+    val p = LocalTokenStatsPalette.current
+    androidx.compose.material3.Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
+        color = p.panel,
+        border = androidx.compose.foundation.BorderStroke(1.dp, p.line),
+        tonalElevation = 0.dp,
+    ) {
+        Column {
+            androidx.compose.material3.Surface(color = p.panelAlt, tonalElevation = 0.dp) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                ) {
+                    StatsText(title, Modifier.weight(1f), size = 12, weight = FontWeight.SemiBold)
+                    StatsPricingSwitch(enabled, onEnabledChange)
+                    IconButton(enabled = enabled, onClick = { onExpandedChange(!expanded) }, modifier = Modifier.size(24.dp)) {
+                        Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                            contentDescription = null, tint = p.muted)
+                    }
+                }
             }
-        }
-        if (enabled && expanded) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                content()
+            if (enabled && expanded) {
+                StatsDivider()
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { content() }
             }
         }
     }
@@ -770,34 +593,15 @@ private fun MultiplierGrid(
     fourthValue: String,
     onFourthChange: (String) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PriceField(
-                label = firstLabel,
-                value = firstValue,
-                onChange = onFirstChange,
-                modifier = Modifier.weight(1f),
-            )
-            PriceField(
-                label = secondLabel,
-                value = secondValue,
-                onChange = onSecondChange,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PriceField(
-                label = thirdLabel,
-                value = thirdValue,
-                onChange = onThirdChange,
-                modifier = Modifier.weight(1f),
-            )
-            PriceField(
-                label = fourthLabel,
-                value = fourthValue,
-                onChange = onFourthChange,
-                modifier = Modifier.weight(1f),
-            )
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        listOf(
+            Triple(firstLabel, firstValue, onFirstChange),
+            Triple(secondLabel, secondValue, onSecondChange),
+            Triple(thirdLabel, thirdValue, onThirdChange),
+            Triple(fourthLabel, fourthValue, onFourthChange),
+        ).forEach { (label, value, onChange) ->
+            StatsDialogField(value, onChange, Modifier.weight(1f), label = label,
+                fieldHeight = 38.dp, fontSize = 14, labelSize = 9)
         }
     }
 }
@@ -809,13 +613,7 @@ private fun TimeField(
     onChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    PriceField(
-        label = label,
-        value = value,
-        onChange = onChange,
-        keyboardType = KeyboardType.Text,
-        modifier = modifier,
-    )
+    StatsDialogField(value, onChange, modifier.fillMaxWidth(), label = label, keyboardType = KeyboardType.Text)
 }
 
 @Composable
@@ -826,14 +624,7 @@ private fun PriceField(
     keyboardType: KeyboardType = KeyboardType.Decimal,
     modifier: Modifier = Modifier,
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        label = { Text(label) },
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        singleLine = true,
-        modifier = modifier.fillMaxWidth(),
-    )
+    StatsDialogField(value, onChange, modifier.fillMaxWidth(), label = label, keyboardType = keyboardType, fieldHeight = 47.dp, fontSize = 16)
 }
 
 private fun parsePeakPeriods(
@@ -857,3 +648,19 @@ private fun formatEditableLong(value: Long?): String = value?.toString().orEmpty
 
 private fun formatEditablePrice(value: Double?): String =
     value?.let { String.format(Locale.US, "%.6f", it).trimEnd('0').trimEnd('.') } ?: ""
+
+/** 开关按稿件的 38×23 尺寸绘制，同时保留原生开关的无障碍语义。 */
+@Composable
+private fun StatsPricingSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    val p = LocalTokenStatsPalette.current
+    Box(
+        Modifier.size(38.dp, 23.dp)
+            .background(if (checked) p.accent else p.background, RoundedCornerShape(20.dp))
+            .border(1.dp, if (checked) p.accent else p.line, RoundedCornerShape(20.dp))
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange),
+        contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
+    ) {
+        Box(Modifier.padding(horizontal = 3.dp).size(15.dp)
+            .background(if (checked) Color(0xFF25334E) else p.muted, RoundedCornerShape(15.dp)))
+    }
+}

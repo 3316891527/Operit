@@ -1,12 +1,14 @@
 ---
 repository: https://github.com/3316891527/Operit
 branch: feat/token-statistics-insights
-status: implementation-complete-awaiting-ci
+status: visual-restoration-complete-awaiting-ci-and-device-review
 ---
 
-# Token 用量与费用 V2 原生重构
+# Token 用量与费用原生重构
 
-现有统计页把概览、活跃记录、模型和配置堆在同一长页，手机筛选与请求追溯不便。基于已评审的 HTML V2 增量实现总览、模型、配置、请求四页，沿用应用主题和已发布价格规则。
+原有统计页把概览、活跃记录、模型和配置堆在同一长页，手机筛选与请求追溯不便。基于已评审的 HTML 设计稿增量实现总览、模型、配置、请求四页，沿用已发布价格规则。统计页使用设计稿的固定配色，明暗跟随应用全局设置。
+
+首轮功能实现已提交至 [PR #262](https://github.com/3316891527/Operit/pull/262)。用户实机反馈后，本轮仅按原稿返工界面；源码与静态核对已完成，远端构建结果与对应 APK 的实际视觉验收待确认。
 
 ## 实现范围
 
@@ -44,3 +46,5 @@ status: implementation-complete-awaiting-ci
 最终分工中，采集助手继续完成 ViewModel 和隔离清空回归，查询助手补齐设置/筛选/清空弹窗及资源，来源助手完成比较、排序和冲突计价核对。主代理整合四页组件并维护最终资源。
 
 - [验证与交付记录](03-validation-and-delivery.md)
+
+- [设计稿界面还原](04-visual-restoration.md)

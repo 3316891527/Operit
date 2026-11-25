@@ -2,176 +2,117 @@ package com.ai.assistance.operit.ui.features.models.tokenstats
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DeleteForever
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.data.model.TokenUsageRecordEntity
 import com.ai.assistance.operit.data.stats.*
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
-import com.ai.assistance.operit.ui.components.CustomScaffold
-import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
-import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
-import java.time.ZoneId
 
-/** 沿用评审过的 V2 层级；共用筛选和计价，让四页能追溯同一批真实请求。 */
+/** 页面布局、颜色和控件顺序直接对应已有设计稿，查询及计价接口保持原义。 */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
     val context = LocalContext.current
-    val viewModel: TokenUsageStatisticsViewModel = viewModel(factory = TokenUsageStatisticsViewModel.Factory(context))
-    val state by viewModel.state.collectAsState()
-    val message by viewModel.actionMessage.collectAsState()
-    var showSettings by rememberSaveable { mutableStateOf(false) }
-    var showFilters by rememberSaveable { mutableStateOf(false) }
-    var showReset by rememberSaveable { mutableStateOf(false) }
-    var showRange by rememberSaveable { mutableStateOf(false) }
-    var showCompareRange by rememberSaveable { mutableStateOf(false) }
-    var priceEditor by remember { mutableStateOf<InsightsPriceEditor?>(null) }
-    var priceReset by remember { mutableStateOf<TokenStatsPriceSetting?>(null) }
-    val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> if (uri != null) viewModel.export(uri) }
-    var modelSearch by rememberSaveable { mutableStateOf("") }
-    var configurationSearch by rememberSaveable { mutableStateOf("") }
-    var listMetric by rememberSaveable { mutableStateOf(TokenStatsInsightMetric.COST) }
+    val model: TokenUsageStatisticsViewModel = viewModel(factory = TokenUsageStatisticsViewModel.Factory(context))
+    val state by model.state.collectAsState()
+    val message by model.actionMessage.collectAsState()
+    var settings by rememberSaveable { mutableStateOf(false) }
+    var filters by rememberSaveable { mutableStateOf(false) }
+    var reset by rememberSaveable { mutableStateOf(false) }
+    var dates by rememberSaveable { mutableStateOf(false) }
+    var compare by rememberSaveable { mutableStateOf(false) }
+    var price by remember { mutableStateOf<StatsPriceEditor?>(null) }
+    var resetPrice by remember { mutableStateOf<TokenStatsPriceSetting?>(null) }
+    val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> if (uri != null) model.export(uri) }
+    val exportAction = { export.launch("operit-usage.csv") }
     val scroll = rememberLazyListState()
-    LaunchedEffect(Unit) { viewModel.loadForEntry() }
+    LaunchedEffect(Unit) { model.loadForEntry() }
+    LaunchedEffect(state.tab) { scroll.scrollToItem(0) }
     LaunchedEffect(message) {
         message?.let {
             if (it.isError) OKToast.error(context, it.text, OKToast.LENGTH_SHORT).show()
             else OKToast.success(context, it.text, OKToast.LENGTH_SHORT).show()
-            viewModel.consumeActionMessage()
+            model.consumeActionMessage()
         }
     }
-    LaunchedEffect(state.tab, state.requests?.pageIndex) { scroll.scrollToItem(0) }
-
-    TokenStatsColorsProvider {
-        CustomScaffold(containerColor = LocalTokenStatsColors.current.pageBackground, contentColor = LocalTokenStatsColors.current.pageContent) { padding ->
-            LazyColumn(Modifier.fillMaxSize().padding(padding), state = scroll,
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    TokenStatsTheme {
+        val p = LocalTokenStatsPalette.current
+        // 根背景必须实际绘制；自定义 Scaffold 会按主题壁纸把背景变透明，不能用于此稿。
+        BoxWithConstraints(Modifier.fillMaxSize().background(p.background)) {
+            val compact = maxWidth < 370.dp
+            val wide = maxWidth >= 900.dp
+            val inset = if (compact) 15.dp else if (wide) 36.dp else 22.dp
+            LazyColumn(Modifier.widthIn(max = 1240.dp).fillMaxSize().align(Alignment.TopCenter), state = scroll,
+                contentPadding = PaddingValues(start = inset, end = inset, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                item("brand") { StatsBrand(compact, wide) }
                 item("title") {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = onBackPressed) { Text(stringResource(R.string.token_insights_back)) }
-                        Text(stringResource(R.string.token_insights_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                        IconButton(enabled = !state.loading && !state.exporting && !state.clearing, onClick = { exporter.launch("operit-usage.csv") }) {
-                            if (state.exporting) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
-                            else Icon(Icons.Default.Download, contentDescription = stringResource(R.string.token_insights_export))
+                    Column(Modifier.padding(top = 26.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            StatsText(stringResource(R.string.token_insights_title), size = 28, weight = FontWeight.SemiBold)
+                            Spacer(Modifier.width(9.dp))
+                            Box(Modifier.size(7.dp).clip(RoundedCornerShape(2.dp)).background(p.teal))
                         }
+                        StatsText(stringResource(R.string.token_stats_design_page_note), size = 11, color = p.muted)
                     }
-                }
-                item("summary") {
-                    if (state.loading || state.clearing) InsightsCard { Text(stringResource(R.string.token_insights_loading)); LinearProgressIndicator(Modifier.fillMaxWidth()) }
-                    else if (state.errorMessage == null) InsightsOverviewHero(state)
                 }
                 item("actions") {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        TextButton(enabled = !state.clearing && !state.exporting, onClick = { showReset = true }) {
-                            Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.token_insights_clear_all), color = MaterialTheme.colorScheme.error)
-                        }
-                        TextButton(enabled = !state.clearing, onClick = { showSettings = true }) {
-                            Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.token_insights_settings))
-                        }
+                    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        StatsIconAction(Icons.Default.DeleteForever, stringResource(R.string.token_insights_clear_all), { reset = true }, enabled = !state.clearing && !state.exporting)
+                        StatsIconAction(Icons.Default.Tune, stringResource(R.string.token_insights_settings), { settings = true }, enabled = !state.clearing)
                     }
                 }
-                item("date") {
-                    InsightsPeriodControls(state, viewModel.zone, onQuick = viewModel::selectQuickRange, onRange = { showRange = true },
-                        onPrevious = viewModel::comparePrevious, onCompare = { showCompareRange = true }, onDisableCompare = { viewModel.setComparison(null) }, onGranularity = viewModel::setGranularity)
+                item("period") {
+                    TokenStatsPeriodControls(state, model.zone, onDate = { dates = true }, onCompare = { compare = true }, onFilter = { filters = true },
+                        onQuick = model::selectQuickRange, onRange = model::setCustomRange, onResetFilters = model::resetFilters)
+                    Spacer(Modifier.height(13.dp))
                 }
-                item("tabs") {
-                    val labels = listOf(R.string.token_insights_overview, R.string.token_insights_models, R.string.token_insights_configurations, R.string.token_insights_requests)
-                    TabRow(selectedTabIndex = state.tab.ordinal, containerColor = LocalTokenStatsColors.current.pageBackground) {
-                        TokenStatsTab.entries.forEachIndexed { index, tab -> Tab(selected = state.tab == tab, onClick = { viewModel.selectTab(tab) }, text = { Text(stringResource(labels[index])) }) }
-                    }
-                }
-                item("filters") {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            TextButton(onClick = { showFilters = true }, enabled = !state.clearing) { Text(stringResource(R.string.token_insights_filters)) }
-                            if (state.filter.copy(range = null) != TokenStatsInsightsFilter()) TextButton(onClick = viewModel::resetFilters) { Text(stringResource(R.string.token_insights_reset_filters)) }
-                        }
-                        InsightsActiveFilters(state)
-                    }
-                }
-                if (state.loading || state.clearing) item("loading") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-                state.errorMessage?.let { error -> item("error") {
-                    InsightsCard { Text(error); TextButton(onClick = { viewModel.load(rebuildCatalog = true) }) { Text(stringResource(R.string.token_insights_retry)) } }
-                } }
-                if (state.overview != null && !state.clearing && !state.loading && state.errorMessage == null) {
-                    when (state.tab) {
-                        TokenStatsTab.OVERVIEW -> {
-                            item("trend") { InsightsTrend(state, viewModel.zone) { viewModel.showRequests(range = it) } }
-                            item("costComposition") { InsightsComposition(state, cost = true) }
-                            item("tokenComposition") { InsightsComposition(state, cost = false) }
-                            item("quality") { InsightsQuality(state) }
-                            item("sources") { InsightsBreakdowns(state, peak = false) { if (it != null) viewModel.showRequests(functionType = it) } }
-                            item("executionModels") { InsightsExecutionModels(state) { viewModel.showRequests(executionModel = it) } }
-                            item("peak") { InsightsBreakdowns(state, peak = true) { if (it != null) viewModel.showRequests(peak = TokenStatsPeakPeriod.valueOf(it)) } }
-                            item("budget") { InsightsBudget(state) }
-                        }
-                        TokenStatsTab.MODELS -> {
-                            item("modelSearch") {
-                                InsightsListControls(modelSearch, R.string.token_insights_search_models, listMetric, { modelSearch = it }, { listMetric = it })
+                stickyHeader("tabs") { StatsTabs(state.tab, model::selectTab, state.configurationNames.size, compact) }
+                item("content") {
+                    Column(Modifier.fillMaxWidth().padding(top = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        when {
+                            state.clearing || state.loading && state.overview == null -> StatsPanel {
+                                StatsText(stringResource(R.string.token_insights_loading), color = p.muted)
+                                LinearProgressIndicator(Modifier.fillMaxWidth(), color = p.accent, trackColor = p.panelAlt)
                             }
-                            val models = state.overview?.models.orEmpty().filter { it.key.orEmpty().contains(modelSearch, ignoreCase = true) }.sortedByDescending { insightsListValue(it.totals, listMetric) }
-                            if (models.isEmpty()) item { InsightsEmpty() }
-                            items(models, key = { "model:${it.key}" }) { model -> InsightsModelCard(model, state) { viewModel.showRequests(model = it) } }
-                        }
-                        TokenStatsTab.CONFIGURATIONS -> {
-                            item("configurationSearch") {
-                                InsightsListControls(configurationSearch, R.string.token_insights_search_configurations, listMetric, { configurationSearch = it }, { listMetric = it })
+                            state.errorMessage != null -> StatsPanel {
+                                StatsText(requireNotNull(state.errorMessage), color = p.muted)
+                                StatsAction(stringResource(R.string.token_insights_retry), { model.load(rebuildCatalog = true) })
                             }
-                            val configurations = state.overview?.configurations.orEmpty().filter { (it.configId.isBlank() || it.configId in state.configurationNames) && listOf(state.configurationNames[it.configId].orEmpty(), it.provider, it.model).any { name -> name.contains(configurationSearch, ignoreCase = true) } }.sortedByDescending { insightsListValue(it.totals, listMetric) }
-                            item { Text(stringResource(R.string.token_insights_configuration_visibility_hint), style = MaterialTheme.typography.bodySmall, color = LocalTokenStatsColors.current.pageSupportingContent) }
-                            if (configurations.isEmpty()) item { InsightsEmpty() }
-                            items(configurations, key = { "config:${it.configId}\u001f${it.provider}\u001f${it.model}" }) { config ->
-                                InsightsConfigurationCard(config, state,
-                                    onRequests = { viewModel.showRequests(model = config.model, configId = config.configId) },
-                                    onEdit = { existing, draft, name -> priceEditor = InsightsPriceEditor(existing, draft, name) },
-                                    onReset = { priceReset = it })
-                            }
-                        }
-                        TokenStatsTab.REQUESTS -> {
-                            item("requestSearch") {
-                                Text(stringResource(R.string.token_insights_export_note), style = MaterialTheme.typography.bodySmall)
-                                var search by rememberSaveable(state.filter.search) { mutableStateOf(state.filter.search) }
-                                OutlinedTextField(value = search, onValueChange = { search = it }, modifier = Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.token_insights_search)) }, singleLine = true,
-                                    trailingIcon = { TextButton(onClick = { viewModel.setFilter(state.filter.copy(search = search)) }) { Text(stringResource(R.string.token_insights_apply)) } })
-                                val sorts = listOf(R.string.token_insights_sort_newest, R.string.token_insights_sort_oldest, R.string.token_insights_sort_tokens, R.string.token_insights_sort_cost, R.string.token_insights_sort_duration)
-                                InsightsChips(sorts.mapIndexed { i, label -> stringResource(label) to (TokenStatsRequestSort.entries[i] == state.requestSort) }) { viewModel.setRequestSort(TokenStatsRequestSort.entries[it]) }
-                            }
-                            if (state.requestsLoading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-                            val page = state.requests
-                            if (page != null) {
-                                if (page.historicalAggregateRequests > 0) item { Text(stringResource(R.string.token_insights_legacy_aggregate_note, page.historicalAggregateRequests), style = MaterialTheme.typography.bodySmall) }
-                                if (page.rows.isEmpty()) item { InsightsEmpty() }
-                                items(page.rows, key = { "request:${it.id}" }) { row -> InsightsRequestCard(row, state, viewModel.zone) { viewModel.showDetail(row.id) } }
-                                item("pagination") {
-                                    val count = ((page.totalRows + page.pageSize - 1) / page.pageSize).coerceAtLeast(1)
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                                        Text(stringResource(R.string.token_insights_page, page.pageIndex + 1, count), style = MaterialTheme.typography.labelMedium)
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            TextButton(enabled = page.pageIndex > 0 && !state.requestsLoading && !state.loading, onClick = { viewModel.requestPage(page.pageIndex - 1) }) { Text(stringResource(R.string.token_insights_previous)) }
-                                            TextButton(enabled = (page.pageIndex + 1L) * page.pageSize < page.totalRows && !state.requestsLoading && !state.loading, onClick = { viewModel.requestPage(page.pageIndex + 1) }) { Text(stringResource(R.string.token_insights_next)) }
-                                        }
-                                    }
+                            state.overview != null -> {
+                                if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = p.accent, trackColor = p.panelAlt)
+                                when (state.tab) {
+                                    TokenStatsTab.OVERVIEW -> TokenStatsOverviewContent(state, model.zone,
+                                        onGranularity = model::setGranularity,
+                                        onRequests = { name, function, executor, range -> model.showRequests(model = name, functionType = function, executionModel = executor, range = range) },
+                                        onModels = { model.selectTab(TokenStatsTab.MODELS) }, onExport = exportAction, onSettings = { settings = true },
+                                        onRequestSort = { sort -> model.selectTab(TokenStatsTab.REQUESTS); model.setRequestSort(sort) })
+                                    TokenStatsTab.MODELS -> TokenStatsModelsContent(state) { model.showRequests(model = it) }
+                                    TokenStatsTab.CONFIGURATIONS -> TokenStatsConfigurationsContent(state,
+                                        onRequests = { name, config -> model.showRequests(model = name, configId = config) },
+                                        onEdit = { setting, draft, name -> price = StatsPriceEditor(setting, draft, name) }, onReset = { resetPrice = it })
+                                    TokenStatsTab.REQUESTS -> TokenStatsRequestsContent(state, model.zone, onFilter = model::setFilter,
+                                        onSort = model::setRequestSort, onPage = model::requestPage, onDetail = model::showDetail, onExport = exportAction)
                                 }
                             }
                         }
@@ -179,116 +120,80 @@ fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
                 }
             }
         }
-        if (showSettings) TokenStatsInsightsSettingsDialog(state, onSave = { currency, rate, unit, increaseRed, budget ->
-            viewModel.saveSettings(currency, rate, unit, increaseRed, budget); showSettings = false
-        }, onDismiss = { showSettings = false })
-        if (showFilters) TokenStatsInsightsFilterDialog(state, onApply = { viewModel.setFilter(it); showFilters = false }, onDismiss = { showFilters = false })
-        if (showReset) TokenStatsInsightsResetDialog(onConfirm = { showReset = false; viewModel.clearUsageRecords() }, onDismiss = { showReset = false })
-        if (showRange) TokenStatsDateRangeDialog(zone = viewModel.zone, maxRangeDays = TokenUsageStatisticsViewModel.MAX_CUSTOM_RANGE_DAYS,
-            initialRange = state.currentRange, onConfirm = viewModel::setCustomRange, onDismiss = { showRange = false })
-        if (showCompareRange) TokenStatsDateRangeDialog(zone = viewModel.zone, maxRangeDays = TokenUsageStatisticsViewModel.MAX_CUSTOM_RANGE_DAYS,
-            initialRange = state.comparisonRange, onConfirm = { start, end -> viewModel.setComparison(TokenStatsTimeRange(start, end)); true }, onDismiss = { showCompareRange = false })
-        priceEditor?.let { target -> PriceSettingsDialog(target.existing, target.draft, target.name, onSave = viewModel::savePrice, onDismiss = { priceEditor = null }) }
-        priceReset?.let { setting -> AlertDialog(onDismissRequest = { priceReset = null }, title = { Text(stringResource(R.string.token_insights_reset_price)) },
-            text = { Text(stringResource(R.string.token_insights_reset_price_warning)) }, confirmButton = { TextButton(onClick = { viewModel.deletePrice(setting); priceReset = null }) { Text(stringResource(R.string.token_insights_reset_price)) } },
-            dismissButton = { TextButton(onClick = { priceReset = null }) { Text(stringResource(R.string.token_insights_cancel)) } }) }
-        if (state.detailLoading) AlertDialog(onDismissRequest = viewModel::dismissDetail, text = { CircularProgressIndicator() }, confirmButton = { TextButton(onClick = viewModel::dismissDetail) { Text(stringResource(R.string.token_insights_close)) } })
-        state.detail?.let { row -> InsightsRequestDetail(row, state, viewModel.zone, viewModel::dismissDetail) }
-    }
-}
-
-@Composable
-private fun InsightsPeriodControls(state: TokenStatsUiState, zone: ZoneId, onQuick: (TokenStatsQuickRange) -> Unit, onRange: () -> Unit, onPrevious: () -> Unit, onCompare: () -> Unit, onDisableCompare: () -> Unit, onGranularity: (TokenStatsInsightsGranularity) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        val labels = listOf(R.string.token_insights_today, R.string.token_insights_yesterday, R.string.token_insights_week, R.string.token_insights_month, R.string.token_insights_this_month, R.string.token_insights_all_time)
-        InsightsChips(labels.mapIndexed { index, id -> stringResource(id) to (TokenStatsQuickRange.entries[index] == state.quickRange) }) { onQuick(TokenStatsQuickRange.entries[it]) }
-        TextButton(onClick = onRange) { Text(state.currentRange?.let { insightsDate(it.startMs, zone, "yyyy/MM/dd") + " — " + insightsDate(it.endMs - 1, zone, "yyyy/MM/dd") } ?: stringResource(R.string.token_insights_all_time)) }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(enabled = state.currentRange != null, onClick = onPrevious) { Text(stringResource(R.string.token_insights_previous_period)) }
-            TextButton(enabled = state.currentRange != null, onClick = onCompare) { Text(stringResource(R.string.token_insights_custom_compare)) }
-            if (state.comparisonRange != null) TextButton(onClick = onDisableCompare) { Text(stringResource(R.string.token_insights_comparison_off)) }
+        if (settings) TokenStatsSettingsDialog(state, onSave = { currency, rate, unit, red, budget ->
+            if (model.saveSettings(currency, rate, unit, red, budget)) settings = false
+        }, onDismiss = { settings = false })
+        if (filters) TokenStatsFilterDialog(state, onApply = { model.setFilter(it); filters = false }, onDismiss = { filters = false })
+        if (reset) TokenStatsResetDialog(onConfirm = { reset = false; model.clearUsageRecords() }, onDismiss = { reset = false })
+        if (dates) TokenStatsDateDialog(state.currentRange, model.zone, onConfirm = model::setCustomRange,
+            onAll = { model.selectQuickRange(TokenStatsQuickRange.ALL); dates = false }, onDismiss = { dates = false })
+        if (compare) TokenStatsComparisonDialog(state.currentRange, state.comparisonRange, model.zone,
+            onConfirm = { model.setComparison(it); compare = false }, onDismiss = { compare = false })
+        price?.let { editor -> PriceSettingsDialog(editor.existing, editor.draft, editor.name, model::savePrice, onDismiss = { price = null }) }
+        resetPrice?.let { setting -> StatsSheet("PRICING", stringResource(R.string.token_insights_reset_price), onDismiss = { resetPrice = null },
+            footer = { StatsPrimaryAction(stringResource(R.string.token_insights_reset_price), { model.deletePrice(setting); resetPrice = null }) }) {
+            StatsText(stringResource(R.string.token_insights_reset_price_warning), color = p.muted)
+        } }
+        if (state.detailLoading) StatsSheet("REQUEST DETAIL", stringResource(R.string.token_insights_details), onDismiss = model::dismissDetail) {
+            CircularProgressIndicator(color = p.accent, modifier = Modifier.size(28.dp))
         }
-        val granularities = TokenStatsInsightsGranularity.entries
-        val granularityLabels = listOf(R.string.token_insights_auto, R.string.token_insights_hourly, R.string.token_insights_daily, R.string.token_insights_weekly, R.string.token_insights_monthly)
-        InsightsChips(granularityLabels.mapIndexed { i, id -> stringResource(id) to (state.granularity == granularities[i]) }) { onGranularity(granularities[it]) }
-        state.comparisonRange?.let { Text(stringResource(R.string.token_insights_compare) + " · " + insightsDate(it.startMs, zone, "yyyy/MM/dd") + " — " + insightsDate(it.endMs - 1, zone, "yyyy/MM/dd"), style = MaterialTheme.typography.bodySmall) }
+        state.detail?.let { row -> TokenStatsRequestDialog(row, state, model.zone, onEdit = { setting, draft, name ->
+            model.dismissDetail(); price = StatsPriceEditor(setting, draft, name)
+        }, onDismiss = model::dismissDetail) }
     }
 }
 
 @Composable
-private fun InsightsActiveFilters(state: TokenStatsUiState) {
-    val names = buildList {
-        state.filter.models?.let { addAll(it) }
-        state.filter.configIds?.forEach { add(insightsConfigurationName(it, state)) }
-        state.filter.functionTypes?.forEach { add(insightsFunction(it)) }
-        state.filter.executionModels?.forEach { add(it) }
-        state.filter.statuses?.forEach { add(insightsStatus(it)) }
-        state.filter.peakPeriods?.forEach { add(insightsPeakName(it)) }
-        if (state.filter.search.isNotBlank()) add(state.filter.search)
-    }
-    if (names.isNotEmpty()) Text(names.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = LocalTokenStatsColors.current.pageSupportingContent)
-    if (listOf(state.filter.models, state.filter.configIds, state.filter.functionTypes, state.filter.statuses, state.filter.peakPeriods, state.filter.executionModels).any { it != null && it.isEmpty() }) Text(stringResource(R.string.token_insights_select_none), style = MaterialTheme.typography.bodySmall)
-}
-
-@Composable
-private fun InsightsEmpty() { InsightsCard { Text(stringResource(R.string.token_insights_empty), color = LocalTokenStatsColors.current.cardSupportingContent) } }
-
-@Composable
-private fun InsightsRequestDetail(row: TokenStatsRequestRow, state: TokenStatsUiState, zone: ZoneId, onDismiss: () -> Unit) {
-    val unknown = stringResource(R.string.token_insights_not_recorded)
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(stringResource(R.string.token_insights_details)) },
-        text = {
-            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(row.model, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text(row.id, style = MaterialTheme.typography.labelSmall)
-                InsightsKeyValue(stringResource(R.string.token_insights_started_at), row.occurredAtMs?.let { insightsDate(it, zone, "yyyy/MM/dd HH:mm:ss") } ?: unknown)
-                InsightsKeyValue(stringResource(R.string.token_insights_configurations), insightsConfigurationName(row.configId, state))
-                InsightsKeyValue(stringResource(R.string.token_insights_status), insightsStatus(row.status))
-                InsightsKeyValue(stringResource(R.string.token_insights_source), insightsFunction(row.functionType))
-                if (row.executionModel != null) InsightsKeyValue(stringResource(R.string.token_insights_execution_model), row.executionModel)
-                InsightsKeyValue(stringResource(R.string.token_insights_first_token), row.firstTokenLatencyMs?.let { "$it ms" } ?: unknown)
-                InsightsKeyValue(stringResource(R.string.token_insights_duration), row.durationMs?.let { "$it ms" } ?: unknown)
-                InsightsKeyValue(stringResource(R.string.token_insights_observed_attempts), row.observedAttemptNumbers ?: unknown)
-                InsightsKeyValue(stringResource(R.string.token_insights_successful_attempt), row.successfulAttempt?.toString() ?: unknown)
-                HorizontalDivider()
-                listOf(R.string.token_insights_uncached to row.uncachedInputTokens, R.string.token_insights_cached to row.cachedInputTokens, R.string.token_insights_cache_write to row.cacheWriteTokens, R.string.token_insights_output to row.outputTokens, R.string.token_insights_tokens to row.totalTokens).forEach { (label, count) ->
-                    InsightsKeyValue(stringResource(label), count?.let { formatTokenCount(it, state.tokenDisplayUnit) } ?: unknown)
-                }
-                InsightsKeyValue(stringResource(R.string.token_insights_cost), insightsCost(row.cost), accent = true)
-                if (!row.hasUsageFact) Text(stringResource(R.string.token_insights_usage_unconfirmed), style = MaterialTheme.typography.bodySmall)
-                InsightsKeyValue(stringResource(R.string.token_insights_peak_usage), insightsPeakName(row.peakPeriod))
-                InsightsKeyValue(stringResource(R.string.token_insights_long_context), row.longContext?.takeIf { row.hasUsageFact }?.let { stringResource(if (it) R.string.token_insights_applied else R.string.token_insights_not_applied) } ?: unknown)
-                if (row.configId.isBlank() || row.configId in state.configurationNames) {
-                val draft = priceDraftForIdentity(row.configId, row.provider, row.model, state.priceSettings)
-                HorizontalDivider()
-                Text(stringResource(R.string.token_insights_pricing_now), style = MaterialTheme.typography.labelMedium)
-                InsightsPricingRules(draft)
-                if (row.hasUsageFact && row.configId != TokenUsageRepository.DETACHED_CONFIG_ID) {
-                    val record = TokenUsageRecordEntity(occurredAtMs = row.occurredAtMs, configId = row.configId, provider = row.provider, model = row.model, requestCount = row.requestCount, uncachedInputTokens = row.uncachedInputTokens, cachedInputTokens = row.cachedInputTokens, cacheWriteTokens = row.cacheWriteTokens, totalInputTokens = row.totalInputTokens, outputTokens = row.outputTokens)
-                    val pricing = TokenPriceResolver.resolve("${row.provider}:${row.model}", draft.toInsightsModelSettings())
-                    val composition = insightsCostComposition(record, pricing, state.params)
-                    val amounts = listOf(R.string.token_insights_uncached to composition.uncachedInput, R.string.token_insights_cached to composition.cachedInput, R.string.token_insights_cache_write to composition.cacheWrite, R.string.token_insights_output to composition.output, R.string.token_insights_per_request to composition.perRequest, R.string.token_insights_unallocated_input to composition.unallocatedInput)
-                    amounts.forEach { (label, amount) -> InsightsKeyValue(stringResource(label), insightsMoney(amount, state.targetCurrency)) }
-                }
-                }
-                Text(stringResource(R.string.token_insights_attempt_note), style = MaterialTheme.typography.bodySmall)
-            }
-        }, confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.token_insights_close)) } })
-}
-
-private data class InsightsPriceEditor(val existing: TokenStatsPriceSetting?, val draft: TokenStatsPriceDraft, val name: String)
-private fun TokenStatsPriceDraft.toInsightsModelSettings() = ModelPriceSettings(billingMode, currency, inputPricePerMillion, cachedInputPricePerMillion, cacheWritePricePerMillion, outputPricePerMillion, pricePerRequest, peakPricingEnabled, weekendOffPeakPricingEnabled, holidayOffPeakPricingEnabled, peakSchedule, peakInputMultiplier, peakCachedInputMultiplier, peakCacheWriteMultiplier, peakOutputMultiplier, longContextPricingEnabled, longContextThreshold, longContextInputMultiplier, longContextCachedInputMultiplier, longContextCacheWriteMultiplier, longContextOutputMultiplier)
-
-@Composable
-private fun InsightsListControls(query: String, label: Int, metric: TokenStatsInsightMetric, onQuery: (String) -> Unit, onMetric: (TokenStatsInsightMetric) -> Unit) {
+private fun StatsBrand(compact: Boolean, wide: Boolean) {
+    val p = LocalTokenStatsPalette.current
     Column {
-        OutlinedTextField(value = query, onValueChange = onQuery, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text(stringResource(label)) })
-        val labels = listOf(R.string.token_insights_cost, R.string.token_insights_tokens, R.string.token_insights_request_count)
-        InsightsChips(labels.mapIndexed { index, id -> stringResource(id) to (metric == TokenStatsInsightMetric.entries[index]) }) { onMetric(TokenStatsInsightMetric.entries[it]) }
+        Row(Modifier.fillMaxWidth().height(if (wide) 80.dp else 65.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.size(28.dp, 30.dp).border(1.dp, p.line, RoundedCornerShape(9.dp)), contentAlignment = Alignment.Center) {
+                StatsText("o", size = 27, weight = FontWeight.SemiBold, color = p.accent)
+                Box(Modifier.align(Alignment.BottomEnd).padding(3.dp).size(5.dp).clip(RoundedCornerShape(3.dp)).background(p.teal))
+            }
+            StatsText("operit", size = 21, weight = FontWeight.SemiBold)
+            if (!compact) {
+                StatsText("/", size = 21, color = p.line)
+                StatsText("I N S I G H T S", size = 8, color = p.muted)
+            }
+        }
+        StatsDivider()
     }
 }
-private fun insightsListValue(totals: TokenStatsInsightsTotals, metric: TokenStatsInsightMetric): Double = when (metric) {
-    TokenStatsInsightMetric.COST -> totals.cost.knownAmount
-    TokenStatsInsightMetric.TOKENS -> totals.totalTokens.knownSum.toDouble()
-    TokenStatsInsightMetric.REQUESTS -> totals.requests.toDouble()
+
+@Composable
+internal fun StatsIconAction(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    val p = LocalTokenStatsPalette.current
+    Row(modifier.clip(RoundedCornerShape(8.dp)).clickable(enabled = enabled, onClick = onClick).heightIn(min = 34.dp).padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Icon(icon, contentDescription = null, tint = p.muted.copy(alpha = if (enabled) 1f else .33f), modifier = Modifier.size(14.dp))
+        StatsText(label, size = 11, color = p.muted.copy(alpha = if (enabled) 1f else .33f), maxLines = 1)
+    }
 }
+
+@Composable
+private fun StatsTabs(tab: TokenStatsTab, onTab: (TokenStatsTab) -> Unit, configurationCount: Int, compact: Boolean) {
+    val p = LocalTokenStatsPalette.current
+    val labels = listOf(R.string.token_insights_overview, R.string.token_insights_models, R.string.token_insights_configurations, R.string.token_insights_requests)
+    val icons = listOf(Icons.Default.BarChart, Icons.Default.Widgets, Icons.Default.Tune, Icons.Default.FormatListBulleted)
+    Column(Modifier.fillMaxWidth().background(p.background)) {
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+            TokenStatsTab.entries.forEachIndexed { index, value ->
+                Column(Modifier.weight(1f).clickable { onTab(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 7.dp).heightIn(min = 49.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally)) {
+                        Icon(icons[index], contentDescription = null, tint = if (tab == value) p.accent else p.muted, modifier = Modifier.size(if (compact) 14.dp else 16.dp))
+                        StatsText(stringResource(labels[index]), Modifier.weight(1f, fill = false), size = if (compact) 11 else 12, color = if (tab == value) p.accent else p.muted, weight = if (tab == value) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1)
+                        if (!compact && value == TokenStatsTab.CONFIGURATIONS && configurationCount > 0) Box(Modifier.clip(RoundedCornerShape(4.dp)).background(p.panelAlt).padding(horizontal = 3.dp, vertical = 1.dp)) {
+                            StatsText(configurationCount.toString(), size = 8, color = p.muted)
+                        }
+                    }
+                    Box(Modifier.fillMaxWidth().padding(horizontal = 10.dp).height(2.dp).background(if (tab == value) p.accent else Color.Transparent))
+                }
+            }
+        }
+        StatsDivider()
+    }
+}
+
+private data class StatsPriceEditor(val existing: TokenStatsPriceSetting?, val draft: TokenStatsPriceDraft, val name: String)
