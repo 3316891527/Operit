@@ -79,11 +79,14 @@ internal class SteeredTranscript {
             val sections = MessageSectionCodec.parse(suffix)
             val sourceCalls = message.resolvedSections().filterIsInstance<MessageSection.ToolCall>()
             var callIndex = sourceCalls.size - sections.count { it is MessageSection.ToolCall }
+            var projectedCallIndex = 0
             val projectedSections = sections.map { section ->
                 if (section is MessageSection.ToolCall) {
                     val source = sourceCalls[callIndex++]
                     check(source.name == section.name && source.raw == section.raw)
-                    section.copy(execution = source.execution)
+                    // 后缀独立保存和显示，工具编号必须从当前消息的零开始，避免耗时丢失或串给别的调用。
+                    val localIndex = projectedCallIndex++
+                    section.copy(execution = source.execution?.copy(callIndex = localIndex))
                 } else section
             }
             result += message.copy(

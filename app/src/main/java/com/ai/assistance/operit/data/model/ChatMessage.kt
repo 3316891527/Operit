@@ -58,7 +58,10 @@ data class ChatMessage(
                 val index = callIndex++
                 val saved = savedCalls.getOrNull(index)?.takeIf { it.name == section.name && it.raw == section.raw }
                 val execution = records?.get(index) ?: section.execution ?: saved?.execution
-                if (execution == section.execution) section else section.copy(execution = execution)
+                // 已保存的分段可能仍携带整轮编号，按该工具所属片段的位置规范编号，保留原始计时值。
+                val localExecution = if (execution == null || execution.callIndex == index) execution
+                    else execution.copy(callIndex = index)
+                if (localExecution == section.execution) section else section.copy(execution = localExecution)
             }
         }
     }
