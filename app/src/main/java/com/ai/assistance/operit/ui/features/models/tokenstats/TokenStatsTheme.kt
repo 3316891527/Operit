@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.models.tokenstats
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ai.assistance.operit.data.stats.TokenStatsInsightsConfiguration
+import com.ai.assistance.operit.ui.common.icons.rememberProviderLogoPainter
 
 /** 直接对应已评审 HTML 设计稿的颜色变量，避免应用主色和壁纸改变稿件外观。 */
 internal data class TokenStatsPalette(
@@ -145,11 +148,20 @@ internal fun StatsSegment(options: List<String>, selected: Int, onSelect: (Int) 
     }
 }
 
+/** 模型聚合可能包含多个渠道，图标取请求数最多的真实配置；同量时按稳定字段排序。 */
+internal fun statsModelProvider(model: String?, configurations: List<TokenStatsInsightsConfiguration>): String? =
+    configurations.asSequence()
+        .filter { it.model == model && it.provider.isNotBlank() }
+        .sortedWith(compareByDescending<TokenStatsInsightsConfiguration> { it.totals.requests }
+            .thenBy { it.provider }.thenBy { it.configId })
+        .firstOrNull()?.provider
+
 @Composable
-internal fun StatsAvatar(label: String, modifier: Modifier = Modifier) {
+internal fun StatsAvatar(provider: String?, modifier: Modifier = Modifier) {
     val p = LocalTokenStatsPalette.current
+    val logo = rememberProviderLogoPainter(provider, 24.dp)
     Box(modifier.size(31.dp).clip(RoundedCornerShape(9.dp)).background(p.accentBackground), contentAlignment = Alignment.Center) {
-        StatsText(label.take(1).uppercase(), size = 12, color = p.accent, weight = FontWeight.SemiBold)
+        if (logo != null) Image(painter = logo, contentDescription = null, modifier = Modifier.size(24.dp))
     }
 }
 

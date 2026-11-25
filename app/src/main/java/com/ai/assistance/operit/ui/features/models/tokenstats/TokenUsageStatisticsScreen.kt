@@ -40,7 +40,6 @@ fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
     var filters by rememberSaveable { mutableStateOf(false) }
     var reset by rememberSaveable { mutableStateOf(false) }
     var dates by rememberSaveable { mutableStateOf(false) }
-    var compare by rememberSaveable { mutableStateOf(false) }
     var price by remember { mutableStateOf<StatsPriceEditor?>(null) }
     var resetPrice by remember { mutableStateOf<TokenStatsPriceSetting?>(null) }
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> if (uri != null) model.export(uri) }
@@ -83,7 +82,7 @@ fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
                     }
                 }
                 item("period") {
-                    TokenStatsPeriodControls(state, model.zone, onDate = { dates = true }, onCompare = { compare = true }, onFilter = { filters = true },
+                    TokenStatsPeriodControls(state, model.zone, onDate = { dates = true }, onComparison = model::setComparison, onFilter = { filters = true },
                         onQuick = model::selectQuickRange, onRange = model::setCustomRange, onResetFilters = model::resetFilters)
                     Spacer(Modifier.height(13.dp))
                 }
@@ -127,8 +126,6 @@ fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
         if (reset) TokenStatsResetDialog(onConfirm = { reset = false; model.clearUsageRecords() }, onDismiss = { reset = false })
         if (dates) TokenStatsDateDialog(state.currentRange, model.zone, onConfirm = model::setCustomRange,
             onAll = { model.selectQuickRange(TokenStatsQuickRange.ALL); dates = false }, onDismiss = { dates = false })
-        if (compare) TokenStatsComparisonDialog(state.currentRange, state.comparisonRange, model.zone,
-            onConfirm = { model.setComparison(it); compare = false }, onDismiss = { compare = false })
         price?.let { editor -> PriceSettingsDialog(editor.existing, editor.draft, editor.name, model::savePrice, onDismiss = { price = null }) }
         resetPrice?.let { setting -> StatsSheet("PRICING", stringResource(R.string.token_insights_reset_price), onDismiss = { resetPrice = null },
             footer = { StatsPrimaryAction(stringResource(R.string.token_insights_reset_price), { model.deletePrice(setting); resetPrice = null }) }) {

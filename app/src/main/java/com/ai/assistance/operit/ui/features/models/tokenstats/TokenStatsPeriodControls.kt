@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,12 +36,13 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 internal fun TokenStatsPeriodControls(
-    state: TokenStatsUiState, zone: ZoneId, onDate: () -> Unit, onCompare: () -> Unit, onFilter: () -> Unit,
+    state: TokenStatsUiState, zone: ZoneId, onDate: () -> Unit, onComparison: (TokenStatsTimeRange?) -> Unit, onFilter: () -> Unit,
     onQuick: (TokenStatsQuickRange) -> Unit, onRange: (Long, Long) -> Boolean, onResetFilters: () -> Unit,
 ) {
     val p = LocalTokenStatsPalette.current
     val compact = LocalConfiguration.current.screenWidthDp < 370
     val range = state.currentRange
+    var comparisonOpen by rememberSaveable { mutableStateOf(false) }
     val endToday = LocalDate.now(zone).plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
     val nextAllowed = range != null && range.endMs <= endToday && range.durationMs <= endToday - range.endMs
     val activeFilters = buildList {
@@ -82,10 +84,17 @@ internal fun TokenStatsPeriodControls(
                         }
                     }
                 }
-                Row(Modifier.size(33.dp, 35.dp).clip(RoundedCornerShape(9.dp)).border(1.dp, p.line, RoundedCornerShape(9.dp))
-                    .clickable(enabled = range != null, onClick = onCompare), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                    Icon(Icons.Default.SwapHoriz, stringResource(R.string.token_insights_compare), modifier = Modifier.size(14.dp), tint = p.muted)
-                    if (state.comparisonRange != null) Box(Modifier.size(4.dp).clip(RoundedCornerShape(3.dp)).background(p.teal))
+                // 弹层状态由入口直接持有，全部时间也给出可操作的日期提示，避免点击无反馈。
+                IconButton(
+                    onClick = { comparisonOpen = true },
+                    modifier = Modifier.size(35.dp).clip(RoundedCornerShape(9.dp))
+                        .border(1.dp, p.line, RoundedCornerShape(9.dp)),
+                ) {
+                    Box(Modifier.size(17.dp), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.SwapHoriz, stringResource(R.string.token_insights_compare), modifier = Modifier.size(14.dp),
+                            tint = if (state.comparisonRange != null) p.accent else p.muted)
+                        if (state.comparisonRange != null) Box(Modifier.align(Alignment.TopEnd).size(4.dp).clip(RoundedCornerShape(3.dp)).background(p.teal))
+                    }
                 }
                 Row(Modifier.height(35.dp).clip(RoundedCornerShape(9.dp)).border(1.dp, p.line, RoundedCornerShape(9.dp)).clickable(onClick = onFilter).padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -103,6 +112,14 @@ internal fun TokenStatsPeriodControls(
             }
         }
     }
+    if (comparisonOpen) TokenStatsComparisonDialog(
+        current = range,
+        initial = state.comparisonRange,
+        zone = zone,
+        onConfirm = { onComparison(it); comparisonOpen = false },
+        onSelectRange = { comparisonOpen = false; onDate() },
+        onDismiss = { comparisonOpen = false },
+    )
 }
 
 @Composable
@@ -177,15 +194,17 @@ internal fun TokenStatsDateDialog(initial: TokenStatsTimeRange?, zone: ZoneId, o
 }
 
 @Composable
-internal fun TokenStatsComparisonDialog(current: TokenStatsTimeRange?, initial: TokenStatsTimeRange?, zone: ZoneId, onConfirm: (TokenStatsTimeRange?) -> Unit, onDismiss: () -> Unit) {
+internal fun TokenStatsComparisonDialog(current: TokenStatsTimeRange?, initial: TokenStatsTimeRange?, zone: ZoneId, onConfirm: (TokenStatsTimeRange?) -> Unit, onSelectRange: () -> Unit, onDismiss: () -> Unit) {
     val p = LocalTokenStatsPalette.current
     var mode by remember { mutableStateOf(if (initial == null) 0 else if (current != null && initial.endMs == current.startMs) 1 else 2) }
-    var start by remember { mutableStateOf(Instant.ofEpochMilli(initial?.startMs ?: current?.startMs ?: System.currentTimeMillis()).atZone(zone).toLocalDate()) }
+    var start by remember { mutableStateOf(Instant.ofEpochMilli(initial?.startMs ?: current?.let { it.startMs - it.durationMs } ?: System.currentTimeMillis()).atZone(zone).toLocalDate()) }
     var picking by remember { mutableStateOf(false) }
     var invalid by remember { mutableStateOf(false) }
     val previous = current?.let { TokenStatsTimeRange(it.startMs - it.durationMs, it.startMs) }
     StatsSheet("COMPARISON", stringResource(R.string.token_stats_design_compare_title), onDismiss, footer = {
-        StatsPrimaryAction(stringResource(R.string.token_stats_design_compare_apply), {
+        if (current == null) {
+            StatsPrimaryAction(stringResource(R.string.token_stats_design_compare_select_dates), onSelectRange)
+        } else StatsPrimaryAction(stringResource(R.string.token_stats_design_compare_apply), {
             val range = when {
                 mode == 0 -> null
                 mode == 1 -> previous
@@ -196,20 +215,25 @@ internal fun TokenStatsComparisonDialog(current: TokenStatsTimeRange?, initial: 
             else onConfirm(range)
         })
     }) {
-        val labels = listOf(R.string.token_insights_comparison_off, R.string.token_insights_previous_period, R.string.token_stats_design_compare_custom_start)
-        labels.forEachIndexed { index, label ->
-            Row(Modifier.fillMaxWidth().clickable { mode = index; invalid = false }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                RadioButton(selected = mode == index, onClick = { mode = index; invalid = false }, colors = RadioButtonDefaults.colors(selectedColor = p.accent, unselectedColor = p.line))
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    StatsText(stringResource(label), weight = FontWeight.Medium)
-                    if (index == 1 && previous != null) StatsText(statsRangeLabel(previous, zone), size = 10, color = p.muted)
-                    if (index == 2) StatsText(stringResource(R.string.token_stats_design_compare_note), size = 10, color = p.muted)
+        if (current == null) {
+            StatsText(stringResource(R.string.token_stats_design_compare_needs_range), size = 12, color = p.muted)
+        } else {
+            val labels = listOf(R.string.token_insights_comparison_off, R.string.token_insights_previous_period, R.string.token_stats_design_compare_custom_start)
+            labels.forEachIndexed { index, label ->
+                Row(Modifier.fillMaxWidth().clickable { mode = index; invalid = false }.padding(vertical = 13.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    RadioButton(selected = mode == index, onClick = { mode = index; invalid = false }, colors = RadioButtonDefaults.colors(selectedColor = p.accent, unselectedColor = p.line))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        StatsText(stringResource(label), weight = FontWeight.Medium)
+                        if (index == 0) StatsText(stringResource(R.string.token_stats_design_compare_off_note), size = 10, color = p.muted)
+                        if (index == 1 && previous != null) StatsText(statsRangeLabel(previous, zone), size = 10, color = p.muted)
+                        if (index == 2) StatsText(stringResource(R.string.token_stats_design_compare_note), size = 10, color = p.muted)
+                    }
                 }
+                StatsDivider()
             }
-            StatsDivider()
+            StatsDateField(stringResource(R.string.token_stats_design_compare_start_date), start, { mode = 2; picking = true }, Modifier.padding(top = 19.dp))
+            if (invalid) StatsText(stringResource(R.string.token_insights_comparison_invalid), color = p.red, size = 11)
         }
-        StatsDateField(stringResource(R.string.token_stats_design_start_date), start, { mode = 2; picking = true })
-        if (invalid) StatsText(stringResource(R.string.token_insights_comparison_invalid), color = p.red, size = 11)
     }
     if (picking) StatsDatePicker(start, onSelect = { start = it; invalid = false; picking = false }, onDismiss = { picking = false })
 }
@@ -221,7 +245,10 @@ private fun StatsDateField(label: String, value: LocalDate, onClick: () -> Unit,
         StatsText(label, color = p.muted, size = 11)
         Box(Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(10.dp)).background(p.background)
             .border(1.dp, p.line, RoundedCornerShape(10.dp)).clickable(onClick = onClick).padding(horizontal = 10.dp), contentAlignment = Alignment.CenterStart) {
-            StatsText(value.toString(), size = 14)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                StatsText(value.format(DateTimeFormatter.ofPattern("yyyy/MM/dd")), Modifier.weight(1f), size = 14, maxLines = 1)
+                Icon(Icons.Default.ExpandMore, contentDescription = null, modifier = Modifier.size(14.dp), tint = p.muted)
+            }
         }
     }
 }

@@ -136,12 +136,24 @@ class TokenUsageStatisticsViewModel(
                 coroutineScope {
                     val overview = async { TokenStatsInsightsService.overview(appContext, snapshot.filter, snapshot.params, zone, snapshot.granularity, snapshot.comparisonRange) }
                     val page = async { TokenStatsInsightsService.requestPage(appContext, snapshot.filter, snapshot.params, snapshot.requestSort, 0, 30) }
+                    val catalogFilter = TokenStatsInsightsFilter(range = snapshot.currentRange)
                     val catalog = async {
-                        if (rebuildCatalog || snapshot.catalog == null) TokenStatsInsightsService.overview(appContext, TokenStatsInsightsFilter(range = snapshot.currentRange), snapshot.params, zone, snapshot.granularity)
-                        else snapshot.catalog
+                        if (rebuildCatalog || snapshot.catalog == null) {
+                            // 无额外筛选时目录与总览完全相同，复用本次结果但不携带对比数据。
+                            if (snapshot.filter == catalogFilter) overview.await().copy(comparison = null)
+                            else TokenStatsInsightsService.overview(appContext, catalogFilter, snapshot.params, zone, snapshot.granularity)
+                        } else snapshot.catalog
                     }
                     val monthly = async {
-                        if (snapshot.monthlyBudgetCny != null) TokenStatsInsightsService.overview(appContext, TokenStatsInsightsFilter(range = monthRange()), snapshot.params, zone).totals.cost else null
+                        if (snapshot.monthlyBudgetCny == null) null else {
+                            val monthlyFilter = TokenStatsInsightsFilter(range = monthRange())
+                            when {
+                                snapshot.filter == monthlyFilter -> overview.await().totals.cost
+                                catalogFilter == monthlyFilter && (rebuildCatalog || snapshot.catalog == null) -> requireNotNull(catalog.await()).totals.cost
+                                // 预算只需要费用，不计算趋势、分组和费用构成。
+                                else -> TokenStatsInsightsService.costSummary(appContext, monthlyFilter, snapshot.params)
+                            }
+                        }
                     }
                     val prices = async(Dispatchers.IO) { manager.allPriceSettings() }
                     val names = async(Dispatchers.IO) { configurations.getAllConfigSummaries().associate { it.id to it.name } }

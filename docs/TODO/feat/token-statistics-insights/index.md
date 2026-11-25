@@ -48,3 +48,4 @@ status: visual-restoration-complete-awaiting-ci-and-device-review
 - [验证与交付记录](03-validation-and-delivery.md)
 
 - [设计稿界面还原](04-visual-restoration.md)
+- [提供商图标、对比入口与查询收尾](05-final-polish-and-query.md)

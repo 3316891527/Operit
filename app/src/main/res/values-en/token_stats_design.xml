@@ -100,4 +100,8 @@
     <string name="token_stats_design_restore_price_short">Reset price</string>
     <string name="token_stats_design_request_details_short">Requests</string>
     <string name="token_stats_design_input">Input</string>
+    <string name="token_stats_design_compare_off_note">Show only the current range</string>
+    <string name="token_stats_design_compare_start_date">Comparison start date</string>
+    <string name="token_stats_design_compare_needs_range">Choose a date range first, then compare two periods of the same duration.</string>
+    <string name="token_stats_design_compare_select_dates">Choose a date range</string>
 </resources>

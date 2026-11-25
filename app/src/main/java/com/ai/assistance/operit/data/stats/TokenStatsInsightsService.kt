@@ -38,6 +38,49 @@ object TokenStatsInsightsService {
         current.copy(comparison = comparison)
     }
 
+    /** 月预算只累计费用，仍逐条使用现有计价器及相同的未知贡献口径。 */
+    suspend fun costSummary(
+        context: Context,
+        filter: TokenStatsInsightsFilter,
+        params: TokenStatsQueryParams,
+    ): TokenStatsCostSummary = access(context) { db, prices, check ->
+        costSummary(db, prices, filter, params, check)
+    }
+    internal fun costSummary(
+        db: SupportSQLiteDatabase,
+        prices: TokenPriceSettingsSnapshot,
+        filter: TokenStatsInsightsFilter,
+        params: TokenStatsQueryParams,
+        check: () -> Unit,
+    ): TokenStatsCostSummary {
+        val query = filtered(filter, params)
+        val pricingLookup = PricingLookup(prices)
+        var amount = 0.0
+        var unknown = 0L
+        var requests = 0L
+        val native = linkedMapOf<com.ai.assistance.operit.data.collects.PricingCurrency, Double>()
+        db.query(SimpleSQLiteQuery(query.sql, query.args.toTypedArray())).use { cursor ->
+            while (cursor.moveToNext()) {
+                check()
+                val usage = record(cursor)
+                val pricing = pricingLookup.resolve(usage)
+                if (filter.peakPeriods != null && insightsPeak(usage, pricing) !in filter.peakPeriods) continue
+                val cost = if (cursor.number("hasUsageFact") == 1L) insightsCost(usage, pricing, params)
+                    else TokenStatsCostSummary(params.targetCurrency, 0.0, usage.requestCount, usage.requestCount, params.manualRate, emptyMap())
+                amount += cost.knownAmount
+                unknown = TokenCostCalculator.saturatedAdd(unknown, cost.unknownContributionCount)
+                requests = TokenCostCalculator.saturatedAdd(requests, usage.requestCount.coerceAtLeast(0L))
+                cost.originalCurrencyAmounts.forEach { (currency, value) -> native[currency] = (native[currency] ?: 0.0) + value }
+            }
+        }
+        return TokenStatsCostSummary(params.targetCurrency, amount, unknown, requests, params.manualRate, native.toMap())
+    }
+    /** 只缓存当前查询的配置解析结果，不保存请求或历史用量。 */
+    private class PricingLookup(private val prices: TokenPriceSettingsSnapshot) {
+        private val resolved = mutableMapOf<Triple<String, String, String>, ResolvedTokenPricing>()
+        fun resolve(usage: TokenUsageRecordEntity): ResolvedTokenPricing =
+            resolved.getOrPut(Triple(usage.configId, usage.provider, usage.model)) { insightsPricing(usage, prices) }
+    }
     suspend fun requestPage(
         context: Context,
         filter: TokenStatsInsightsFilter,
@@ -173,13 +216,13 @@ object TokenStatsInsightsService {
         } finally { db.execSQL("DROP TABLE token_insights_sort") }
     }
 
-    private fun aggregate(db: SupportSQLiteDatabase, prices: TokenPriceSettingsSnapshot, filter: TokenStatsInsightsFilter, params: TokenStatsQueryParams, zone: ZoneId, requested: TokenStatsInsightsGranularity, check: () -> Unit, alignedBounds: List<Pair<Long, Long>>? = null): TokenStatsInsightsOverview {
+    internal fun aggregate(db: SupportSQLiteDatabase, prices: TokenPriceSettingsSnapshot, filter: TokenStatsInsightsFilter, params: TokenStatsQueryParams, zone: ZoneId, requested: TokenStatsInsightsGranularity, check: () -> Unit, alignedBounds: List<Pair<Long, Long>>? = null): TokenStatsInsightsOverview {
         val query = filtered(filter, params)
-        val extent = db.query(SimpleSQLiteQuery("SELECT MIN(occurredAtMs), MAX(occurredAtMs) FROM (" + query.sql + ")", query.args.toTypedArray())).use { cursor ->
+        // 已选日期就是趋势边界，无需再扫描同一范围求最早、最晚时间。
+        val range = filter.range ?: db.query(SimpleSQLiteQuery("SELECT MIN(occurredAtMs), MAX(occurredAtMs) FROM (" + query.sql + ")", query.args.toTypedArray())).use { cursor ->
             cursor.moveToFirst()
             if (cursor.isNull(0)) null else TokenStatsTimeRange(cursor.getLong(0), TokenCostCalculator.saturatedAdd(cursor.getLong(1), 1L))
         }
-        val range = filter.range ?: extent
         val granularity = if (requested != TokenStatsInsightsGranularity.AUTO) requested else when {
             range == null -> TokenStatsInsightsGranularity.DAILY
             range.durationMs <= 2 * TokenStatsTimeRanges.DAY_MS -> TokenStatsInsightsGranularity.HOURLY
@@ -196,10 +239,13 @@ object TokenStatsInsightsService {
         val executions = linkedMapOf<String, InsightsAccumulator>()
         val periods = linkedMapOf<String, InsightsAccumulator>()
         val costs = DoubleArray(6)
+        val pricingLookup = PricingLookup(prices)
         db.query(SimpleSQLiteQuery(query.sql, query.args.toTypedArray())).use { cursor ->
             while (cursor.moveToNext()) {
                 check()
-                val row = read(cursor, prices, params)
+                val usage = record(cursor)
+                val pricing = pricingLookup.resolve(usage)
+                val row = read(cursor, prices, params, usage, pricing)
                 if (filter.peakPeriods != null && row.peakPeriod !in filter.peakPeriods) continue
                 totals.add(row)
                 models.getOrPut(row.model) { InsightsAccumulator(params) }.add(row)
@@ -217,8 +263,7 @@ object TokenStatsInsightsService {
                     }
                 }
                 if (row.hasUsageFact) {
-                    val record = record(cursor)
-                    val composition = insightsCostComposition(record, insightsPricing(record, prices), params)
+                    val composition = insightsCostComposition(usage, pricing, params)
                     listOf(composition.uncachedInput, composition.cachedInput, composition.cacheWrite, composition.output, composition.perRequest, composition.unallocatedInput).forEachIndexed { index, value -> costs[index] += value }
                 }
             }
@@ -283,10 +328,15 @@ object TokenStatsInsightsService {
         return if (cursor.number("hasUsageFact") == 1L) normalizeLegacyCacheWriteUsage(raw) else raw
     }
 
-    private fun read(cursor: Cursor, prices: TokenPriceSettingsSnapshot, params: TokenStatsQueryParams): TokenStatsRequestRow {
+    private fun read(
+        cursor: Cursor,
+        prices: TokenPriceSettingsSnapshot,
+        params: TokenStatsQueryParams,
+        usage: TokenUsageRecordEntity = record(cursor),
+        pricing: ResolvedTokenPricing = insightsPricing(usage, prices),
+    ): TokenStatsRequestRow {
+        val record = usage
         val fact = cursor.number("hasUsageFact") == 1L
-        val record = record(cursor)
-        val pricing = insightsPricing(record, prices)
         val totalInput = record.totalInputTokens?.takeIf { it >= 0L } ?: insightsKnownSum(record.uncachedInputTokens, record.cachedInputTokens, record.cacheWriteTokens)
         val cost = if (fact) insightsCost(record, pricing, params) else TokenStatsCostSummary(params.targetCurrency, 0.0, record.requestCount, record.requestCount, params.manualRate, emptyMap())
         return TokenStatsRequestRow(

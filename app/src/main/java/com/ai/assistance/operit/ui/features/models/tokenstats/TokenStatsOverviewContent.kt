@@ -435,7 +435,7 @@ private fun StatsOverviewRanking(data: TokenStatsInsightsOverview, onModels: () 
                 Row(Modifier.fillMaxWidth().clickable(enabled = name != null) { if (name != null) onModel(name) }.padding(vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                     StatsText(String.format(Locale.US, "%02d", index + 1), size = 9, color = p.faint, mono = true)
-                    StatsAvatar(if (name == null) "?" else overviewModelMark(name))
+                    StatsAvatar(statsModelProvider(name, data.configurations))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         StatsText(name ?: stringResource(R.string.token_insights_not_recorded), size = 12, weight = FontWeight.Medium, maxLines = 1)
                         val configs = data.configurations.filter { it.model == name }.map { it.configId }.distinct().size
@@ -609,11 +609,3 @@ private fun overviewPercent(value: Double, total: Double): String =
     if (total <= 0.0) "—" else String.format(Locale.getDefault(), "%.1f%%", value / total * 100)
 private fun overviewMoney(value: Double, currency: PricingCurrency, decimals: Int): String =
     String.format(Locale.getDefault(), "%s%,.${decimals}f", currency.symbol, value)
-private fun overviewModelMark(model: String): String = when {
-    model.startsWith("claude", true) -> "A"
-    model.startsWith("gpt", true) || model.startsWith("o1", true) || model.startsWith("o3", true) || model.startsWith("o4", true) -> "O"
-    model.startsWith("gemini", true) -> "G"
-    model.startsWith("deepseek", true) -> "D"
-    model.startsWith("grok", true) -> "X"
-    else -> model.take(1).uppercase()
-}

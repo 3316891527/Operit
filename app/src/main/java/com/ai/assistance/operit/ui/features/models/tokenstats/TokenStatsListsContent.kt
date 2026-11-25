@@ -57,7 +57,7 @@ internal fun TokenStatsModelsContent(state: TokenStatsUiState, onRequests: (Stri
                             val rightColumnWidth = maxWidth * .44f
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                                 StatsText(String.format(Locale.ROOT, "%02d", index + 1), Modifier.width(17.dp), 10, palette.faint, mono = true)
-                                StatsAvatar(if (configs.isEmpty()) name else configs.first().provider, Modifier.size(32.dp))
+                                StatsAvatar(statsModelProvider(name, state.overview?.configurations.orEmpty()), Modifier.size(32.dp))
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     StatsText(name, size = 12, weight = FontWeight.Medium, maxLines = 1, mono = true)
                                     StatsText(stringResource(R.string.token_stats_design_model_meta, configs.size, model.totals.requests), size = 10, color = palette.muted, maxLines = 1)

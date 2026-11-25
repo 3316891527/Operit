@@ -100,4 +100,8 @@
     <string name="token_stats_design_restore_price_short">恢复默认</string>
     <string name="token_stats_design_request_details_short">请求明细</string>
     <string name="token_stats_design_input">输入</string>
+    <string name="token_stats_design_compare_off_note">只显示当前范围</string>
+    <string name="token_stats_design_compare_start_date">对比开始日期</string>
+    <string name="token_stats_design_compare_needs_range">请先选择日期范围，再比较相同长度的两个周期。</string>
+    <string name="token_stats_design_compare_select_dates">选择日期范围</string>
 </resources>
