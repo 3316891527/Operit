@@ -77,7 +77,8 @@ internal class AdvancedCardComponent(override val name: String) : A2uiComponent 
                     Text(title, style = MaterialTheme.typography.titleMedium)
                     if (readOnly) Text(current, style = MaterialTheme.typography.bodyMedium)
                     else OutlinedTextField(current, { next -> if (interactive && update != null && next.length <= 8192) mutationGuard { update(next) } },
-                        modifier = Modifier.fillMaxWidth(), enabled = interactive, readOnly = update == null, minLines = 4, maxLines = 12)
+                        modifier = Modifier.fillMaxWidth(), enabled = interactive, readOnly = update == null, minLines = 4, maxLines = 12,
+                        shape = CardControlShape, colors = cardFieldColors())
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (!readOnly) OutlinedButton(onClick = { dispatchAction(mapOf("event" to mapOf("name" to "local_action", "context" to mapOf("op" to "save")))) }, enabled = interactive) {
                             Text(stringResource(R.string.a2ui_save_draft))
@@ -94,10 +95,10 @@ internal class AdvancedCardComponent(override val name: String) : A2uiComponent 
                 val choices = properties.bind(options).orEmpty().take(32)
                 Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (title.isNotBlank()) Text(title, style = MaterialTheme.typography.labelLarge)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         choices.forEach { choice ->
                             FilterChip(selected = current == choice, onClick = { if (interactive && update != null) change(current, choice, choices.indexOf(choice)) { update(choice) } },
-                                label = { Text(choice) }, enabled = update != null && interactive)
+                                label = { Text(choice) }, shape = CardControlShape, enabled = update != null && interactive)
                         }
                     }
                 }
@@ -133,7 +134,7 @@ internal class AdvancedCardComponent(override val name: String) : A2uiComponent 
                     if (title.isNotBlank()) Text(title, style = MaterialTheme.typography.titleMedium)
                     if (name == "Tabs") Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         refs.forEachIndexed { i, _ ->
-                            FilterChip(selected == i, onClick = { select(i) }, label = { Text(titles.getOrNull(i) ?: "${i + 1}") }, enabled = canNavigate)
+                            FilterChip(selected == i, onClick = { select(i) }, label = { Text(titles.getOrNull(i) ?: "${i + 1}") }, shape = CardControlShape, enabled = canNavigate)
                         }
                     }
                     if (name == "Carousel" && refs.isNotEmpty()) {
