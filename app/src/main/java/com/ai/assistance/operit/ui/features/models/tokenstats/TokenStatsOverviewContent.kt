@@ -596,7 +596,7 @@ private fun overviewMetricLabel(totals: TokenStatsInsightsTotals, metric: Int): 
 
 private fun overviewTokens(value: TokenStatsTokenAggregate): String =
     if (value.knownEventCount == 0L && value.unknownEventCount > 0L) "—"
-    else overviewCompact(value.knownSum.toDouble()) + if (value.unknownEventCount > 0L) " + ?" else ""
+    else overviewCompact(value.knownSum.toDouble())
 
 private fun overviewCompact(value: Double): String = when {
     abs(value) >= 1_000_000_000 -> String.format(Locale.getDefault(), "%.1fB", value / 1_000_000_000)

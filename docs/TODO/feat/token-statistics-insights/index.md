@@ -49,3 +49,5 @@ status: visual-restoration-complete-awaiting-ci-and-device-review
 
 - [设计稿界面还原](04-visual-restoration.md)
 - [提供商图标、对比入口与查询收尾](05-final-polish-and-query.md)
+
+组合版反馈后移除费用与 Token 数值的 `+ ?` 后缀，详情见[显示规则](05-final-polish-and-query.md#图标与状态)。
