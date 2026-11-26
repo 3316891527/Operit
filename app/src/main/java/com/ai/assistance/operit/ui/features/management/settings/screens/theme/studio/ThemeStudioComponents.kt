@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.management.settings.screens.theme.studio
 
+import android.os.Build
 import com.ai.assistance.operit.ui.theme.script.text.LocalThemeTextStroke
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.*
@@ -32,6 +34,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.core.view.WindowCompat
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.components.slider.WorkbenchSlider
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
@@ -39,6 +43,7 @@ import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import com.ai.assistance.operit.ui.theme.resolveThemeColorScheme
 import com.ai.assistance.operit.ui.theme.script.LocalThemeScriptState
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptState
+import com.ai.assistance.operit.ui.theme.script.themeStatusBarDarkIcons
 
 internal val StudioAccent: Color
     @Composable get() = MaterialTheme.colorScheme.primary
@@ -49,13 +54,22 @@ internal val StudioPanel: Color
 internal val StudioLine: Color
     @Composable get() = MaterialTheme.colorScheme.outlineVariant
 
-/** 工作室跟随应用主题；显式提供内容色，防止跨明暗主题继承错误的文字和图标颜色。 */
+/** 工作室跟随应用主题，独立窗口按编辑器底色设置系统图标。 */
 @Composable
-internal fun StudioTheme(content: @Composable () -> Unit) {
+internal fun StudioTheme(edgeToEdgeDialog: Boolean = false, content: @Composable () -> Unit) {
     val snapshot = LocalThemePreferenceSnapshot.current
     val dark = if (snapshot.useSystemTheme) isSystemInDarkTheme()
         else snapshot.themeMode == UserPreferencesManager.THEME_MODE_DARK
     val colors = remember(snapshot, dark) { resolveThemeColorScheme(snapshot, dark) }
+    if (edgeToEdgeDialog) {
+        val window = (LocalView.current.parent as DialogWindowProvider).window
+        SideEffect {
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isStatusBarContrastEnforced = false
+            WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars =
+                themeStatusBarDarkIcons(contentColor = null, darkTheme = dark)
+        }
+    }
     CompositionLocalProvider(
         LocalThemeScriptState provides ThemeScriptState.Disabled,
         LocalThemeTextStroke provides null,
