@@ -41,5 +41,18 @@ root = Column(children=[table,reset])
 table = Table(columns=["主题","分钟"],rows=[["GPU",formatNumber(value=$/plan/gpu,decimals=0)],["CUDA",$/plan/cuda]])
 reset = Button(child=Text(text="重置计划"),action=Event(name="local_action",context={op:"set",path:"/plan",value:{gpu:40,cuda:35}}))
 ```
-
 Catalog 内的完整正向示例同时作为渲染器契约回归输入，覆盖实际组件 Schema，减少说明与实现脱节。
+
+## 常用控件显示
+
+原生输入框、按钮、分段选项和标签页使用统一的圆角。复选、单选和开关以整行轻底色及选中描边表达状态，支持整行点击。Expandable、下拉框和日期选择器使用带旋转箭头的整行标题，并提供展开状态读屏信息；长标题可自然换行，按钮区域至少为 48dp 高度。
+
+样式继承当前卡片的局部主题与背景。显式 Card 提供圆角分组容器，Panel 继续按作者指定的背景、圆角和边框显示。普通复选框仅表达布尔状态；待办完成项的删除线可用 RichText 的 strike 按数据绑定表达。
+
+下面使用示例数据组合一个可勾选、可折叠的待办卡片，无需新增工具或控件。它显示在聊天消息里；固定到输入框上方需要宿主页面另外接入。
+
+```text
+$/demo={expanded:true,one:true,two:false,three:false}
+root=Card(child=Column(children=[Header(text="任务待办",label="示例任务，可勾选和折叠",status="交互示意",tone="info"),tasks]))
+tasks=Expandable(label="查看任务列表",expanded=$/demo/expanded,children=[CheckBox(label="整理阅读计划",value=$/demo/one),CheckBox(label="补充练习内容",value=$/demo/two),CheckBox(label="回顾完成情况",value=$/demo/three)])
+```

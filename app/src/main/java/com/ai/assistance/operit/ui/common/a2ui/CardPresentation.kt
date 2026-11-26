@@ -36,9 +36,9 @@ internal object FramedCard : A2uiBasicCatalogV1.Card {
             listOfNotNull(accessibility?.label, accessibility?.description)
                 .takeIf { it.isNotEmpty() }?.let { contentDescription = it.joinToString(". ") }
         }
-        Surface(accessible, shape = MaterialTheme.shapes.medium,
+        Surface(accessible, shape = CardContainerShape,
             color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .65f))) {
             Box(Modifier.padding(16.dp)) {
                 when (child) {
                     is A2uiComponentState.Success -> A2uiComponent(child.component)
