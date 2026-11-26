@@ -49,6 +49,7 @@ import com.ai.assistance.operit.ui.common.markdown.LocalMarkdownRenderMode
 import com.ai.assistance.operit.ui.common.markdown.MarkdownNodeGrouper
 import com.ai.assistance.operit.ui.common.markdown.MarkdownRenderMode
 import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownRenderer
+import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownChunkRenderer
 import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownRendererState
 import com.ai.assistance.operit.ui.common.markdown.UnifiedMarkdownCanvas
 import com.ai.assistance.operit.ui.common.markdown.XmlContentRenderer
@@ -67,7 +68,6 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.r
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.thinkToolsGroupTitle
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.stream.rememberRevisableTextStream
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
-import com.ai.assistance.operit.util.markdown.toCharStream
 import kotlinx.coroutines.flow.Flow
 
 internal data class ChatTimelineEntry(
@@ -154,8 +154,7 @@ internal fun rememberChatTimelineEntries(
                     grouper.executionTimings = timingSnapshot
                     val stream = rememberRevisableTextStream(message.contentStream)
                     if (stream != null) {
-                        val charStream = remember(stream) { stream.toCharStream() }
-                        StreamMarkdownRenderer(markdownStream = charStream, state = state, renderContent = false)
+                        StreamMarkdownChunkRenderer(markdownStream = stream, state = state, renderContent = false)
                     } else {
                         // 已恢复的片段直接生成节点，工具结果不再进入全文 Markdown 扫描。
                         val sections = remember(message.content, message.sections) { messageSectionsForRendering(message) }
