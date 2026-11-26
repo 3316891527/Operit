@@ -1,6 +1,6 @@
 /** Android 原生主题外观协议；apiVersion 仅用于机器校验。 */
 export type SurfaceId = "background" | "userMessage" | "assistantMessage" | "composer" |
-    "userAvatar" | "assistantAvatar" | "appBar" | "navigation" | "navigationItem" |
+    "userAvatar" | "assistantAvatar" | "statusBar" | "appBar" | "navigation" | "navigationItem" |
     "button" | "iconButton" | "input" | "settingsCard" | "dialog" | "sheet" | "menu" |
     "listItem" | "status" | "toolCard" | "attachmentMenu" | "modelMenu" | "chatSettingsMenu" | ActionButtonId | PageId;
 export type IconId = "composer.settings" | "composer.attachment" | "composer.microphone" |
@@ -94,6 +94,7 @@ export interface Surface {
     fillGradient?: Gradient;
     /** 仅全局及页面背景使用，0..30 dp；零关闭，需要 Android 12 或更新版本。 */
     backgroundBlur?: number;
+    /** statusBar 仅按颜色亮度选择深色或浅色系统图标，省略时随主题明暗。 */
     contentColor?: Color;
     strokeColor?: Color;
     strokeWidth?: number;

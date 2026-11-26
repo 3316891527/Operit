@@ -40,6 +40,7 @@ internal data class StudioTarget(
         "composer" -> Icons.Default.Keyboard
         "userAvatar" -> Icons.Default.Person
         "assistantAvatar" -> Icons.Default.SmartToy
+        "statusBar" -> Icons.Default.Smartphone
         "appBar" -> Icons.Default.ViewComfy
         "navigation" -> Icons.Default.ViewSidebar
         "navigationItem" -> Icons.Default.FormatListBulleted
@@ -81,7 +82,7 @@ internal val ThemeStudioTargets: List<StudioTarget> = buildList {
             "background" -> StudioGroup.Global
             "userMessage", "assistantMessage", "userAvatar", "assistantAvatar", "status", "toolCard" -> StudioGroup.Messages
             "composer", "input" -> StudioGroup.Input
-            "appBar", "navigation", "navigationItem" -> StudioGroup.Navigation
+            "statusBar", "appBar", "navigation", "navigationItem" -> StudioGroup.Navigation
             "button", "iconButton" -> StudioGroup.Buttons
             "settingsCard", "listItem" -> StudioGroup.Settings
             else -> StudioGroup.Panels

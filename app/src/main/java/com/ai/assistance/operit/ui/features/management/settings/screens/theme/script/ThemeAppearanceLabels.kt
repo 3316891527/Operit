@@ -12,6 +12,7 @@ internal fun themeAppearanceAreaLabel(id: String): String = if (id in com.ai.ass
     "composer" -> R.string.theme_area_composer
     "userAvatar" -> R.string.theme_area_user_avatar
     "assistantAvatar" -> R.string.theme_area_assistant_avatar
+    "statusBar" -> R.string.theme_area_system_status_bar
     "appBar" -> R.string.theme_area_app_bar
     "navigation" -> R.string.theme_area_navigation
     "navigationItem" -> R.string.theme_area_navigation_item

@@ -25,7 +25,7 @@ object ThemeScriptContract {
     )
     val surfaceIds = setOf(
         "background", "userMessage", "assistantMessage", "composer", "userAvatar", "assistantAvatar",
-        "appBar", "navigation", "navigationItem", "button", "iconButton", "input",
+        "statusBar", "appBar", "navigation", "navigationItem", "button", "iconButton", "input",
         "settingsCard", "dialog", "sheet", "menu", "listItem", "status", "toolCard",
     ) + popupSurfaceIds + actionButtonIds + ThemeStyleTargets.pageIds
     val iconIds = setOf(
