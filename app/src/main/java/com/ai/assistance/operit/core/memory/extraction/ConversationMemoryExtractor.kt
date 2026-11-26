@@ -1,4 +1,6 @@
 package com.ai.assistance.operit.core.memory.extraction
+import com.ai.assistance.operit.data.model.FunctionType
+import com.ai.assistance.operit.data.stats.TokenRequestSource
 
 import android.content.Context
 import com.ai.assistance.operit.util.logging.AppLogger
@@ -255,10 +257,12 @@ object ConversationMemoryExtractor {
         
         withContext(Dispatchers.IO) {
             val stream =
-                aiService.sendMessage(
-                    context = context,
-                    chatHistory = messages,
-                )
+                withContext(TokenRequestSource(FunctionType.MEMORY)) {
+                    aiService.sendMessage(
+                        context = context,
+                        chatHistory = messages,
+                    )
+                }
             stream.collect { content -> result.append(content) }
         }
 
@@ -658,10 +662,12 @@ object ConversationMemoryExtractor {
 
             withContext(Dispatchers.IO) {
                 val stream =
-                    aiService.sendMessage(
-                        context = context,
-                        chatHistory = messages,
-                    )
+                    withContext(TokenRequestSource(FunctionType.MEMORY)) {
+                        aiService.sendMessage(
+                            context = context,
+                            chatHistory = messages,
+                        )
+                    }
                 stream.collect { content -> result.append(content) }
             }
 

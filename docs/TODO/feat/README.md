@@ -5,6 +5,7 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+- [Token 用量与费用 V2 原生重构](token-statistics-insights/index.md)
 
 - [约 1 MiB 快照追加分卷与 Waifu 气泡对齐](workspace-packed-snapshots/index.md)
 - [终端工具输出精简](terminal-output-compression/index.md)

@@ -11,6 +11,7 @@ import androidx.room.PrimaryKey
         Index(value = ["occurredAtMs"]),
         Index(value = ["provider", "model", "configId", "occurredAtMs"]),
         Index(value = ["importKey"], unique = true),
+        Index(value = ["requestId"], unique = true),
     ],
 )
 data class TokenUsageRecordEntity(
@@ -26,6 +27,7 @@ data class TokenUsageRecordEntity(
     val cacheWriteTokens: Long? = null,
     val totalInputTokens: Long? = null,
     val outputTokens: Long? = null,
+    val requestId: String? = null,
 ) {
     val providerModel: String
         get() = "$provider:$model"
