@@ -216,7 +216,6 @@ internal fun TokenStatsRequestsContent(
     onSort: (TokenStatsRequestSort) -> Unit,
     onPage: (Int) -> Unit,
     onDetail: (String) -> Unit,
-    onExport: () -> Unit,
 ) {
     var query by rememberSaveable(state.filter.search) { mutableStateOf(state.filter.search) }
     val palette = LocalTokenStatsPalette.current
@@ -230,7 +229,6 @@ internal fun TokenStatsRequestsContent(
         StatsListTools(query, { query = it }, stringResource(R.string.token_insights_search), listOf(stringResource(R.string.token_insights_sort_newest), stringResource(R.string.token_insights_sort_oldest), stringResource(R.string.token_insights_sort_tokens), stringResource(R.string.token_insights_sort_cost), stringResource(R.string.token_insights_sort_duration)), state.requestSort.ordinal, { onSort(TokenStatsRequestSort.entries[it]) }, { onFilter(state.filter.copy(search = query)) })
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatsSelect(if (currentStatus == 0) stringResource(R.string.token_stats_design_states_all) else if (currentStatus > 0) insightsStatus(statuses[currentStatus]) else stringResource(R.string.token_insights_status), listOf(stringResource(R.string.token_stats_design_states_all)) + statuses.drop(1).map { insightsStatus(it) }, currentStatus, { onFilter(state.filter.copy(statuses = statuses[it]?.let { value -> setOf(value) })) })
-            StatsAction("↓ " + stringResource(R.string.token_stats_design_export_results), onExport, enabled = !state.exporting && !state.requestsLoading)
         }
         StatsListChips(listOf(stringResource(R.string.token_stats_design_requests_all)), 0, { onFilter(state.filter.copy(statuses = null)) })
         if (state.requestsLoading) Box(Modifier.fillMaxWidth().height(2.dp).background(palette.accentBackground)) { Box(Modifier.fillMaxWidth(.4f).height(2.dp).background(palette.accent)) }

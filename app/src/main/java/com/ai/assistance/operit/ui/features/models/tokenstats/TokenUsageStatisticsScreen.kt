@@ -1,7 +1,5 @@
 package com.ai.assistance.operit.ui.features.models.tokenstats
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,8 +40,6 @@ fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
     var dates by rememberSaveable { mutableStateOf(false) }
     var price by remember { mutableStateOf<StatsPriceEditor?>(null) }
     var resetPrice by remember { mutableStateOf<TokenStatsPriceSetting?>(null) }
-    val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> if (uri != null) model.export(uri) }
-    val exportAction = { export.launch("operit-usage.csv") }
     val scroll = rememberLazyListState()
     LaunchedEffect(Unit) { model.loadForEntry() }
     LaunchedEffect(state.tab) { scroll.scrollToItem(0) }
@@ -77,7 +73,7 @@ fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
                 }
                 item("actions") {
                     Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        StatsIconAction(Icons.Default.DeleteForever, stringResource(R.string.token_insights_clear_all), { reset = true }, enabled = !state.clearing && !state.exporting)
+                        StatsIconAction(Icons.Default.DeleteForever, stringResource(R.string.token_insights_clear_all), { reset = true }, enabled = !state.clearing)
                         StatsIconAction(Icons.Default.Tune, stringResource(R.string.token_insights_settings), { settings = true }, enabled = !state.clearing)
                     }
                 }
@@ -104,14 +100,14 @@ fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
                                     TokenStatsTab.OVERVIEW -> TokenStatsOverviewContent(state, model.zone,
                                         onGranularity = model::setGranularity,
                                         onRequests = { name, function, executor, range -> model.showRequests(model = name, functionType = function, executionModel = executor, range = range) },
-                                        onModels = { model.selectTab(TokenStatsTab.MODELS) }, onExport = exportAction, onSettings = { settings = true },
+                                        onModels = { model.selectTab(TokenStatsTab.MODELS) }, onSettings = { settings = true },
                                         onRequestSort = { sort -> model.selectTab(TokenStatsTab.REQUESTS); model.setRequestSort(sort) })
                                     TokenStatsTab.MODELS -> TokenStatsModelsContent(state) { model.showRequests(model = it) }
                                     TokenStatsTab.CONFIGURATIONS -> TokenStatsConfigurationsContent(state,
                                         onRequests = { name, config -> model.showRequests(model = name, configId = config) },
                                         onEdit = { setting, draft, name -> price = StatsPriceEditor(setting, draft, name) }, onReset = { resetPrice = it })
                                     TokenStatsTab.REQUESTS -> TokenStatsRequestsContent(state, model.zone, onFilter = model::setFilter,
-                                        onSort = model::setRequestSort, onPage = model::requestPage, onDetail = model::showDetail, onExport = exportAction)
+                                        onSort = model::setRequestSort, onPage = model::requestPage, onDetail = model::showDetail)
                                 }
                             }
                         }

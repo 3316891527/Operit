@@ -30,7 +30,6 @@
     <string name="token_stats_design_advanced">Advanced rules</string>
     <string name="token_stats_design_requests_all">All requests</string>
     <string name="token_stats_design_states_all">All statuses</string>
-    <string name="token_stats_design_export_results">Export results</string>
     <string name="token_stats_design_results">%1$d results · %2$s tokens</string>
     <string name="token_stats_design_price_unit">Per million tokens · %1$s</string>
     <string name="token_stats_design_price_missing">Price not configured · usage retained, cost pending</string>

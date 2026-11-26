@@ -1,7 +1,6 @@
 package com.ai.assistance.operit.ui.features.models.tokenstats
 
 import android.content.Context
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -18,13 +17,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 enum class TokenStatsTab { OVERVIEW, MODELS, CONFIGURATIONS, REQUESTS }
 enum class TokenStatsQuickRange { TODAY, YESTERDAY, WEEK, MONTH, THIS_MONTH, ALL }
@@ -62,7 +59,6 @@ data class TokenStatsUiState(
     val detail: TokenStatsRequestRow? = null,
     val detailLoading: Boolean = false,
     val clearing: Boolean = false,
-    val exporting: Boolean = false,
 ) {
     val params: TokenStatsQueryParams get() = TokenStatsQueryParams(targetCurrency, manualRate)
     val currentRange: TokenStatsTimeRange? get() = filter.range
@@ -96,7 +92,6 @@ class TokenUsageStatisticsViewModel(
     private var pageJob: Job? = null
     private var detailJob: Job? = null
     private var rangeSaveJob: Job? = null
-    private var exportJob: Job? = null
 
     fun consumeActionMessage() { messages.value = null }
     fun selectTab(tab: TokenStatsTab) { mutableState.update { it.copy(tab = tab) } }
@@ -323,7 +318,7 @@ class TokenUsageStatisticsViewModel(
     }
     fun clearUsageRecords() {
         if (state.value.clearing) return
-        cancelReads(); rangeSaveJob?.cancel(); exportJob?.cancel()
+        cancelReads(); rangeSaveJob?.cancel()
         mutableState.update { it.copy(clearing = true, loading = false, requestsLoading = false, detail = null, detailLoading = false) }
         viewModelScope.launch(dispatcher) {
             try {
@@ -334,42 +329,6 @@ class TokenUsageStatisticsViewModel(
             load(true)
         }
     }
-    fun export(uri: Uri) {
-        if (state.value.exporting || state.value.clearing) return
-        val snapshot = state.value
-        mutableState.update { it.copy(exporting = true) }
-        exportJob = viewModelScope.launch(dispatcher) {
-            try {
-                withContext(Dispatchers.IO) {
-                    val stream = requireNotNull(appContext.contentResolver.openOutputStream(uri, "wt"))
-                    stream.bufferedWriter(Charsets.UTF_8).use { writer ->
-                        writer.write(0xFEFF)
-                        writer.write(csvRow(listOf("request_id", "started_at", "provider", "model", "configuration", "status", "function", "subagent_model", "uncached_input", "cache_read", "cache_write", "total_input", "output", "total_tokens", "known_cost", "cost_complete", "currency", "first_text_ms", "duration_ms", "observed_attempts", "successful_attempt")))
-                        TokenStatsInsightsService.exportRequests(appContext, snapshot.filter, snapshot.params) { row ->
-                            ensureActive()
-                            writer.write(csvRow(listOf(
-                                row.id, row.occurredAtMs?.let { Instant.ofEpochMilli(it).atZone(zone).toString() }, row.provider, row.model,
-                                snapshot.configurationNames[row.configId] ?: row.configId, row.status, row.functionType, row.executionModel,
-                                row.uncachedInputTokens?.toString(), row.cachedInputTokens?.toString(), row.cacheWriteTokens?.toString(),
-                                row.totalInputTokens?.toString(), row.outputTokens?.toString(), row.totalTokens?.toString(),
-                                row.cost.knownAmount.takeIf { row.cost.knownAmount > 0.0 || row.cost.unknownContributionCount == 0L }?.toString(),
-                                (row.cost.unknownContributionCount == 0L).toString(), row.cost.currency.name,
-                                row.firstTokenLatencyMs?.toString(), row.durationMs?.toString(), row.observedAttemptNumbers, row.successfulAttempt?.toString(),
-                            )))
-                        }
-                    }
-                }
-                messages.value = TokenStatsActionMessage(stringResolver(R.string.token_insights_export_complete))
-            } catch (error: CancellationException) { throw error } catch (error: Exception) { AppLogger.e(TAG, "导出统计请求失败", error); failure(R.string.token_insights_export_failed) }
-            finally { mutableState.update { it.copy(exporting = false) } }
-        }
-    }
-    private fun csvRow(values: List<String?>): String = values.joinToString(",") { value ->
-        val text = value.orEmpty()
-        val safe = if (text.trimStart().firstOrNull() in listOf('=', '+', '-', '@') || text.startsWith('\t') || text.startsWith('\r')) "'" + text else text
-        "\"" + safe.replace("\"", "\"\"") + "\""
-    } + "\r\n"
-
     private fun failure(resource: Int) { messages.value = TokenStatsActionMessage(stringResolver(resource), true) }
     class Factory(context: Context) : ViewModelProvider.Factory {
         private val appContext = context.applicationContext

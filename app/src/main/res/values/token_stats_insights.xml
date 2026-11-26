@@ -7,9 +7,6 @@
     <string name="token_insights_settings">统计设置</string>
     <string name="token_insights_filters">筛选统计范围</string>
     <string name="token_insights_clear_all">清空全部用量</string>
-    <string name="token_insights_export">导出结果</string>
-    <string name="token_insights_export_complete">导出完成</string>
-    <string name="token_insights_export_failed">导出失败</string>
     <string name="token_insights_not_recorded">未记录</string>
     <string name="token_insights_unknown_cost">费用未知</string>
     <string name="token_insights_partial_cost">仅已知费用</string>
@@ -123,7 +120,6 @@
     <string name="token_insights_not_applied">未应用</string>
     <string name="token_insights_pricing_now">以下按当前价格与规则计算</string>
     <string name="token_insights_attempt_note">尝试编号仅包含实际观测到的回调，不能据此推断完整重试次数。首段文本耗时从发送入口开始计时。</string>
-    <string name="token_insights_export_note">导出当前筛选内的逐次请求，按时间倒序；没有逐次记录的历史累计不包含在 CSV 中。</string>
     <string name="token_insights_cache_rate">缓存读取率</string>
     <string name="token_insights_search_models">搜索模型</string>
     <string name="token_insights_search_configurations">搜索配置名称、渠道或模型</string>

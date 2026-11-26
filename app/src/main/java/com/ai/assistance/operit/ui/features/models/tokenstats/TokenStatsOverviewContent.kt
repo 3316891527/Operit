@@ -50,13 +50,12 @@ internal fun TokenStatsOverviewContent(
     onGranularity: (TokenStatsInsightsGranularity) -> Unit,
     onRequests: (model: String?, functionType: String?, executionModel: String?, range: TokenStatsTimeRange?) -> Unit,
     onModels: () -> Unit,
-    onExport: () -> Unit,
     onSettings: () -> Unit,
     onRequestSort: (TokenStatsRequestSort) -> Unit,
 ) {
     val data = state.overview ?: return
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        StatsOverviewHero(data, onExport) { onRequests(null, null, null, null) }
+        StatsOverviewHero(data) { onRequests(null, null, null, null) }
         StatsOverviewMetrics(data.totals)
         StatsOverviewTrend(state, zone, data, onGranularity) { onRequests(null, null, null, it) }
         StatsOverviewExpenses(state, data)
@@ -70,7 +69,7 @@ internal fun TokenStatsOverviewContent(
 }
 
 @Composable
-private fun StatsOverviewHero(data: TokenStatsInsightsOverview, onExport: () -> Unit, onRequests: () -> Unit) {
+private fun StatsOverviewHero(data: TokenStatsInsightsOverview, onRequests: () -> Unit) {
     val compact = LocalConfiguration.current.screenWidthDp < 370
     val ink = Color(0xFFF2F5FF)
     val muted = Color(0xFFAEBBD8)
@@ -120,7 +119,6 @@ private fun StatsOverviewHero(data: TokenStatsInsightsOverview, onExport: () -> 
                     StatsText(coverage + " · " + stringResource(R.string.token_stats_design_model_config_count, data.models.size, data.configurations.size) + "  ›",
                         color = Color(0xFFCAD5EE), size = 10)
                 }
-                StatsOverviewIconButton("download", stringResource(R.string.token_insights_export), onExport, color = Color(0xFFD5DFF3), bordered = true)
             }
         }
     }
@@ -567,7 +565,6 @@ private fun StatsOverviewGlyph(glyph: String, color: Color, modifier: Modifier) 
         when (glyph) {
             "left" -> path(.65f to .15f, .3f to .5f, .65f to .85f)
             "right" -> path(.35f to .15f, .7f to .5f, .35f to .85f)
-            "download" -> { line(.5f, .12f, .5f, .66f); path(.27f to .46f, .5f to .7f, .73f to .46f); path(.15f to .65f, .15f to .87f, .85f to .87f, .85f to .65f) }
             "edit" -> { path(.2f to .62f, .7f to .12f, .88f to .3f, .38f to .8f, .14f to .86f, .2f to .62f); line(.61f, .22f, .79f, .4f) }
             "cube" -> { path(.5f to .1f, .86f to .3f, .86f to .7f, .5f to .9f, .14f to .7f, .14f to .3f, .5f to .1f); path(.14f to .3f, .5f to .5f, .86f to .3f); line(.5f, .5f, .5f, .9f) }
             "list" -> { for (y in listOf(.25f, .5f, .75f)) { line(.34f, y, .9f, y); drawCircle(color, stroke * .55f, Offset(.12f * w, y * h)) } }

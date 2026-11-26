@@ -30,7 +30,6 @@
     <string name="token_stats_design_advanced">高级规则</string>
     <string name="token_stats_design_requests_all">全部请求</string>
     <string name="token_stats_design_states_all">全部状态</string>
-    <string name="token_stats_design_export_results">导出结果</string>
     <string name="token_stats_design_results">%1$d 条结果 · %2$s Token</string>
     <string name="token_stats_design_price_unit">每百万 Token · %1$s</string>
     <string name="token_stats_design_price_missing">未配置价格 · 用量保留，费用待计算</string>

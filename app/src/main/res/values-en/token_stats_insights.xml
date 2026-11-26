@@ -7,9 +7,6 @@
     <string name="token_insights_settings">Statistics settings</string>
     <string name="token_insights_filters">Filter statistics</string>
     <string name="token_insights_clear_all">Clear all usage</string>
-    <string name="token_insights_export">Export results</string>
-    <string name="token_insights_export_complete">Export complete</string>
-    <string name="token_insights_export_failed">Export failed</string>
     <string name="token_insights_not_recorded">Not recorded</string>
     <string name="token_insights_unknown_cost">Unknown cost</string>
     <string name="token_insights_partial_cost">Known cost only</string>
@@ -123,7 +120,6 @@
     <string name="token_insights_not_applied">Not applied</string>
     <string name="token_insights_pricing_now">Calculated with current prices and rules</string>
     <string name="token_insights_attempt_note">Attempt numbers include observed callbacks only and do not imply a complete retry count. First-text latency is measured from the send entry.</string>
-    <string name="token_insights_export_note">Export individual requests matching current filters, newest first. Historical aggregates without individual records are excluded.</string>
     <string name="token_insights_cache_rate">Cache read rate</string>
     <string name="token_insights_search_models">Search models</string>
     <string name="token_insights_search_configurations">Search configuration names, providers or models</string>

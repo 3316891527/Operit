@@ -109,22 +109,6 @@ object TokenStatsInsightsService {
         }
     }
 
-    /** 同一数据库快照内按时间倒序流式导出；回调必须同步消费当前行。 */
-    suspend fun exportRequests(context: Context, filter: TokenStatsInsightsFilter, params: TokenStatsQueryParams, onRow: (TokenStatsRequestRow) -> Unit): Long = access(context) { db, prices, check ->
-        val query = filtered(filter, params)
-        var count = 0L
-        db.query(SimpleSQLiteQuery(query.sql + " AND isLegacyAggregate = 0 ORDER BY occurredAtMs DESC, id DESC", query.args.toTypedArray())).use { cursor ->
-            while (cursor.moveToNext()) {
-                check()
-                val row = read(cursor, prices, params)
-                if (filter.peakPeriods != null && row.peakPeriod !in filter.peakPeriods) continue
-                onRow(row)
-                count++
-            }
-        }
-        count
-    }
-
     suspend fun requestDetail(context: Context, id: String, params: TokenStatsQueryParams): TokenStatsRequestRow? = access(context) { db, prices, _ ->
         db.query(SimpleSQLiteQuery(UNIFIED + " SELECT * FROM unified WHERE id = ? AND isLegacyAggregate = 0 LIMIT 1", arrayOf(id))).use { cursor ->
             if (cursor.moveToFirst()) read(cursor, prices, params) else null
