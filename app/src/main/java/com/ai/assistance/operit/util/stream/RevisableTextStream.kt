@@ -125,10 +125,10 @@ private class DelegatingRevisableCharStream(
     }
 }
 
-private class DelegatingRollbackPrefixCharStream(
-    private val upstream: Stream<Char>,
+private class DelegatingRollbackPrefixStream<T>(
+    private val upstream: Stream<T>,
     override val rollbackPrefix: String,
-) : Stream<Char> by upstream, StreamRollbackPrefix
+) : Stream<T> by upstream, StreamRollbackPrefix
 
 fun Stream<String>.withEventChannel(eventChannel: SharedStream<TextStreamEvent>): Stream<String> {
     if (this is RevisableTextStream && this.eventChannel === eventChannel) {
@@ -153,11 +153,12 @@ fun Stream<Char>.withTextEventChannel(eventChannel: SharedStream<TextStreamEvent
     return DelegatingRevisableCharStream(this, eventChannel)
 }
 
-internal fun Stream<Char>.withRollbackPrefix(rollbackPrefix: String): Stream<Char> {
+/** 回滚前缀只标记恢复位置，包装后保留字符流或文本块流的元素类型。 */
+internal fun <T> Stream<T>.withRollbackPrefix(rollbackPrefix: String): Stream<T> {
     if (this is StreamRollbackPrefix && this.rollbackPrefix == rollbackPrefix) {
         return this
     }
-    return DelegatingRollbackPrefixCharStream(this, rollbackPrefix)
+    return DelegatingRollbackPrefixStream(this, rollbackPrefix)
 }
 
 fun Stream<String>.shareRevisable(

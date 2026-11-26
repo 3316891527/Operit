@@ -6,6 +6,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -73,8 +75,15 @@ class MutableSharedStreamImpl<T>(
         data class Completion(val cause: Throwable?) : SharedEvent<Nothing>
     }
 
+    private data class PendingDelivery<T>(
+        val event: SharedEvent<T>,
+        val channels: List<Channel<SharedEvent<T>>>,
+    )
+
     private val replayLimit = replay.coerceAtLeast(0)
     private val replayBuffer = ArrayDeque<T>()
+    private val pendingDeliveries = ArrayDeque<PendingDelivery<T>>()
+    private var delivering = false
     private val subscribers = linkedMapOf<Long, Channel<SharedEvent<T>>>()
     private val stateLock = Any()
     private var nextSubscriberId = 0L
@@ -112,36 +121,20 @@ class MutableSharedStreamImpl<T>(
         get() = synchronized(stateLock) { closeCause }
 
     override suspend fun emit(value: T) {
-        val subscriberChannels =
-            synchronized(stateLock) {
-                if (isClosed) {
-                    emptyList()
-                } else {
-                    appendToReplayBufferLocked(value)
-                    subscribers.values.toList()
-                }
-            }
-
-        for (channel in subscriberChannels) {
-            channel.send(SharedEvent.Value(value))
-        }
+        currentCoroutineContext().ensureActive()
+        tryEmit(value)
     }
 
-    override fun tryEmit(value: T): Boolean {
-        val subscriberChannels =
-            synchronized(stateLock) {
-                if (isClosed) {
-                    return false
-                }
-                appendToReplayBufferLocked(value)
-                subscribers.values.toList()
+    override fun tryEmit(value: T): Boolean =
+        synchronized(stateLock) {
+            if (isClosed) {
+                return false
             }
-
-        subscriberChannels.forEach { channel ->
-            channel.trySend(SharedEvent.Value(value))
+            appendToReplayBufferLocked(value)
+            // 无限队列不会因消费速度挂起；入队与订阅退出、关闭串行，避免单个订阅取消中断上游。
+            enqueueDeliveryLocked(SharedEvent.Value(value))
+            true
         }
-        return true
-    }
 
     override fun resetReplayCache() {
         synchronized(stateLock) {
@@ -150,19 +143,14 @@ class MutableSharedStreamImpl<T>(
     }
 
     fun close(cause: Throwable? = null) {
-        val subscriberChannels =
-            synchronized(stateLock) {
-                if (isClosed) {
-                    return
-                }
-                isClosed = true
-                closeCause = cause
-                subscribers.values.toList()
+        synchronized(stateLock) {
+            if (isClosed) {
+                return
             }
-
-        subscriberChannels.forEach { channel ->
-            channel.trySend(SharedEvent.Completion(cause))
-            channel.close()
+            isClosed = true
+            closeCause = cause
+            // 完成通知与文本共用入队锁，关闭前已接受的文本必须先交给每个订阅者。
+            enqueueDeliveryLocked(SharedEvent.Completion(cause))
         }
     }
 
@@ -214,13 +202,31 @@ class MutableSharedStreamImpl<T>(
                 throw closedSnapshot
             }
         } finally {
-            subscriberChannel?.cancel()
-            if (subscriberId != null) {
-                synchronized(stateLock) {
+            synchronized(stateLock) {
+                if (subscriberId != null) {
                     subscribers.remove(subscriberId)
                     internalSubscriptionCountFlow.value = subscribers.size
                 }
+                subscriberChannel?.cancel()
             }
+        }
+    }
+
+    private fun enqueueDeliveryLocked(event: SharedEvent<T>) {
+        pendingDeliveries.addLast(PendingDelivery(event, subscribers.values.toList()))
+        // 订阅者可能在入队时立即恢复并再次发射或关闭；重入投递必须排在当前事件之后。
+        if (delivering) return
+        delivering = true
+        try {
+            while (pendingDeliveries.isNotEmpty()) {
+                val delivery = pendingDeliveries.removeFirst()
+                delivery.channels.forEach { channel ->
+                    channel.trySend(delivery.event)
+                    if (delivery.event is SharedEvent.Completion) channel.close()
+                }
+            }
+        } finally {
+            delivering = false
         }
     }
 

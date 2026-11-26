@@ -47,13 +47,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownRenderer
+import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownChunkRenderer
 import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownRendererState
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.list.ChatMessageHeightMemory
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.stream.rememberRevisableTextStream
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.CustomXmlRenderer
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.ThinkToolsXmlNodeGrouper
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.links.LinkPreviewDialog
-import com.ai.assistance.operit.util.markdown.toCharStream
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
@@ -410,9 +410,8 @@ fun BubbleAiMessageComposable(
                         key(message.timestamp) {
                             val stream = if (LocalMarkdownRenderFragment.current != null) null else rememberRevisableTextStream(message.contentStream)
                             if (stream != null) {
-                                val charStream = remember(stream) { stream.toCharStream() }
-                                StreamMarkdownRenderer(
-                                    markdownStream = charStream,
+                                StreamMarkdownChunkRenderer(
+                                    markdownStream = stream,
                                     textColor = themedTextColor,
                                     backgroundColor = effectiveBackgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
@@ -634,9 +633,8 @@ fun BubbleAiMessageComposable(
                         key(message.timestamp) {
                             val stream = if (LocalMarkdownRenderFragment.current != null) null else rememberRevisableTextStream(message.contentStream)
                             if (stream != null) {
-                                val charStream = remember(stream) { stream.toCharStream() }
-                                StreamMarkdownRenderer(
-                                    markdownStream = charStream,
+                                StreamMarkdownChunkRenderer(
+                                    markdownStream = stream,
                                     textColor = themedTextColor,
                                     backgroundColor = effectiveBackgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
