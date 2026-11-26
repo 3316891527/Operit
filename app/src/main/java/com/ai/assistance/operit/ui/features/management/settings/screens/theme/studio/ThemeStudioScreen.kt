@@ -129,7 +129,7 @@ private fun ThemeStudioScreen(session: ThemeEditorSession, projectKey: String, t
         if (uri != null) scope.launch { if (state.exportProject(uri, snapshot)) notice = R.string.studio_exported }
     }
     Dialog(onDismissRequest = ::close, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        StudioTheme {
+        StudioTheme(edgeToEdgeDialog = true) {
             val focusManager = LocalFocusManager.current
             DisposableEffect(focusManager) {
                 editorFocusManager = focusManager

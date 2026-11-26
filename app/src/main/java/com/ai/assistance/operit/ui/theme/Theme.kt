@@ -4,7 +4,7 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.Voic
 import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
 
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptHost
-import com.ai.assistance.operit.ui.theme.script.ThemeSystemStatusBar
+import com.ai.assistance.operit.ui.theme.script.ThemeSystemStatusBarLayout
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -376,34 +376,25 @@ fun OperitTheme(content: @Composable () -> Unit) {
                 Box(Modifier.fillMaxSize().themeScriptDecoration("background", backgroundImageOpacity))
             }
 
-            if (useBackgroundImage && backgroundImageUri != null) {
-                MaterialTheme(
-                    colorScheme =
-                        renderedColors.copy(
-                            surface = renderedColors.surface.copy(alpha = 1f),
-                            surfaceVariant = renderedColors.surfaceVariant.copy(alpha = 1f),
-                            background = renderedColors.background.copy(alpha = 1f),
-                            surfaceContainer = renderedColors.surfaceContainer.copy(alpha = 1f),
-                            surfaceContainerHigh =
-                                renderedColors.surfaceContainerHigh.copy(alpha = 1f),
-                            surfaceContainerHighest =
-                                renderedColors.surfaceContainerHighest.copy(alpha = 1f),
-                            surfaceContainerLow =
-                                renderedColors.surfaceContainerLow.copy(alpha = 1f),
-                            surfaceContainerLowest =
-                                renderedColors.surfaceContainerLowest.copy(alpha = 1f),
-                        ),
-                    typography = renderedTypography,
-                    content = { VoiceRecordingOverlayHost(content) },
-                )
-            } else {
-                MaterialTheme(
-                    colorScheme = renderedColors,
-                    typography = renderedTypography,
-                    content = { VoiceRecordingOverlayHost(content) },
-                )
+            ThemeSystemStatusBarLayout(darkTheme) {
+                val pageColors = if (useBackgroundImage && backgroundImageUri != null) {
+                    renderedColors.copy(
+                        surface = renderedColors.surface.copy(alpha = 1f),
+                        surfaceVariant = renderedColors.surfaceVariant.copy(alpha = 1f),
+                        background = renderedColors.background.copy(alpha = 1f),
+                        surfaceContainer = renderedColors.surfaceContainer.copy(alpha = 1f),
+                        surfaceContainerHigh = renderedColors.surfaceContainerHigh.copy(alpha = 1f),
+                        surfaceContainerHighest = renderedColors.surfaceContainerHighest.copy(alpha = 1f),
+                        surfaceContainerLow = renderedColors.surfaceContainerLow.copy(alpha = 1f),
+                        surfaceContainerLowest = renderedColors.surfaceContainerLowest.copy(alpha = 1f),
+                    )
+                } else {
+                    renderedColors
+                }
+                MaterialTheme(colorScheme = pageColors, typography = renderedTypography) {
+                    VoiceRecordingOverlayHost(content)
+                }
             }
-            ThemeSystemStatusBar(darkTheme)
         }
     }
     }
