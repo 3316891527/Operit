@@ -17,14 +17,13 @@ internal fun insightsMoney(amount: Double, currency: PricingCurrency): String =
 @Composable
 internal fun insightsCost(cost: TokenStatsCostSummary): String = when {
     cost.unknownContributionCount > 0 && cost.knownAmount == 0.0 -> stringResource(R.string.token_insights_unknown_cost)
-    cost.unknownContributionCount > 0 -> insightsMoney(cost.knownAmount, cost.currency) + " + ?"
     else -> insightsMoney(cost.knownAmount, cost.currency)
 }
 
 @Composable
 internal fun insightsTokens(value: TokenStatsTokenAggregate, unit: TokenStatsDisplayUnit): String =
     if (value.knownEventCount == 0L && value.unknownEventCount > 0L) stringResource(R.string.token_insights_not_recorded)
-    else formatTokenCount(value.knownSum, unit) + if (value.unknownEventCount > 0L) " + ?" else ""
+    else formatTokenCount(value.knownSum, unit)
 
 @Composable
 internal fun insightsStatus(status: String?): String = stringResource(when (status) {
