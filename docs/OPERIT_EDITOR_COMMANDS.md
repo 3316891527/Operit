@@ -54,6 +54,7 @@
 | `model` | `list`、`create`、`update`、`delete`、`test`、`function-list`、`function-show`、`function-set` |
 | `context` | `show`、`set`，按功能绑定定位模型配置 |
 | `character` | `list`、`show`、`create`、`update`、`delete`、`activate`、`clear`、`import`、`export` |
+| `theme` | `targets`、`fields`、`show`、`set`，按需查询并修改外观 |
 | `performance` | `show`，可指定插件 ID |
 | `tool` | `list`、`show`、`exec`，发现和执行已有宿主或包工具 |
 
@@ -63,6 +64,53 @@
 {"args": ["context", "show", "CHAT"]}
 {"args": ["context", "set", "CHAT", "{\"enable_summary\":true,\"summary_message_count_threshold\":16}"]}
 ```
+
+## 主题外观
+
+本次新增命令需要包含主题控制实现的宿主版本。已有 1.12.2+27 命令入口不代表包含这些新操作，以空数组返回的实时帮助为准；单独更新编辑器脚本不会添加宿主能力。
+
+新增范围为主题与配色、字体与头像、背景、消息外观和消息信息显示。字段分为 colors、fonts、avatars、background、messages、info；未开放语言、全局布局、显示行为、输入框、侧边栏、主题工作室或玻璃细节参数。
+
+先发现目标和需要的字段：
+
+```json
+{"args":["theme","targets"]}
+{"args":["theme","fields","fonts"]}
+{"args":["help","theme","set"]}
+{"args":["theme","show","{\"section\":\"info\"}"]}
+```
+
+默认 current 使用调用对话的主题，群聊使用角色组主题。没有对话身份的直接调用使用应用当前激活主题。显式 card 或 group 目标必须带 theme targets 返回的精确 target_id；user 目标只接受全局用户头像和名称。命令不会为了修改非当前角色而切换激活角色。
+
+```json
+{"args":["theme","show","{\"target_type\":\"card\",\"target_id\":\"角色ID\"}"]}
+{"args":["theme","show","{\"target_type\":\"user\"}"]}
+```
+
+theme show 返回 revision。修改时把同一目标的 revision 原样放入 expected_revision，下面的“上次读取的revision”需替换为实际返回的 64 位十六进制值。
+
+```json
+{"args":["theme","set","{\"expected_revision\":\"上次读取的revision\",\"changes\":{\"font_scale\":1.1,\"show_model_name\":false,\"show_message_token_speed\":true}}"]}
+{"args":["theme","set","{\"target_type\":\"card\",\"target_id\":\"角色ID\",\"expected_revision\":\"上次读取的revision\",\"changes\":{\"custom_primary_color\":\"#FF315A9F\",\"bubble_ai_text_color\":\"#FFE8EEF8\"}}"]}
+```
+
+changes 只更新提供的字段，其他偏好保留。字段帮助声明类型、范围、单位、枚举、可空与作用范围；布尔值和数值不接受字符串代替，颜色接受 #RRGGBB 或 #AARRGGBB，opacity 是 0 到 1 的不透明度，值越小越透明。媒体背景需要同时启用 use_background_image；手动 theme_mode 需要关闭 use_system_theme 才主导模式。
+
+设置主色或辅助色会启用自定义配色，文件字体会启用对应字体，消息玻璃模式与图片模式遵循界面互斥规则。明确互相矛盾的参数会整体拒绝，不会静默忽略。message 图片裁剪和拉伸仍使用已有字段，九宫格自动解析或工作室工程编辑没有加入命令。
+
+资源接受可读 Android 绝对路径、file URI 或已授权的 content URI。图片、视频、字体经内容和大小校验后复制到应用私有受管理目录；成功后即使原附件被清理也能保留，失败只清理本次导入副本。命令不下载网络资源，字体保存为路径，图片与视频保存为文件 URI。null 仅在字段帮助允许时用于清除；例如清除角色用户头像后恢复全局头像来源。
+
+```json
+{"args":["theme","set","{\"expected_revision\":\"上次读取的revision\",\"changes\":{\"custom_ai_avatar_uri\":\"/sdcard/Download/avatar.png\"}}"]}
+{"args":["theme","set","{\"expected_revision\":\"上次读取的revision\",\"changes\":{\"background_image_uri\":\"/sdcard/Download/background.jpg\",\"background_media_type\":\"image\",\"use_background_image\":true,\"background_image_opacity\":0.35,\"use_background_blur\":true,\"background_blur_radius\":12}}"]}
+```
+
+保存结果包含实际目标、新 revision、saved、verified、updatedFields 和读回偏好。valueSource 为 preferences；若 hasThemeScript=true，现有自定义主题脚本可能覆盖最终外观，这些数值不代表最终渲染结果。偏好修改不重建 Activity，尚未激活的角色在显示该主题时使用新设置；verified 仅代表持久值读回一致。
+读取后若有其他修改，保存会拒绝旧 revision，需要重新读取。主题设置页后续保存旧草稿时会三方合并未冲突字段；同字段不同修改则保留草稿并报告保存失败，避免覆盖命令的新设置。保存期间继续编辑的内容仍保留为未保存草稿。全局名称独立合并，更新名称会保留当前头像。
+
+主题页的重置将默认值作为草稿合并保存，保留角色头像与标题，不再通过清除全部 override 完成；未被草稿修改的并发更新仍会保留。“应用到所有角色”先检查并保存当前角色，再沿用原有的全角色视觉覆盖行为。若后续传播、名称或布局保存失败，已完成的主题保存仍保留，界面基线会反映实际已保存部分。
+
+如果持久化成功后读回失败，命令返回失败状态并携带 saved=true、verified=false，调用方应重新读取确认，不能把失败状态理解为所有设置均未修改。
 
 ## 调试安装
 
@@ -90,7 +138,7 @@
 
 ```bash
 node --test tools/operit-editor/tests/command-entry.test.cjs
-./gradlew :app:testDebugUnitTest --tests '*PlatformCommand*Test' --tests '*PlatformPackageFilesTest' --tests '*OperitEditorRuntimeTest'
+./gradlew :app:testDebugUnitTest --tests '*PlatformCommand*Test' --tests '*PlatformPackageFilesTest' --tests '*OperitEditorRuntimeTest' --tests '*ThemeCommand*Test' --tests '*ThemeDraft*Test' --tests '*ThemeEditorSessionMergeTest'
 ```
 
 运行时回归通过 JVM 测试入口接入 Android Tests 和 PR 检查，验证脚本、实际 SDK 桥接、错误传播、参数完整性、嵌套与并发、命令解析、权限调度及安装文件处理。测试中的目标业务调用使用受控替身；真机上的配置修改与包安装需使用新版软件验收。

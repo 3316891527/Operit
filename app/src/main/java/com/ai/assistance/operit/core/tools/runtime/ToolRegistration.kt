@@ -7,6 +7,7 @@ import com.ai.assistance.operit.core.config.SystemToolPrompts
 import com.ai.assistance.operit.core.tools.commands.PlatformCommandExecutor
 import com.ai.assistance.operit.core.tools.commands.PlatformCommandDispatcher
 import com.ai.assistance.operit.core.tools.commands.PlatformPackageInstaller
+import com.ai.assistance.operit.core.tools.commands.ThemeSettingsTools
 import com.ai.assistance.operit.core.tools.skill.SkillManager
 import java.io.File
 import com.ai.assistance.operit.core.performance.PerformanceMonitorManager
@@ -299,6 +300,15 @@ fun registerAllTools(handler: AIToolHandler, context: Context) {
             executeWithPermission = { executeProxyTargetWithPermissionCheck(it.name, it.parameters, isEnglishLanguage()) },
             accessDeniedMessage = CliToolModeSupport.buildRoleAccessDeniedMessage(isEnglishLanguage()),
         ).execute(target, parameters)
+    }
+
+    val themeSettingsTools = ThemeSettingsTools(context)
+    ThemeSettingsTools.toolNames.forEach { name ->
+        handler.registerTool(
+            name = name,
+            descriptionGenerator = { "Operit theme settings: $name" },
+            executor = { tool -> runBlocking(Dispatchers.IO) { themeSettingsTools.execute(tool) } },
+        )
     }
 
     handler.registerTool(

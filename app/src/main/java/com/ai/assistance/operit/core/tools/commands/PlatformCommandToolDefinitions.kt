@@ -42,6 +42,6 @@ internal object PlatformCommandToolDefinitions {
                     ToolParameterSchema(name = "wait_ms", type = "integer", description = "Execution timeout in milliseconds", required = false),
                 ),
             ),
-        ) + PlatformSettingsToolDefinitions.tools(useEnglish),
+        ) + PlatformSettingsToolDefinitions.tools(useEnglish) + ThemeCommandToolDefinitions.tools(useEnglish),
     )
 }
