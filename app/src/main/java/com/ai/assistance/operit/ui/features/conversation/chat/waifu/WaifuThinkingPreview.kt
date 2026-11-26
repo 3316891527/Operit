@@ -8,17 +8,24 @@ internal fun waifuThinkingPreview(content: String): String {
     val preview = StringBuilder()
     var cursor = block.bodyStart
     var pendingSpace = false
-    while (cursor < block.bodyEnd && preview.length < 240) {
+    var previewCodePoints = 0
+    while (cursor < block.bodyEnd) {
         val codePoint = content.codePointAt(cursor)
         cursor += Character.charCount(codePoint)
         if (Character.isWhitespace(codePoint) || Character.isSpaceChar(codePoint)) {
             pendingSpace = preview.isNotEmpty()
         } else {
-            if (pendingSpace) preview.append(' ')
+            // 只有确认还有正文才截断，避免八字后的尾部空白产生多余省略号。
+            if (previewCodePoints == 8) return preview.append('…').toString()
+            if (pendingSpace) {
+                preview.append(' ')
+                previewCodePoints++
+            }
+            if (previewCodePoints == 8) return preview.append('…').toString()
             preview.appendCodePoint(codePoint)
+            previewCodePoints++
             pendingSpace = false
         }
     }
-    if (cursor < block.bodyEnd) preview.append('…')
     return preview.toString()
 }
