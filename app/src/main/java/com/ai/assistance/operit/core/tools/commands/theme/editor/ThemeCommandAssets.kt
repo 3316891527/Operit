@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.core.tools.commands
+package com.ai.assistance.operit.core.tools.commands.theme.editor
 
 import android.content.Context
 import android.graphics.BitmapFactory

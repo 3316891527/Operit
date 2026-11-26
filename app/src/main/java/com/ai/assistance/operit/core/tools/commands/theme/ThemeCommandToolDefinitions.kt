@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.core.tools.commands
+package com.ai.assistance.operit.core.tools.commands.theme
 
 import com.ai.assistance.operit.core.tools.prompt.ToolParameterSchema
 import com.ai.assistance.operit.core.tools.prompt.ToolPrompt

@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.core.tools.commands
+package com.ai.assistance.operit.core.tools.commands.theme
 
 import android.graphics.Bitmap
 import android.net.Uri

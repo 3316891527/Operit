@@ -1,15 +1,19 @@
-package com.ai.assistance.operit.core.tools.commands
+package com.ai.assistance.operit.core.tools.commands.theme
 
 import android.content.Context
+import com.ai.assistance.operit.core.tools.commands.PlatformCommandExecutor
+import com.ai.assistance.operit.core.tools.commands.PlatformCommandRegistry
+import com.ai.assistance.operit.core.tools.commands.PlatformSettingsTarget
+import com.ai.assistance.operit.core.tools.commands.PlatformSettingsTargets
+import com.ai.assistance.operit.core.tools.commands.theme.editor.ThemeCommandAssets
+import com.ai.assistance.operit.core.tools.commands.theme.editor.ThemeCommandFields
+import com.ai.assistance.operit.core.tools.commands.theme.editor.ThemeCommandRevision
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.ThemeSettingsResultData
 import com.ai.assistance.operit.core.tools.protocol.AITool
 import com.ai.assistance.operit.core.tools.protocol.ToolResult
 import com.ai.assistance.operit.data.character.ActivePrompt
-import com.ai.assistance.operit.data.db.AppDatabase
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
-import com.ai.assistance.operit.data.preferences.CharacterCardManager
-import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.ThemePreferenceValues
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
@@ -17,7 +21,6 @@ import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -30,15 +33,13 @@ internal class ThemeSettingsTools(context: Context) {
     private val preferences = UserPreferencesManager.getInstance(this.context)
     private val display = DisplayPreferencesManager.getInstance(this.context)
     private val prompts = ActivePromptManager.getInstance(this.context)
-    private val cards = CharacterCardManager.getInstance(this.context)
-    private val groups = CharacterGroupCardManager.getInstance(this.context)
+    private val targets = PlatformSettingsTargets(this.context)
     private val assets = ThemeCommandAssets(this.context)
 
     companion object {
         val toolNames = setOf("list_theme_targets", "describe_theme_fields", "get_theme_settings", "set_theme_settings")
     }
 
-    private data class Target(val type: String, val id: String, val name: String, val prompt: ActivePrompt?)
 
     suspend fun execute(tool: AITool): ToolResult = withContext(Dispatchers.IO) {
         try {
@@ -54,7 +55,7 @@ internal class ThemeSettingsTools(context: Context) {
                 "section must be one of ${ThemeCommandFields.sections.joinToString()}"
             }
             when (tool.name) {
-                "list_theme_targets" -> listTargets(tool.name)
+                "list_theme_targets" -> ToolResult(tool.name, true, StringResultData(targets.list(includeUser = true).toString()))
                 "describe_theme_fields" -> ToolResult(tool.name, true, StringResultData(
                     JSONObject().put("sections", JSONArray(ThemeCommandFields.sections.toList()))
                         .put("fields", ThemeCommandFields.describe(section))
@@ -65,7 +66,7 @@ internal class ThemeSettingsTools(context: Context) {
                         .toString()
                 ))
                 "get_theme_settings" -> prompts.runThemeTransition {
-                    val target = resolveTarget(tool, parameters)
+                    val target = targets.resolve(tool, parameters, allowUser = true)
                     require(target.type != "user" || section == null || section == "avatars") { "user target only supports avatars/profile fields" }
                     val values = readValues(target)
                     result(tool.name, target, values, active = target.prompt == null || target.prompt == prompts.getActivePrompt(), section = section)
@@ -81,66 +82,7 @@ internal class ThemeSettingsTools(context: Context) {
         }
     }
 
-    private suspend fun listTargets(toolName: String): ToolResult {
-        val active = prompts.getActivePrompt()
-        val rows = JSONArray()
-        cards.getAllCharacterCards().forEach { card ->
-            rows.put(JSONObject().put("target_type", "card").put("target_id", card.id)
-                .put("name", card.name).put("active", active == ActivePrompt.CharacterCard(card.id)))
-        }
-        groups.getAllCharacterGroupCards().forEach { group ->
-            rows.put(JSONObject().put("target_type", "group").put("target_id", group.id)
-                .put("name", group.name).put("active", active == ActivePrompt.CharacterGroup(group.id)))
-        }
-        rows.put(JSONObject().put("target_type", "user").put("name", "Global user profile").put("active", true))
-        return ToolResult(toolName, true, StringResultData(rows.toString()))
-    }
-
-    private suspend fun resolveTarget(tool: AITool, parameters: Map<String, String>): Target {
-        val type = parameters["target_type"] ?: "current"
-        require(type in setOf("current", "card", "group", "user")) { "target_type must be current, card, group or user" }
-        val id = parameters["target_id"]
-        if (type == "user") {
-            require(id == null) { "user target does not accept target_id" }
-            return Target("user", "global", "Global user profile", null)
-        }
-        if (type == "card" || type == "group") {
-            require(!id.isNullOrBlank() && id == id.trim()) { "Explicit card/group target requires an exact target_id" }
-            return checkedTarget(if (type == "card") ActivePrompt.CharacterCard(id) else ActivePrompt.CharacterGroup(id))
-        }
-        require(id == null) { "current target does not accept target_id" }
-        // 群聊的视觉主题属于角色组，不能把本轮发言角色的卡片 ID 当成主题目标。
-        val chatId = tool.parameters.singleOrNull { it.name == "__operit_package_chat_id" }?.value?.takeIf { it.isNotBlank() }
-        val cardId = tool.parameters.singleOrNull { it.name == "__operit_package_caller_card_id" }?.value?.takeIf { it.isNotBlank() }
-        if (chatId != null) {
-            val chat = requireNotNull(AppDatabase.getDatabase(context).chatDao().getChatById(chatId)) { "Caller conversation no longer exists; use an explicit theme target" }
-            if (!chat.characterGroupId.isNullOrBlank()) return checkedTarget(ActivePrompt.CharacterGroup(chat.characterGroupId))
-            if (cardId != null) return checkedTarget(ActivePrompt.CharacterCard(cardId))
-            val name = chat.characterCardName
-            if (!name.isNullOrBlank()) {
-                val matches = cards.getAllCharacterCards().filter { it.name == name }
-                require(matches.size == 1) { "Caller theme binding is missing or ambiguous; use theme targets and an explicit target" }
-                return checkedTarget(ActivePrompt.CharacterCard(matches.single().id))
-            }
-            return checkedTarget(ActivePrompt.CharacterCard(CharacterCardManager.DEFAULT_CHARACTER_CARD_ID))
-        }
-        if (cardId != null) return checkedTarget(ActivePrompt.CharacterCard(cardId))
-        // 直接命令没有聊天归属时，current 明确定义为应用当前激活的主题。
-        return checkedTarget(prompts.getActivePrompt())
-    }
-
-    private suspend fun checkedTarget(prompt: ActivePrompt): Target = when (prompt) {
-        is ActivePrompt.CharacterCard -> {
-            require(prompt.id in cards.characterCardListFlow.first()) { "Unknown character card: ${prompt.id}" }
-            Target("card", prompt.id, cards.getCharacterCard(prompt.id).name, prompt)
-        }
-        is ActivePrompt.CharacterGroup -> {
-            val group = requireNotNull(groups.getCharacterGroupCard(prompt.id)) { "Unknown character group: ${prompt.id}" }
-            Target("group", prompt.id, group.name, prompt)
-        }
-    }
-
-    private suspend fun readValues(target: Target): ThemePreferenceValues = when (val prompt = target.prompt) {
+    private suspend fun readValues(target: PlatformSettingsTarget): ThemePreferenceValues = when (val prompt = target.prompt) {
         is ActivePrompt.CharacterCard -> preferences.resolveThemePreferenceSnapshot(characterCardId = prompt.id).values
         is ActivePrompt.CharacterGroup -> preferences.resolveThemePreferenceSnapshot(characterGroupId = prompt.id).values
         null -> ThemePreferenceValues(strings = display.globalUserProfile())
@@ -152,7 +94,7 @@ internal class ThemeSettingsTools(context: Context) {
         val changes = ThemeCommandFields.validate(PlatformCommandRegistry.parseJsonObject(requireNotNull(parameters["changes"])))
         require(changes.isNotEmpty()) { "changes must contain at least one theme field" }
         return prompts.runThemeTransition {
-            val target = resolveTarget(tool, parameters)
+            val target = targets.resolve(tool, parameters, allowUser = true)
             if (target.type == "user") require(changes.keys.all { it in ThemeCommandFields.profileNames }) { "user target only accepts global_user_avatar_uri and global_user_name" }
             else require(changes.keys.none { it in ThemeCommandFields.profileNames }) { "Global profile fields require target_type=user" }
             val before = readValues(target)
@@ -244,7 +186,7 @@ internal class ThemeSettingsTools(context: Context) {
     }
 
     private fun result(
-        toolName: String, target: Target, values: ThemePreferenceValues,
+        toolName: String, target: PlatformSettingsTarget, values: ThemePreferenceValues,
         active: Boolean, section: String? = null, saved: Boolean = false, verified: Boolean = false,
         updatedFields: List<String> = emptyList(),
     ): ToolResult {

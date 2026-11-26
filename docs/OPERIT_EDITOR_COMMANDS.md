@@ -10,7 +10,7 @@
 {"args": []}
 ```
 
-空数组返回当前宿主命令帮助。查看某一项操作的参数：
+包与工具描述只说明宿主执行入口和版本要求，具体能力以 Help 为准。空数组返回当前宿主命令帮助。查看某一项操作的参数：
 
 ```json
 {"args": ["help", "model", "update"]}
@@ -55,6 +55,7 @@
 | `context` | `show`、`set`，按功能绑定定位模型配置 |
 | `character` | `list`、`show`、`create`、`update`、`delete`、`activate`、`clear`、`import`、`export` |
 | `theme` | `targets`、`fields`、`show`、`set`，按需查询并修改外观 |
+| `waifu` | `targets`、`fields`、`show`、`set`，按角色或角色组修改 Waifu 配置 |
 | `performance` | `show`，可指定插件 ID |
 | `tool` | `list`、`show`、`exec`，发现和执行已有宿主或包工具 |
 
@@ -112,6 +113,42 @@ changes 只更新提供的字段，其他偏好保留。字段帮助声明类型
 
 如果持久化成功后读回失败，命令返回失败状态并携带 saved=true、verified=false，调用方应重新读取确认，不能把失败状态理解为所有设置均未修改。
 
+
+## Waifu 配置
+
+Waifu 配置与主题外观使用独立存储，命令组为 waifu。需要包含此实现的新版宿主，是否可用由实时 Help 返回的命令决定。
+
+```json
+{"args":["waifu","targets"]}
+{"args":["waifu","fields"]}
+{"args":["help","waifu","set"]}
+{"args":["waifu","show"]}
+```
+
+支持设置页的九个字段：
+
+- enable_waifu_mode：开启或关闭模式
+- waifu_char_delay：逐字延迟，整数毫秒，200 到 1000
+- waifu_remove_punctuation：移除标点
+- waifu_enable_emoticons：启用表情包
+- waifu_enable_selfie：启用自拍
+- waifu_enable_merge_send：合并发送
+- waifu_merge_send_delay_ms：合并等待，整数毫秒，500 到 10000
+- waifu_custom_prompt：附加提示词
+- waifu_selfie_prompt：自拍外貌提示词
+
+默认 current 归属调用对话，群聊归属角色组；直接调用使用应用当前激活的角色或组。显式 card 或 group 必须带 targets 返回的精确 ID，不支持全局 user 目标。先读取同一目标，再提交其 revision。
+
+```json
+{"args":["waifu","show","{\"target_type\":\"card\",\"target_id\":\"角色ID\"}"]}
+{"args":["waifu","set","{\"expected_revision\":\"上次读取的revision\",\"changes\":{\"enable_waifu_mode\":true,\"waifu_char_delay\":300,\"waifu_enable_merge_send\":true,\"waifu_merge_send_delay_ms\":3000}}"]}
+{"args":["waifu","set","{\"target_type\":\"group\",\"target_id\":\"角色组ID\",\"expected_revision\":\"该组上次读取的revision\",\"changes\":{\"waifu_custom_prompt\":\"用简洁的短句回复。\"}}"]}
+```
+
+changes 只更新显式字段。布尔值、整数和字符串严格校验，不接受 null，提示词可用空串清除；关闭模式、自拍或合并发送不清除其附属配置。附属参数仅在对应功能开启时使用，不会因修改延迟或提示词自动开启功能。
+
+版本绑定目标与完整 Waifu 配置，版本检查和增量保存发生在同一 DataStore 事务。修改当前目标会同时更新运行值及该角色或组的存储；修改其他目标不会切换当前角色，也不改变当前聊天运行值。返回实际目标、revision、values、saved、verified 和 updated_fields；active 记录操作开始时该目标是否激活。旧版本拒绝写入，保存后校验失败仍携带 saved=true，需重新读取确认。
+
 ## 调试安装
 
 `package install` 支持可读取的 Android 绝对路径：`.js`、`.toolpkg`、包含根 manifest 的 ToolPkg 源码目录，以及 `manifest.json` / `manifest.hjson` 本身。软件根据自身安装包确定外部包目录，不再在脚本中写死正式版的目录和广播组件。
@@ -138,7 +175,36 @@ changes 只更新提供的字段，其他偏好保留。字段帮助声明类型
 
 ```bash
 node --test tools/operit-editor/tests/command-entry.test.cjs
-./gradlew :app:testDebugUnitTest --tests '*PlatformCommand*Test' --tests '*PlatformPackageFilesTest' --tests '*OperitEditorRuntimeTest' --tests '*ThemeCommand*Test' --tests '*ThemeDraft*Test' --tests '*ThemeEditorSessionMergeTest'
+./gradlew :app:testDebugUnitTest --tests '*PlatformCommand*Test' --tests '*PlatformPackageFilesTest' --tests '*OperitEditorRuntimeTest' --tests '*ThemeCommand*Test' --tests '*WaifuCommand*Test' --tests '*ThemeDraft*Test' --tests '*ThemeEditorSessionMergeTest'
 ```
 
 运行时回归通过 JVM 测试入口接入 Android Tests 和 PR 检查，验证脚本、实际 SDK 桥接、错误传播、参数完整性、嵌套与并发、命令解析、权限调度及安装文件处理。测试中的目标业务调用使用受控替身；真机上的配置修改与包安装需使用新版软件验收。
+
+
+## 命令代码组织
+
+命令入口统一位于 core.tools.commands，沿用现有复数包名。主题编辑实现与 Waifu 各有子包：
+
+```text
+core/tools/commands/
+	PlatformCommandRegistry.kt
+	PlatformCommandExecutor.kt
+	PlatformCommandDispatcher.kt
+	PlatformSettingsTargets.kt
+	theme/
+		ThemeSettingsTools.kt
+		ThemeCommandToolDefinitions.kt
+		editor/
+			ThemeCommandFields.kt
+			ThemeCommandAssets.kt
+			ThemeCommandRevision.kt
+	waifu/
+		WaifuSettingsTools.kt
+		WaifuCommandToolDefinitions.kt
+		WaifuCommandFields.kt
+		WaifuCommandRevision.kt
+```
+
+包安装适配在同目录的 PlatformPackageInstaller 与 PlatformPackageFiles。语音、模型、角色卡、环境变量、包和权限等既有能力由 core.tools.builtin.settings.StandardSoftwareSettingsModifyTools 实现，命令目录通过宿主工具注册与授权调度调用它；性能读取由 runtime.ToolRegistration 注册。这些共享工具服务仍可供既有 SDK 使用。
+
+主题存储和草稿三方合并属于 data.preferences，UI 编辑会话保留在 ui.features.management.settings.screens.theme；data.theme.script、data.resources.theme、data.themesharing 分别负责主题协议、资源存储和分享。它们是命令调用的领域能力或 UI，保持依赖从命令指向数据，数据不依赖命令。

@@ -7,7 +7,8 @@ import com.ai.assistance.operit.core.config.SystemToolPrompts
 import com.ai.assistance.operit.core.tools.commands.PlatformCommandExecutor
 import com.ai.assistance.operit.core.tools.commands.PlatformCommandDispatcher
 import com.ai.assistance.operit.core.tools.commands.PlatformPackageInstaller
-import com.ai.assistance.operit.core.tools.commands.ThemeSettingsTools
+import com.ai.assistance.operit.core.tools.commands.theme.ThemeSettingsTools
+import com.ai.assistance.operit.core.tools.commands.waifu.WaifuSettingsTools
 import com.ai.assistance.operit.core.tools.skill.SkillManager
 import java.io.File
 import com.ai.assistance.operit.core.performance.PerformanceMonitorManager
@@ -308,6 +309,15 @@ fun registerAllTools(handler: AIToolHandler, context: Context) {
             name = name,
             descriptionGenerator = { "Operit theme settings: $name" },
             executor = { tool -> runBlocking(Dispatchers.IO) { themeSettingsTools.execute(tool) } },
+        )
+    }
+
+    val waifuSettingsTools = WaifuSettingsTools(context)
+    WaifuSettingsTools.toolNames.forEach { name ->
+        handler.registerTool(
+            name = name,
+            descriptionGenerator = { "Operit Waifu settings: $name" },
+            executor = { tool -> runBlocking(Dispatchers.IO) { waifuSettingsTools.execute(tool) } },
         )
     }
 

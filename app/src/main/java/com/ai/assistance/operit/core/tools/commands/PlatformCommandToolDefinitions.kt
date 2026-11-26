@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.core.tools.commands
 
+import com.ai.assistance.operit.core.tools.commands.theme.ThemeCommandToolDefinitions
+import com.ai.assistance.operit.core.tools.commands.waifu.WaifuCommandToolDefinitions
 import com.ai.assistance.operit.core.tools.prompt.SystemToolPromptCategory
 import com.ai.assistance.operit.core.tools.prompt.ToolParameterSchema
 import com.ai.assistance.operit.core.tools.prompt.ToolPrompt
@@ -42,6 +44,6 @@ internal object PlatformCommandToolDefinitions {
                     ToolParameterSchema(name = "wait_ms", type = "integer", description = "Execution timeout in milliseconds", required = false),
                 ),
             ),
-        ) + PlatformSettingsToolDefinitions.tools(useEnglish) + ThemeCommandToolDefinitions.tools(useEnglish),
+        ) + PlatformSettingsToolDefinitions.tools(useEnglish) + ThemeCommandToolDefinitions.tools(useEnglish) + WaifuCommandToolDefinitions.tools(useEnglish),
     )
 }

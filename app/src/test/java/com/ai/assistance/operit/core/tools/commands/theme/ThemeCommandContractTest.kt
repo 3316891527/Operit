@@ -1,5 +1,8 @@
-package com.ai.assistance.operit.core.tools.commands
+package com.ai.assistance.operit.core.tools.commands.theme
 
+import com.ai.assistance.operit.core.tools.commands.PlatformCommandRegistry
+import com.ai.assistance.operit.core.tools.commands.PlatformCommandRequest
+import com.ai.assistance.operit.core.tools.commands.theme.editor.ThemeCommandRevision
 import com.ai.assistance.operit.data.preferences.ThemePreferenceValues
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
