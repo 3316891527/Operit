@@ -96,7 +96,7 @@ class StreamingDisplayBacklogAndroidTest {
         val tail = "继续</param></tool>"
         val response = result("shell", "成功")
         val state = StreamMarkdownRendererState()
-        val input = stream { emit(tail + response) }.withRollbackPrefix(prefix)
+        val input = stream<String> { emit(tail + response) }.withRollbackPrefix(prefix)
         composeRule.setContent {
             MaterialTheme { StreamMarkdownChunkRenderer(input, state = state, renderContent = false) }
         }
