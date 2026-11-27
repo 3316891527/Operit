@@ -4,6 +4,7 @@ import com.ai.assistance.operit.core.agent.SubagentContextHistory
 import com.ai.assistance.operit.core.agent.selectSubagentThinking
 import com.ai.assistance.operit.core.agent.subagentThinkingMapping
 import com.ai.assistance.operit.core.chat.tools.timing.ToolCallExecution
+import com.ai.assistance.operit.core.chat.context.ChatContextInputReports
 import com.ai.assistance.operit.core.chat.context.TokenUsageBreakdown
 import com.ai.assistance.operit.core.chat.voice.VoiceAnalysis
 import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
@@ -84,6 +85,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -155,8 +158,12 @@ class EnhancedAIService private constructor(context: Context) {
                 }
         }
 
+        internal fun clearReportedContextInput(chatId: String) {
+            CHAT_INSTANCES[chatId]?.contextInputReports?.clear()
+        }
         fun releaseChatInstance(chatId: String) {
             val instance = CHAT_INSTANCES.remove(chatId) ?: return
+            instance.contextInputReports.clear()
             runCatching {
                 instance.cancelConversation()
             }.onFailure { e ->
@@ -255,6 +262,9 @@ class EnhancedAIService private constructor(context: Context) {
                 addAll(CHAT_INSTANCES.values)
             }.distinct()
             allInstances.forEach {
+                if (functionType == null || functionType == FunctionType.CHAT) {
+                    it.contextInputReports.clear()
+                }
                 if (functionType == null) {
                     it.multiServiceManager.resetAllTokenCounters()
                 } else {
@@ -271,6 +281,7 @@ class EnhancedAIService private constructor(context: Context) {
             }.distinct()
 
             allInstances.forEach { instance ->
+                instance.contextInputReports.clear()
                 instance.initScope.launch {
                     runCatching {
                         instance.multiServiceManager.resetAllTokenCounters()
@@ -439,6 +450,9 @@ class EnhancedAIService private constructor(context: Context) {
     private val _requestWindowEstimate = MutableStateFlow<Long?>(null)
     val requestWindowEstimateFlow: StateFlow<Long?> = _requestWindowEstimate.asStateFlow()
 
+    private val contextInputReports = ChatContextInputReports()
+    internal val reportedContextInputTokens: StateFlow<Long?> get() = contextInputReports.inputTokens
+
     // Conversation management
     // private val streamBuffer = StringBuilder() // Moved to MessageExecutionContext
     // private val roundManager = ConversationRoundManager() // Moved to MessageExecutionContext
@@ -472,6 +486,7 @@ class EnhancedAIService private constructor(context: Context) {
         val eventChannel: MutableSharedStream<TextStreamEvent>,
         val permissionSession: PermissionCapabilitySession,
         val onToolTiming: suspend (ToolCallExecution) -> Unit,
+        val contextInputTurn: ChatContextInputReports.Turn?,
         val toolCallCount: AtomicInteger = AtomicInteger(0),
         val onToolExecutionBoundary: (suspend (ToolExecutionBoundarySnapshot) -> Unit)? = null,
         val turnInputInbox: TurnInputInbox? = null,
@@ -530,6 +545,18 @@ class EnhancedAIService private constructor(context: Context) {
             activeExecutionContexts[context.executionId] === context
     }
 
+    private suspend fun finishContextInputRequest(
+        execution: MessageExecutionContext,
+        request: ChatContextInputReports.Request?,
+    ) {
+        if (request == null) return
+        val chatId = execution.callerChatId ?: return
+        val caller = currentCoroutineContext()
+        // finalized 之后流仍可能失败或被中止，等整个聊天采样正常返回再提交。
+        request.finish(execution.samplingInterrupted) {
+            caller.isActive && isExecutionContextActive(execution) && CHAT_INSTANCES[chatId] === this
+        }
+    }
     private suspend fun getModelExecutionSnapshot(
         context: MessageExecutionContext,
         functionType: FunctionType,
@@ -1014,6 +1041,13 @@ class EnhancedAIService private constructor(context: Context) {
         require(!options.subagentReportOnly || options.isDelegatedTask) { "Report-only mode is restricted to delegated executions" }
         var message = VoiceMessageMarkup.toRequestContent(options.message)
         val chatId = options.chatId
+        val contextInputTurn = if (chatId != null && CHAT_INSTANCES[chatId] === this &&
+            options.functionType == FunctionType.CHAT && !options.isDelegatedTask
+        ) {
+            contextInputReports.startTurn()
+        } else {
+            null
+        }
         if (chatId != null && !options.isDelegatedTask) {
             com.ai.assistance.operit.data.repository.ChatHistoryManager.getInstance(context).requireNormalConversation(chatId)
         }
@@ -1095,6 +1129,7 @@ class EnhancedAIService private constructor(context: Context) {
                     eventChannel = eventChannel,
                     permissionSession = permissionSession,
                     onToolTiming = options.onToolTiming,
+                    contextInputTurn = contextInputTurn,
                     onToolExecutionBoundary = options.onToolExecutionBoundary,
                     turnInputInbox = options.turnInputInbox,
                     onTurnInput = options.onTurnInput,
@@ -1323,6 +1358,7 @@ class EnhancedAIService private constructor(context: Context) {
                         TextStreamEventType.SAVEPOINT, execContext.samplingSavepoint, execContext.samplingRawStart,
                     ))
                     var usageRequestHistory = requestHistory
+                    val contextInputRequest = execContext.contextInputTurn?.startRequest()
                     execContext.samplingInterrupted = runSteerableSampling(
                         execContext.turnInputInbox, { execContext.samplingReplayMetadata = it },
                     ) {
@@ -1331,6 +1367,7 @@ class EnhancedAIService private constructor(context: Context) {
                             onNonFatalError = onNonFatalError,
                             request = { voiceRequestHistory, attemptNotice ->
                                 usageRequestHistory = voiceRequestHistory
+                                val usage = contextInputRequest?.startProviderCall()
 
                                 withContext(
                                     TokenRequestSource(
@@ -1353,7 +1390,9 @@ class EnhancedAIService private constructor(context: Context) {
                                                 currentRequestCachedInputTokenCount = cachedInput.coerceAtLeast(0)
                                                 _perRequestTokenCounts.value = Pair(input, output)
                                             },
-                                             onNonFatalError = attemptNotice,
+                                            onUsageReported = usage?.onUsageReported,
+                                            onUsageFinalized = usage?.onUsageFinalized,
+                                            onNonFatalError = attemptNotice,
                                     )
                                 }
                             },
@@ -1417,6 +1456,7 @@ class EnhancedAIService private constructor(context: Context) {
                             }
 
                     }
+                    finishContextInputRequest(execContext, contextInputRequest)
 
                     // Update accumulated token counts and persist them
                     val inputTokens = if (requestReportedTokens) serviceForFunction.inputTokenCount else 0L
@@ -2744,9 +2784,11 @@ class EnhancedAIService private constructor(context: Context) {
                 context.eventChannel.emit(TextStreamEvent(
                     TextStreamEventType.SAVEPOINT, context.samplingSavepoint, context.samplingRawStart,
                 ))
+                val contextInputRequest = context.contextInputTurn?.startRequest()
                 context.samplingInterrupted = runSteerableSampling(
                     context.turnInputInbox, { context.samplingReplayMetadata = it },
                 ) {
+                    val usage = contextInputRequest?.startProviderCall()
                     val responseStream =
                             withContext(
                                 TokenRequestSource(
@@ -2769,7 +2811,9 @@ class EnhancedAIService private constructor(context: Context) {
                                             currentRequestCachedInputTokenCount = cachedInput.coerceAtLeast(0)
                                             _perRequestTokenCounts.value = Pair(input, output)
                                         },
-                                         onNonFatalError = onNonFatalError,
+                                        onUsageReported = usage?.onUsageReported,
+                                        onUsageFinalized = usage?.onUsageFinalized,
+                                        onNonFatalError = onNonFatalError,
                                 )
                             }
 
@@ -2833,6 +2877,7 @@ class EnhancedAIService private constructor(context: Context) {
                             if (currentTime - lastLogTime > 5000) lastLogTime = currentTime
                         }
                 }
+                finishContextInputRequest(context, contextInputRequest)
 
                 // Update accumulated token counts and persist them
                 val inputTokens = if (requestReportedTokens) serviceForFunction.inputTokenCount else 0L

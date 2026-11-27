@@ -7521,7 +7521,7 @@
     <string name="context_panel_estimate_badge">Anggaran</string>
     <string name="context_panel_footer_auto_summary">Rumusan automatik pada %1$s</string>
     <string name="context_panel_footer_summary_disabled">Rumusan automatik dimatikan</string>
-    <string name="context_panel_last_request">Permintaan terkini %1$s · %2$s</string>
+    <string name="context_panel_last_request">Permintaan berjaya terakhir · Token input dilaporkan oleh pelayan: %1$s</string>
     <string name="context_panel_loading">Menganggar tetingkap semasa…</string>
     <string name="context_panel_mcp_tools">MCP / alat pakej</string>
     <string name="context_panel_message_history">Sejarah mesej</string>

@@ -211,13 +211,7 @@ object ProviderUsageNormalizer {
         val uncached = input
         // 总输入 = input + cache_read + cache_creation（官方文档语义）；
         // 全部已知才确定总量；无任何缓存分量时总输入即 input_tokens。
-        val totalInput =
-            when {
-                cached != null && cacheWrite != null && uncached != null ->
-                    uncached + cached + cacheWrite
-                cached == null && cacheWrite == null -> uncached
-                else -> null
-            }
+        val totalInput = anthropicTotalInputTokens(uncached, cached, cacheWrite)
         val snapshot =
             ProviderUsageSnapshot(
                 uncachedInputTokens = uncached,
@@ -330,6 +324,14 @@ object ProviderUsageNormalizer {
             source = SOURCE_TOOLPKG,
         )
     }
+
+    /** Anthropic 分段上报合并后也使用同一总输入口径，不把缺失缓存分量当作零。 */
+    internal fun anthropicTotalInputTokens(uncached: Long?, cached: Long?, cacheWrite: Long?): Long? =
+        when {
+            uncached != null && cached != null && cacheWrite != null -> uncached + cached + cacheWrite
+            cached == null && cacheWrite == null -> uncached
+            else -> null
+        }
 
     private fun sumNumericFields(jsonObject: JSONObject): Long {
         var total = 0L

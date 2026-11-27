@@ -42,7 +42,7 @@ import com.ai.assistance.operit.core.chat.context.ContextWindowBreakdown
 @Composable
 internal fun ContextWindowUsageContent(
     breakdown: ContextWindowBreakdown,
-    lastRequestInputTokens: Long?,
+    lastReportedInputTokens: Long?,
     canSummarize: Boolean,
     isSummarizing: Boolean,
     onSummarizeNow: () -> Unit
@@ -101,12 +101,11 @@ internal fun ContextWindowUsageContent(
                     color = progressColor
                 )
             }
-            if (lastRequestInputTokens != null) {
+            if (lastReportedInputTokens != null) {
                 Text(
                     stringResource(
                         R.string.context_panel_last_request,
-                        formatUsageTokens(lastRequestInputTokens),
-                        formatUsagePercent(lastRequestInputTokens, breakdown.maxWindowTokens)
+                        formatUsageTokens(lastReportedInputTokens)
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = secondaryTextColor
