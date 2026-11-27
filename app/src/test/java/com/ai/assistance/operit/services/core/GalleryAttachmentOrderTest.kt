@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
 import org.junit.Test
 import org.mockito.kotlin.mock
 
@@ -141,7 +140,9 @@ class GalleryAttachmentOrderTest {
             }
             releaseFirst.complete(Unit)
             first.join()
-            assertSame(failure, observedFailure)
+            // 协程恢复堆栈时可能复制异常，失败传播只要求类型和消息保持一致。
+            assertEquals(failure.javaClass, observedFailure?.javaClass)
+            assertEquals(failure.message, observedFailure?.message)
             assertEquals("next image copied", next.await())
         }
     }
