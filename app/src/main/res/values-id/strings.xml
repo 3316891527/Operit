@@ -7446,7 +7446,7 @@
     <string name="context_panel_estimate_badge">Estimasi</string>
     <string name="context_panel_footer_auto_summary">Ringkasan otomatis pada %1$s</string>
     <string name="context_panel_footer_summary_disabled">Ringkasan otomatis nonaktif</string>
-    <string name="context_panel_last_request">Permintaan terakhir %1$s · %2$s</string>
+    <string name="context_panel_last_request">Permintaan terakhir yang berhasil · Token masukan dari server: %1$s</string>
     <string name="context_panel_loading">Mengestimasi jendela saat ini…</string>
     <string name="context_panel_mcp_tools">MCP / alat paket</string>
     <string name="context_panel_message_history">Riwayat pesan</string>

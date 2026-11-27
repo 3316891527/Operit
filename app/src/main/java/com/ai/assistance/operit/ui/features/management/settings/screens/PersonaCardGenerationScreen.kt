@@ -33,6 +33,7 @@ import com.ai.assistance.operit.core.chat.hooks.toPromptTurns
 import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.data.model.CharacterCard
 import com.ai.assistance.operit.data.model.FunctionType
+import com.ai.assistance.operit.data.stats.TokenRequestSource
 import com.ai.assistance.operit.data.model.PromptTag
 import com.ai.assistance.operit.core.tools.protocol.ToolResult
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
@@ -377,10 +378,12 @@ fun PersonaCardGenerationScreen(
         }
         fullHistory.addAll(historyPairs)
 
-        val stream = aiService.sendMessage(
-            context = context,
-            chatHistory = (fullHistory + ("user" to prompt)).toPromptTurns(),
-        )
+        val stream = withContext(TokenRequestSource(FunctionType.CHAT)) {
+            aiService.sendMessage(
+                context = context,
+                chatHistory = (fullHistory + ("user" to prompt)).toPromptTurns(),
+            )
+        }
         Pair(stream, aiService)
     }
 

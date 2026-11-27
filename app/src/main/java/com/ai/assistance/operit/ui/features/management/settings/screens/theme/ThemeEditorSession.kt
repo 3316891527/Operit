@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.management.settings.screens.theme
 
 import android.net.Uri
+import com.ai.assistance.operit.data.preferences.ThemeDraftMerge
 import com.ai.assistance.operit.data.preferences.ThemePreferenceValues
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.preferences.layout.ChatLayoutSettings
@@ -24,6 +25,8 @@ internal class ThemeEditorSession(
     private val _layout = MutableStateFlow(initialLayout)
     private var baselineLayout = initialLayout
     private var resetRequested = false
+    private var themeRevision = 0L
+    private var inFlightThemeRevision = 0L
     private val stagedAssetUris = mutableSetOf<String>()
     private var inFlightSavedValues: ThemePreferenceValues? = null
     private var disposed = false
@@ -37,8 +40,14 @@ internal class ThemeEditorSession(
     val currentValues: ThemePreferenceValues
         get() = _values.value
 
+    val currentBaselineValues: ThemePreferenceValues
+        get() = baselineValues
+
     val currentGlobalUserName: String
         get() = _globalUserName.value
+
+    val currentBaselineGlobalUserName: String
+        get() = baselineGlobalUserName
 
     val currentLayout: ChatLayoutSettings
         get() = _layout.value
@@ -81,6 +90,7 @@ internal class ThemeEditorSession(
         val updated = transform(currentValues)
         if (updated == currentValues) return
         _values.value = updated
+        themeRevision += 1
         resetRequested = false
         deleteUnreferencedStagedAssets(updated)
         updateDirtyState()
@@ -162,6 +172,7 @@ internal class ThemeEditorSession(
                 .withString("custom_ai_avatar_uri", currentValues.string("custom_ai_avatar_uri"))
                 .withString("custom_chat_title", currentValues.string("custom_chat_title"))
         _values.value = resetValues
+        themeRevision += 1
         resetRequested = true
         deleteUnreferencedStagedAssets(resetValues)
         updateDirtyState()
@@ -178,22 +189,38 @@ internal class ThemeEditorSession(
 
     fun beginSave(savedValues: ThemePreferenceValues) {
         inFlightSavedValues = savedValues
+        inFlightThemeRevision = themeRevision
+    }
+
+    fun markThemeSaved(savedValues: ThemePreferenceValues) {
+        val submitted = checkNotNull(inFlightSavedValues)
+        // 合并带回外部更新，同时将提交后继续编辑的字段保留为未保存草稿。
+        _values.value = ThemeDraftMerge.rebaseAfterSave(submitted, currentValues, savedValues)
+        stagedAssetUris.removeAll(savedValues.strings.values)
+        baselineValues = savedValues
+        inFlightSavedValues = savedValues
+        if (themeRevision == inFlightThemeRevision) resetRequested = false
+        updateDirtyState()
     }
 
     fun markSaved(savedValues: ThemePreferenceValues, savedGlobalUserName: String, savedLayout: ChatLayoutSettings) {
-        stagedAssetUris.removeAll(savedValues.strings.values)
+        markThemeSaved(savedValues)
         inFlightSavedValues = null
-        baselineValues = savedValues
         // 保存期间继续输入的名字保留为草稿，只更新本次保存的基线。
         baselineGlobalUserName = savedGlobalUserName
         // 只推进已完成保存的布局基线，保存期间继续调整的数值仍属于未保存草稿。
         baselineLayout = savedLayout
-        resetRequested = false
         if (disposed) {
             deleteStagedAssets(stagedAssetUris.toSet())
         } else {
             deleteUnreferencedStagedAssets(currentValues)
         }
+        updateDirtyState()
+    }
+
+    fun markGlobalUserNameSaved(submitted: String, saved: String) {
+        if (currentGlobalUserName == submitted) _globalUserName.value = saved
+        baselineGlobalUserName = saved
         updateDirtyState()
     }
 

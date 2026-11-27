@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import java.util.UUID
+import kotlin.coroutines.EmptyCoroutineContext
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -42,17 +44,36 @@ class JsToolManager private constructor(
         }
     }
 
+    private val githubTerminalSessions = GithubTerminalSessionGate()
     private val engines = List(MAX_CONCURRENT_ENGINES) { JsEngine(context) }
     private val enginePool = Channel<JsEngine>(capacity = MAX_CONCURRENT_ENGINES).also { pool ->
         engines.forEach(pool::trySend)
     }
 
-    private suspend fun <T> withEngine(block: suspend (JsEngine) -> T): T {
-        val engine = enginePool.receive()
+    private fun logTerminalWait(traceId: String?, phase: String, started: Long) {
+        if (traceId == null) return
+        // ToolPkg 日志按启动归档，强停后仍可关联等待阶段；不记录参数或命令内容。
+        AppLogger.d("ToolPkg", "package=github function=terminal_exec invocation=$traceId phase=$phase elapsedMs=${(System.nanoTime() - started) / 1_000_000}")
+    }
+
+    private suspend fun <T> withEngine(
+        traceId: String? = null,
+        block: suspend (JsEngine) -> T,
+    ): T {
+        val started = System.nanoTime()
+        logTerminalWait(traceId, "pool.wait", started)
+        val engine = try {
+            enginePool.receive()
+        } catch (error: Exception) {
+            logTerminalWait(traceId, "pool.failed type=${error.javaClass.simpleName}", started)
+            throw error
+        }
+        logTerminalWait(traceId, "pool.acquired", started)
         return try {
             block(engine)
         } finally {
-            enginePool.trySend(engine)
+            val released = enginePool.trySend(engine)
+            logTerminalWait(traceId, "pool.released success=${released.isSuccess}", started)
         }
     }
 
@@ -128,27 +149,50 @@ class JsToolManager private constructor(
 
     private suspend fun <T> withExecutionEngineForPackage(
         packageName: String,
-        block: suspend (JsEngine) -> T
+        traceId: String? = null,
+        terminalSessionName: String? = null,
+        block: suspend (JsEngine) -> T,
     ): T {
-        val toolPkgRuntime = packageManager.resolveToolPkgSubpackageRuntimeInternal(packageName)
-        if (toolPkgRuntime != null) {
-            val contextKey = "toolpkg_main:${toolPkgRuntime.containerPackageName}"
-            return block(
-                packageManager.getToolPkgExecutionEngine(
-                    contextKey = contextKey,
-                    containerPackageName = toolPkgRuntime.containerPackageName
+        suspend fun execute(): T {
+            val toolPkgRuntime = packageManager.resolveToolPkgSubpackageRuntimeInternal(packageName)
+            if (toolPkgRuntime != null) {
+                val contextKey = "toolpkg_main:${toolPkgRuntime.containerPackageName}"
+                return block(
+                    packageManager.getToolPkgExecutionEngine(
+                        contextKey = contextKey,
+                        containerPackageName = toolPkgRuntime.containerPackageName,
+                    )
                 )
-            )
+            }
+            return withEngine(traceId = traceId, block = block)
         }
-        return withEngine(block)
+        if (terminalSessionName == null) return execute()
+
+        // 同名会话的获取、执行与关闭必须共用一次租用；等待时尚未占用 JS 引擎。
+        val started = System.nanoTime()
+        logTerminalWait(traceId, "session_gate.wait", started)
+        return try {
+            githubTerminalSessions.withSession(terminalSessionName) {
+                logTerminalWait(traceId, "session_gate.acquired", started)
+                execute()
+            }
+        } finally {
+            logTerminalWait(traceId, "session_gate.finished", started)
+        }
     }
 
     private fun <T> withExecutionEngineForPackageBlocking(
         packageName: String,
-        block: (JsEngine) -> T
+        terminalSessionName: String? = null,
+        traceId: String? = null,
+        block: (JsEngine) -> T,
     ): T {
-        return runBlocking {
-            withExecutionEngineForPackage(packageName) { engine -> block(engine) }
+        // 同步包调用新增会话等待时也继承取消，避免取消的等待者随后进入引擎。
+        val callerJob = if (terminalSessionName != null) {
+            com.ai.assistance.operit.core.chat.tools.ToolExecutionManager.currentToolRuntimeContext()?.cancellationJob
+        } else null
+        return runBlocking(callerJob ?: EmptyCoroutineContext) {
+            withExecutionEngineForPackage(packageName, traceId, terminalSessionName) { engine -> block(engine) }
         }
     }
 
@@ -345,7 +389,9 @@ class JsToolManager private constructor(
             packageName = packageName,
             params = params.mapValues { it.value as Any? }
         )
-        return withExecutionEngineForPackageBlocking(packageName) { engine ->
+        val terminalSessionName = githubTerminalSessionKey(packageName, functionName, runtimeParams["session_name"] as? String)
+        val terminalTraceId = terminalSessionName?.let { UUID.randomUUID().toString() }
+        return withExecutionEngineForPackageBlocking(packageName, terminalSessionName, terminalTraceId) { engine ->
             // Activation may change while this invocation waits for an execution engine.
             packageManager.packageAvailabilityError(packageName)?.let {
                 return@withExecutionEngineForPackageBlocking it
@@ -390,7 +436,11 @@ class JsToolManager private constructor(
             send(failure(tool.name, e.message ?: "Invalid tool parameters"))
             return@channelFlow
         }
-        withExecutionEngineForPackage(packageName) { engine ->
+        val terminalSessionName = githubTerminalSessionKey(packageName, functionName, runtimeParams["session_name"] as? String)
+        val terminalTraceId = terminalSessionName?.let { UUID.randomUUID().toString() }
+        val terminalStarted = System.nanoTime()
+        logTerminalWait(terminalTraceId, "invocation.begin", terminalStarted)
+        withExecutionEngineForPackage(packageName, traceId = terminalTraceId, terminalSessionName = terminalSessionName) { engine ->
             packageManager.packageAvailabilityError(packageName)?.let {
                 send(failure(tool.name, it))
                 return@withExecutionEngineForPackage
@@ -398,6 +448,9 @@ class JsToolManager private constructor(
             val traceListener =
                 object : JsExecutionListener {
                     override fun onCallLog(callId: String, level: String, message: String) {
+                        if (terminalTraceId != null && message.startsWith("[github-terminal] ")) {
+                            AppLogger.d("ToolPkg", "package=github function=terminal_exec invocation=$terminalTraceId scriptCall=$callId $message")
+                        }
                         trySend(
                             trace(
                                 toolName = tool.name,
@@ -423,6 +476,7 @@ class JsToolManager private constructor(
             try {
                 withTimeout(JsTimeoutConfig.SCRIPT_TIMEOUT_MS) {
                     packageManager.recordPluginUse(packageName)
+                    logTerminalWait(terminalTraceId, "script.begin", terminalStarted)
                     val result = engine.executeScriptFunction(
                         script = script,
                         functionName = functionName,
@@ -431,14 +485,17 @@ class JsToolManager private constructor(
                         executionListener = traceListener
                     )
 
+                    logTerminalWait(terminalTraceId, "script.returned", terminalStarted)
                     val normalizedFailure = extractJsExecutionFailure(result)
                     if (normalizedFailure != null) {
                         send(failure(tool.name, normalizedFailure))
                     } else {
                         send(success(tool.name, result))
                     }
+                    logTerminalWait(terminalTraceId, "result.sent success=${normalizedFailure == null}", terminalStarted)
                 }
             } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                logTerminalWait(terminalTraceId, "script.timeout", terminalStarted)
                 send(
                     failure(
                         tool.name,
@@ -446,8 +503,11 @@ class JsToolManager private constructor(
                     )
                 )
             } catch (e: Exception) {
+                logTerminalWait(terminalTraceId, "script.failed type=${e.javaClass.simpleName}", terminalStarted)
                 AppLogger.e(TAG, "Script execution failed: tool=${tool.name}, error=${e.message}", e)
                 send(failure(tool.name, "Script execution failed: ${e.message}"))
+            } finally {
+                logTerminalWait(terminalTraceId, "script.finished", terminalStarted)
             }
         }
     }

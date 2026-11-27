@@ -1,4 +1,6 @@
 package com.ai.assistance.operit.api.chat.decorator
+import com.ai.assistance.operit.data.stats.TokenRequestSource
+import kotlinx.coroutines.withContext
 
 import android.content.Context
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
@@ -52,6 +54,9 @@ class RateLimitedAIService(
         recordTokenUsage: Boolean,
         onUsageFinalized: (suspend (attempt: Int?) -> Unit)?,
     ): Stream<String> {
+        // 排队流延迟到收集时才调用底层服务，必须保存发送入口的来源，避免串用收集者上下文。
+        val source = kotlinx.coroutines.currentCoroutineContext()[TokenRequestSource]
+        val requestSource = TokenRequestSource(source?.functionType, source?.executionModel)
         val requestEpoch = synchronized(cancellationLock) { cancellationEpoch }
         // 保存点会在正文之前发出。消费端是后订阅的，必须重放，否则回滚没有起点。
         val eventChannel = MutableSharedStream<TextStreamEvent>(
@@ -103,25 +108,27 @@ class RateLimitedAIService(
                     acquireConcurrency(semaphore)
                 }
                 throwIfCancelled()
-                val response = delegate.sendMessage(
-                    context = context,
-                    chatHistory = chatHistory,
-                    modelParameters = modelParameters,
-                    enableThinking = enableThinking,
-                    thinkingOptionId = thinkingOptionId,
-                    stream = stream,
-                    availableTools = availableTools,
-                    preserveThinkInHistory = preserveThinkInHistory,
-                    onTokensUpdated = onTokensUpdated,
-                    onUsageReported = onUsageReported,
-                    onNonFatalError = onNonFatalError,
-                    enableRetry = enableRetry,
-                    recordTokenUsage = recordTokenUsage,
-                    onUsageFinalized = { attempt ->
-                        throwIfCancelled()
-                        onUsageFinalized?.invoke(attempt)
-                    },
-                )
+                val response = withContext(requestSource) {
+                    delegate.sendMessage(
+                        context = context,
+                        chatHistory = chatHistory,
+                        modelParameters = modelParameters,
+                        enableThinking = enableThinking,
+                        thinkingOptionId = thinkingOptionId,
+                        stream = stream,
+                        availableTools = availableTools,
+                        preserveThinkInHistory = preserveThinkInHistory,
+                        onTokensUpdated = onTokensUpdated,
+                        onUsageReported = onUsageReported,
+                        onNonFatalError = onNonFatalError,
+                        enableRetry = enableRetry,
+                        recordTokenUsage = recordTokenUsage,
+                        onUsageFinalized = { attempt ->
+                            throwIfCancelled()
+                            onUsageFinalized?.invoke(attempt)
+                        },
+                    )
+                }
                 response.collectWithRevisionRelay(
                     eventChannel = eventChannel,
                     roundStartLength = 0,

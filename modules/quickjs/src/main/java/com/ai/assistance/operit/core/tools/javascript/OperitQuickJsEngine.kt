@@ -5,6 +5,7 @@ import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -43,6 +44,16 @@ class OperitQuickJsEngine : Closeable {
         }
     }
 
+    private val pendingJobs = QuickJsPendingJobPump(
+        executor = runtimeExecutor,
+        isClosed = closed::get,
+        executeJobs = { budget -> runtime.executePendingJobs(budget) },
+        reportFailure = { failure ->
+            System.err.println("QuickJS pending job dispatch failed: ${failure.message}")
+            failure.printStackTrace()
+        }
+    )
+
     fun bindNativeInterface(instance: Any) {
         check(!closed.get()) { "QuickJS engine already closed" }
         nativeInterfaceRef.set(instance)
@@ -53,8 +64,9 @@ class OperitQuickJsEngine : Closeable {
     fun <T> evaluate(script: String, fileName: String = "<eval>"): T? {
         check(!closed.get()) { "QuickJS engine already closed" }
         return runOnRuntimeThread {
+            check(!closed.get()) { "QuickJS engine already closed" }
             val result = runtime.eval(script, fileName)
-            runtime.executePendingJobs()
+            pendingJobs.drain()
             if (!result.success) {
                 error(result.describeFailure("QuickJS evaluation failed"))
             }
@@ -70,8 +82,9 @@ class OperitQuickJsEngine : Closeable {
     ): T? {
         check(!closed.get()) { "QuickJS engine already closed" }
         return runOnRuntimeThread {
+            check(!closed.get()) { "QuickJS engine already closed" }
             val result = runtime.callFunction(functionName, argsJson, callSite)
-            runtime.executePendingJobs()
+            pendingJobs.drain()
             if (!result.success) {
                 error(result.describeFailure("QuickJS function call failed"))
             }
@@ -90,28 +103,73 @@ class OperitQuickJsEngine : Closeable {
 
     fun getMemoryUsage(): QuickJsMemoryUsage {
         check(!closed.get()) { "QuickJS engine already closed" }
-        return runOnRuntimeThread { runtime.getMemoryUsage() }
+        return runOnRuntimeThread {
+            check(!closed.get()) { "QuickJS engine already closed" }
+            runtime.getMemoryUsage()
+        }
     }
 
     fun resetMemoryPeak() {
         check(!closed.get()) { "QuickJS engine already closed" }
-        runOnRuntimeThread { runtime.resetMemoryPeak() }
+        runOnRuntimeThread {
+            check(!closed.get()) { "QuickJS engine already closed" }
+            runtime.resetMemoryPeak()
+        }
     }
 
     override fun close() {
-        if (!closed.compareAndSet(false, true)) {
-            return
+        if (!closed.compareAndSet(false, true)) return
+        // 先发布关闭状态并中断脚本，防止队列中的调用继续进入原生运行时。
+        try {
+            interrupt()
+        } finally {
+            try {
+                hostDispatcher.close()
+            } finally {
+                val cleanup = try {
+                    // 即使由原生桥回调发起关闭，也要等当前 JNI 调用退栈后再销毁。
+                    runtimeExecutor.submit {
+                        try {
+                            try {
+                                runtime.clearAllTimers()
+                            } finally {
+                                runtime.close()
+                            }
+                        } finally {
+                            runtimeTid.set(-1L)
+                            runtimeRef.set(null)
+                            nativeInterfaceRef.set(null)
+                            methodCache.clear()
+                        }
+                    }
+                } finally {
+                    // 已接受的同步调用必须得到执行并报告关闭，不能丢弃它们等待的 Future。
+                    runtimeExecutor.shutdown()
+                }
+                if (Thread.currentThread() !== runtimeThread.get()) {
+                    awaitRuntimeCleanup(cleanup)
+                }
+            }
         }
-        // Runtime cleanup is dispatched to the runtime executor. Interrupt first so close does
-        // not queue behind JavaScript that never yields.
-        interrupt()
-        runCatching { runOnRuntimeThread { runtime.clearAllTimers() } }
-        hostDispatcher.close()
-        runtime.close()
-        runtimeExecutor.shutdownNow()
-        runtimeRef.set(null)
-        nativeInterfaceRef.set(null)
-        methodCache.clear()
+    }
+
+    private fun awaitRuntimeCleanup(cleanup: Future<*>) {
+        var interrupted = false
+        try {
+            while (true) {
+                try {
+                    cleanup.get()
+                    break
+                } catch (_: InterruptedException) {
+                    // 关闭必须等原生清理结束；之后恢复调用线程的中断状态。
+                    interrupted = true
+                } catch (failure: ExecutionException) {
+                    throw (failure.cause ?: failure)
+                }
+            }
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt()
+        }
     }
 
     private fun dispatchTimerOnRuntimeThread(timerId: Int) {
@@ -125,7 +183,7 @@ class OperitQuickJsEngine : Closeable {
                 }
                 runCatching {
                     val result = runtime.dispatchTimer(timerId)
-                    runtime.executePendingJobs()
+                    pendingJobs.drain()
                     if (!result.success) {
                         error(result.describeFailure("QuickJS timer callback failed"))
                     }

@@ -30,6 +30,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
+import com.ai.assistance.operit.ui.common.markdown.LocalMarkdownImageStartAligned
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.timeline.LocalChatMessageSlice
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import com.ai.assistance.operit.ui.theme.script.themeScriptAvatarSize
@@ -40,7 +41,7 @@ import kotlinx.coroutines.flow.flowOf
 internal data class WaifuMessageLayout(val joinedToPrevious: Boolean)
 internal val LocalWaifuMessageLayout = staticCompositionLocalOf<WaifuMessageLayout?> { null }
 
-/** 两种聊天样式共用头像和角色标题，过程只保留缩进，头像跟随首块回复正文。 */
+/** 两种聊天样式共用头像列；独立内容后的新正文可有头像，但不重复角色标题。 */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun WaifuReplyAvatarRow(
@@ -56,13 +57,15 @@ internal fun WaifuReplyAvatarRow(
         return
     }
     val slice = LocalChatMessageSlice.current
-    val showHeader = !processOnly && (slice?.waifuReplyStart ?: true)
+    // 标题可放在思考上方，后续回复继续有头像但不在过程和正文之间重复标题。
+    val showHeader = !joinedToPrevious && (slice?.waifuHeaderStart ?: true)
+    val showAvatar = !processOnly && ((slice?.waifuReplyStart ?: true) || slice?.waifuAvatarAfterStandalone == true)
     val theme = LocalThemePreferenceSnapshot.current
     val context = LocalContext.current
     val preferences = remember(context) { UserPreferencesManager.getInstance(context) }
     val characterCards = remember(context) { CharacterCardManager.getInstance(context) }
-    val avatarUri by produceState(theme.customAiAvatarUri, message.roleName, theme.customAiAvatarUri, slice?.appearance, showHeader) {
-        if (!showHeader) return@produceState
+    val avatarUri by produceState(theme.customAiAvatarUri, message.roleName, theme.customAiAvatarUri, slice?.appearance, showAvatar) {
+        if (!showAvatar) return@produceState
         val appearance = slice?.appearance
         val cacheKey = message.roleName to theme.customAiAvatarUri
         val cachedFlow = appearance?.avatarFlows?.get(cacheKey)
@@ -82,7 +85,7 @@ internal fun WaifuReplyAvatarRow(
     val avatarSize = themeScriptAvatarSize("assistantAvatar", 32.dp)
     WaifuAvatarLayout(
         avatarSize = avatarSize,
-        showAvatar = showHeader,
+        showAvatar = showAvatar,
         avatar = {
             val avatarModifier = Modifier.size(avatarSize)
                 .clip(themeScriptShape("assistantAvatar", avatarShape))
@@ -121,7 +124,10 @@ internal fun WaifuReplyAvatarRow(
                     modifier = Modifier.padding(bottom = 4.dp),
                 )
             }
-            CompositionLocalProvider(LocalWaifuMessageLayout provides WaifuMessageLayout(joinedToPrevious)) { content() }
+            CompositionLocalProvider(
+                LocalWaifuMessageLayout provides WaifuMessageLayout(joinedToPrevious),
+                LocalMarkdownImageStartAligned provides true,
+            ) { content() }
         }
     }
 }

@@ -8403,7 +8403,7 @@
     <string name="context_panel_estimate_badge">估算</string>
     <string name="context_panel_footer_auto_summary">自动总结阈值 %1$s</string>
     <string name="context_panel_footer_summary_disabled">自动总结已关闭</string>
-    <string name="context_panel_last_request">最近请求 %1$s · %2$s</string>
+    <string name="context_panel_last_request">最近成功请求 · 服务端上报输入：%1$s Token</string>
     <string name="context_panel_loading">正在估算当前窗口…</string>
     <string name="context_panel_mcp_tools">模型上下文协议 / 包工具</string>
     <string name="context_panel_message_history">消息历史</string>

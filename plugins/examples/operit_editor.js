@@ -3,8 +3,8 @@
     "name": "operit_editor",
     "display_name": {"zh": "Operit 平台编辑器", "en": "Operit Platform Editor"},
     "description": {
-        "zh": "通过宿主命令执行器管理包、Skill、MCP、模型、角色卡、上下文总结和语音配置。新版需要同步更新 Operit 软件至 1.12.2+27 或更新版本。",
-        "en": "Manage packages, Skills, MCP, models, character cards, context summaries and speech through the host command executor. Requires updating Operit software to 1.12.2+27 or later."
+        "zh": "通过宿主命令执行器修改 Operit 软件配置，通过 Help 获取帮助。需要 Operit 1.12.2+27 及以上版本。",
+        "en": "Modify Operit software settings through the host command executor. Use Help for guidance. Requires Operit 1.12.2+27 or later."
     },
     "enabledByDefault": true,
     "category": "Chat",
@@ -12,8 +12,8 @@
         "name": "operit_editor",
         "display": {"label": {"zh": "管理 Operit 配置", "en": "Manage Operit settings"}, "icon": "edit"},
         "description": {
-            "zh": "执行结构化平台命令，返回真实结果。args=[] 获取宿主实际帮助；[\"help\",\"model\",\"update\"] 查看参数；例如 [\"package\",\"list\"]、[\"context\",\"show\",\"CHAT\"]。变更前读取状态，按用户授权修改，随后核验。不接受自然语言 query。需要软件 1.12.2+27 或更新版本，单独更新脚本不能补齐宿主接口。",
-            "en": "Execute structured platform commands and return real results. [] requests live help; [\"help\",\"model\",\"update\"] shows parameters. Read state, apply authorized changes, then verify. Natural-language query is not accepted. Requires Operit 1.12.2+27 or later; updating the script alone cannot add the host executor."
+            "zh": "执行结构化平台命令，返回真实结果。args=[] 获取宿主实际帮助。需要 Operit 1.12.2+27 及以上版本。",
+            "en": "Execute structured platform commands and return real results. args=[] requests live host help. Requires Operit 1.12.2+27 or later."
         },
         "parameters": [{
             "name": "args",

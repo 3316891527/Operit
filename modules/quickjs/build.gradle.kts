@@ -53,4 +53,5 @@ kotlin {
 
 dependencies {
     implementation(libs.kotlinx.serialization)
+    testImplementation(libs.junit)
 }

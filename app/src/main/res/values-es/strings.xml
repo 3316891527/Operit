@@ -7590,7 +7590,7 @@
     <string name="context_panel_estimate_badge">Estimación</string>
     <string name="context_panel_footer_auto_summary">Resumen automático al %1$s</string>
     <string name="context_panel_footer_summary_disabled">El resumen automático está desactivado</string>
-    <string name="context_panel_last_request">Última solicitud %1$s · %2$s</string>
+    <string name="context_panel_last_request">Última solicitud exitosa · Tokens de entrada según el servidor: %1$s</string>
     <string name="context_panel_loading">Estimando la ventana actual…</string>
     <string name="context_panel_mcp_tools">MCP / herramientas de paquete</string>
     <string name="context_panel_message_history">Historial de mensajes</string>

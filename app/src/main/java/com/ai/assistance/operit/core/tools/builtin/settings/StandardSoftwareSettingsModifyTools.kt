@@ -57,7 +57,10 @@ import com.ai.assistance.operit.data.character.CharacterCardChatModelBindingMode
 import com.ai.assistance.operit.data.character.CharacterCardMemoryProfileBindingMode
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.config.model.ModelConfigData
+import com.ai.assistance.operit.data.character.ActivePrompt
+import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
+import com.ai.assistance.operit.data.preferences.WaifuPreferences
 import com.ai.assistance.operit.data.preferences.EnvPreferences
 import com.ai.assistance.operit.core.tools.protocol.ToolResult
 import com.ai.assistance.operit.data.config.model.getModelByIndex
@@ -1738,7 +1741,8 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
         return try {
             val characterCardManager = CharacterCardManager.getInstance(context)
             requireCharacterCard(characterCardManager, characterCardId)
-            characterCardManager.setActiveCharacterCard(characterCardId)
+            // 激活命令与配置增量保存共用切换锁，并清除优先级更高的旧角色组。
+            ActivePromptManager.getInstance(context).setActivePrompt(ActivePrompt.CharacterCard(characterCardId))
             ToolResult(
                 toolName = tool.name,
                 success = true,
@@ -1767,7 +1771,16 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
     suspend fun clearActiveCharacterCard(tool: AITool): ToolResult {
         return try {
             val characterCardManager = CharacterCardManager.getInstance(context)
-            characterCardManager.clearActiveCharacterCard()
+            val prompts = ActivePromptManager.getInstance(context)
+            prompts.runThemeTransition {
+                characterCardManager.clearActiveCharacterCard()
+                // 清除卡片绑定后同步实际目标的运行值，保留仍激活的角色组。
+                val waifu = WaifuPreferences.getInstance(context)
+                when (val target = prompts.getActivePrompt()) {
+                    is ActivePrompt.CharacterCard -> waifu.switchToCharacterCardWaifuSettings(target.id)
+                    is ActivePrompt.CharacterGroup -> waifu.switchToCharacterGroupWaifuSettings(target.id)
+                }
+            }
             ToolResult(
                 toolName = tool.name,
                 success = true,

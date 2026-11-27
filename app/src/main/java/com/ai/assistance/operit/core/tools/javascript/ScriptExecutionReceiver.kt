@@ -122,152 +122,159 @@ class ScriptExecutionReceiver : BroadcastReceiver() {
                 else -> filePath?.takeIf { it.isNotBlank() } ?: "<script>"
             }
         val scriptFile = filePath?.takeIf { it.isNotBlank() }?.let(::File)
-        val resultFile = resolveResultFile(resultFilePath, scriptIdentityPath, functionName, normalizedMode)
-        val paramsJson =
-            try {
-                resolveParamsJson(rawParamsJson = rawParamsJson, paramsFilePath = paramsFilePath)
-            } catch (e: Exception) {
-                val fallbackParamsJson = rawParamsJson.orEmpty().ifBlank { "{}" }
-                val traceRecorder =
-                    JsExecutionTraceRecorder(
-                        scriptPath = scriptIdentityPath,
-                        functionName =
-                            if (normalizedMode == EXECUTION_MODE_FUNCTION) {
-                                functionName
-                            } else {
-                                normalizedMode
-                            },
-                        paramsJson = fallbackParamsJson,
-                        envFilePath = envFilePath
-                    )
-                val errorMessage = e.message ?: "Failed to resolve params JSON"
-                AppLogger.e(TAG, errorMessage, e)
-                runCatching {
-                    traceRecorder.writeTo(
-                        resultFile,
-                        traceRecorder.buildPayload(
-                            success = false,
-                            result = null,
-                            error = errorMessage
+        var engine: JsEngine? = null
+        try {
+            val resultFile = resolveResultFile(resultFilePath, scriptIdentityPath, functionName, normalizedMode)
+            val paramsJson =
+                try {
+                    resolveParamsJson(rawParamsJson = rawParamsJson, paramsFilePath = paramsFilePath)
+                } catch (e: Exception) {
+                    val fallbackParamsJson = rawParamsJson.orEmpty().ifBlank { "{}" }
+                    val traceRecorder =
+                        JsExecutionTraceRecorder(
+                            scriptPath = scriptIdentityPath,
+                            functionName =
+                                if (normalizedMode == EXECUTION_MODE_FUNCTION) {
+                                    functionName
+                                } else {
+                                    normalizedMode
+                                },
+                            paramsJson = fallbackParamsJson,
+                            envFilePath = envFilePath
                         )
-                    )
-                }
-                return
-            }
-        val traceRecorder =
-            JsExecutionTraceRecorder(
-                scriptPath = scriptIdentityPath,
-                functionName =
-                    if (normalizedMode == EXECUTION_MODE_FUNCTION) {
-                        functionName
-                    } else {
-                        normalizedMode
-                    },
-                paramsJson = paramsJson,
-                envFilePath = envFilePath
-            )
-        val scriptText =
-            when (normalizedMode) {
-                EXECUTION_MODE_CODE -> codeText.orEmpty()
-                EXECUTION_MODE_SCRIPT, EXECUTION_MODE_FUNCTION -> {
-                    if (scriptFile == null || !scriptFile.exists()) {
-                        AppLogger.e(TAG, "JavaScript file not found: $scriptIdentityPath")
-                        runCatching {
-                            traceRecorder.writeTo(
-                                resultFile,
-                                traceRecorder.buildPayload(
-                                    success = false,
-                                    result = null,
-                                    error = "JavaScript file not found: $scriptIdentityPath"
-                                )
-                            )
-                        }
-                        return
-                    }
-                    scriptFile.readText()
-                }
-                else -> {
-                    val error = "Unsupported execution mode: $normalizedMode"
-                    AppLogger.e(TAG, error)
+                    val errorMessage = e.message ?: "Failed to resolve params JSON"
+                    AppLogger.e(TAG, errorMessage, e)
                     runCatching {
                         traceRecorder.writeTo(
                             resultFile,
                             traceRecorder.buildPayload(
                                 success = false,
                                 result = null,
-                                error = error
+                                error = errorMessage
                             )
                         )
                     }
                     return
                 }
-            }
-        if (normalizedMode == EXECUTION_MODE_CODE && scriptText.isBlank()) {
-            AppLogger.e(TAG, "JavaScript code is empty for inline execution")
-            runCatching {
-                traceRecorder.writeTo(
-                    resultFile,
-                    traceRecorder.buildPayload(
-                        success = false,
-                        result = null,
-                        error = "JavaScript code is empty"
-                    )
+            val traceRecorder =
+                JsExecutionTraceRecorder(
+                    scriptPath = scriptIdentityPath,
+                    functionName =
+                        if (normalizedMode == EXECUTION_MODE_FUNCTION) {
+                            functionName
+                        } else {
+                            normalizedMode
+                        },
+                    paramsJson = paramsJson,
+                    envFilePath = envFilePath
                 )
-            }
-            return
-        }
-
-        try {
-            val engine = JsEngine(context)
-            val parsedParams =
-                parseParams(paramsJson).toMutableMap().apply {
-                    put("__operit_toolpkg_runtime_kind", "sandbox")
-                }
-            val envOverrides = parseEnvFile(envFilePath)
-            val result =
+            val scriptText =
                 when (normalizedMode) {
-                    EXECUTION_MODE_SCRIPT, EXECUTION_MODE_CODE ->
-                        engine.executeScriptCode(
-                            script = scriptText,
-                            params = parsedParams,
-                            envOverrides = envOverrides,
-                            executionListener = traceRecorder
-                        )
-                    else ->
-                        engine.executeScriptFunction(
-                            script = scriptText,
-                            functionName = functionName,
-                            params = parsedParams,
-                            envOverrides = envOverrides,
-                            executionListener = traceRecorder
-                        )
+                    EXECUTION_MODE_CODE -> codeText.orEmpty()
+                    EXECUTION_MODE_SCRIPT, EXECUTION_MODE_FUNCTION -> {
+                        if (scriptFile == null || !scriptFile.exists()) {
+                            AppLogger.e(TAG, "JavaScript file not found: $scriptIdentityPath")
+                            runCatching {
+                                traceRecorder.writeTo(
+                                    resultFile,
+                                    traceRecorder.buildPayload(
+                                        success = false,
+                                        result = null,
+                                        error = "JavaScript file not found: $scriptIdentityPath"
+                                    )
+                                )
+                            }
+                            return
+                        }
+                        scriptFile.readText()
+                    }
+                    else -> {
+                        val error = "Unsupported execution mode: $normalizedMode"
+                        AppLogger.e(TAG, error)
+                        runCatching {
+                            traceRecorder.writeTo(
+                                resultFile,
+                                traceRecorder.buildPayload(
+                                    success = false,
+                                    result = null,
+                                    error = error
+                                )
+                            )
+                        }
+                        return
+                    }
                 }
-            val error = extractJsExecutionErrorMessage(result)
-            val success = error == null
-            traceRecorder.writeTo(
-                resultFile,
-                traceRecorder.buildPayload(
-                    success = success,
-                    result = result,
-                    error = error
-                )
-            )
-            AppLogger.d(TAG, "JavaScript execution result written to: ${resultFile.absolutePath}")
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Error executing JavaScript: ${e.message}", e)
-            runCatching {
+            if (normalizedMode == EXECUTION_MODE_CODE && scriptText.isBlank()) {
+                AppLogger.e(TAG, "JavaScript code is empty for inline execution")
+                runCatching {
+                    traceRecorder.writeTo(
+                        resultFile,
+                        traceRecorder.buildPayload(
+                            success = false,
+                            result = null,
+                            error = "JavaScript code is empty"
+                        )
+                    )
+                }
+                return
+            }
+
+            try {
+                val executionEngine = JsEngine(context).also { engine = it }
+                val parsedParams =
+                    parseParams(paramsJson).toMutableMap().apply {
+                        put("__operit_toolpkg_runtime_kind", "sandbox")
+                    }
+                val envOverrides = parseEnvFile(envFilePath)
+                val result =
+                    when (normalizedMode) {
+                        EXECUTION_MODE_SCRIPT, EXECUTION_MODE_CODE ->
+                            executionEngine.executeScriptCode(
+                                script = scriptText,
+                                params = parsedParams,
+                                envOverrides = envOverrides,
+                                executionListener = traceRecorder
+                            )
+                        else ->
+                            executionEngine.executeScriptFunction(
+                                script = scriptText,
+                                functionName = functionName,
+                                params = parsedParams,
+                                envOverrides = envOverrides,
+                                executionListener = traceRecorder
+                            )
+                    }
+                val error = extractJsExecutionErrorMessage(result)
+                val success = error == null
                 traceRecorder.writeTo(
                     resultFile,
                     traceRecorder.buildPayload(
-                        success = false,
-                        result = null,
-                        error = e.message ?: e.javaClass.simpleName
+                        success = success,
+                        result = result,
+                        error = error
                     )
                 )
-            }.onFailure { writeError ->
-                AppLogger.e(TAG, "Error writing JS execution result file: ${writeError.message}", writeError)
+                AppLogger.d(TAG, "JavaScript execution result written to: ${resultFile.absolutePath}")
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Error executing JavaScript: ${e.message}", e)
+                runCatching {
+                    traceRecorder.writeTo(
+                        resultFile,
+                        traceRecorder.buildPayload(
+                            success = false,
+                            result = null,
+                            error = e.message ?: e.javaClass.simpleName
+                        )
+                    )
+                }.onFailure { writeError ->
+                    AppLogger.e(TAG, "Error writing JS execution result file: ${writeError.message}", writeError)
+                }
             }
         } finally {
+            // 临时引擎覆盖准备、执行和结果落盘的全部出口，销毁失败也不能阻断文件清理。
+            runCatching { engine?.destroy() }.onFailure { error ->
+                AppLogger.e(TAG, "Error destroying temporary JavaScript engine: ${error.message}", error)
+            }
             if (scriptFile != null) {
                 deleteIfNeeded(scriptFile, tempScript, "temporary script")
             }

@@ -18,7 +18,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.HelpOutline
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -145,12 +144,12 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
             )
             "Progress" -> {
                 val progress = (properties.bind(number)?.toFloat() ?: 0f).coerceIn(0f, 1f)
-                Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(title, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
                         Text("${(progress * 100).toInt()}%", style = MaterialTheme.typography.labelMedium)
                     }
-                    LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+                    LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(6.dp))
                 }
             }
             "TextField", "TextArea" -> {
@@ -170,6 +169,7 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
                     },
                     readOnly = update == null || !interactive, enabled = interactive, label = { Text(title) },
                     modifier = modifier.fillMaxWidth(), singleLine = name == "TextField",
+                    shape = CardControlShape, colors = cardFieldColors(),
                     keyboardOptions = KeyboardOptions(keyboardType = when {
                         fieldMask == "password" -> KeyboardType.Password
                         fieldMask == "digits" -> KeyboardType.Number
@@ -186,11 +186,11 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
             "Switch" -> {
                 val current = properties.bind(checked) ?: false
                 val update = properties.bindUpdater(checked)
-                Row(modifier.fillMaxWidth().toggleable(
+                Row(modifier.fillMaxWidth().heightIn(min = 48.dp).cardChoiceSurface(current).toggleable(
                     current, enabled = update != null && interactive, role = Role.Switch,
                     onValueChange = { next -> if (interactive && update != null) change(current, next, -1) { update(next) } },
-                ), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, Modifier.weight(1f))
+                ).padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(title, Modifier.weight(1f).padding(vertical = 12.dp), style = MaterialTheme.typography.bodyMedium)
                     Switch(current, onCheckedChange = null, enabled = update != null && interactive)
                 }
             }
@@ -199,24 +199,25 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
                 val update = properties.bindUpdater(value)
                 val choices = properties.bind(options).orEmpty().take(32)
                 var expanded by remember { mutableStateOf(false) }
-                Column(modifier) {
+                Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (title.isNotEmpty()) Text(title, style = MaterialTheme.typography.labelLarge)
                     if (LocalCardReadOnly.current) Text(current.ifBlank { stringResource(R.string.a2ui_empty_value) })
-                    else if (name == "Select") OutlinedButton(onClick = { expanded = !expanded }, enabled = update != null && interactive, modifier = Modifier.fillMaxWidth()) {
-                        Text(current.ifBlank { stringResource(R.string.a2ui_select) }, Modifier.weight(1f))
-                        Icon(Icons.Outlined.ExpandMore, contentDescription = null)
-                    }
+                    else if (name == "Select") CardSelectorButton(
+                        text = current.ifBlank { stringResource(R.string.a2ui_select) },
+                        expanded = expanded, enabled = update != null && interactive,
+                        onClick = { expanded = !expanded },
+                    )
                     if (!LocalCardReadOnly.current && (name != "Select" || expanded)) choices.forEach { choice ->
                         Row(
-                            Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp).cardChoiceSurface(current == choice).selectable(
                                 selected = current == choice, enabled = update != null && interactive, role = Role.RadioButton,
                                 onClick = { if (interactive && update != null) change(current, choice, choices.indexOf(choice)) { update(choice) }; expanded = false },
-                            ),
+                            ).padding(horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             RadioButton(current == choice, onClick = null, enabled = update != null && interactive)
-                            Text(choice, Modifier.weight(1f).padding(vertical = 8.dp))
+                            Text(choice, Modifier.weight(1f).padding(vertical = 8.dp), style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -256,10 +257,11 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
                     if (current.isNotEmpty() && selectedDate == null)
                         Text(stringResource(R.string.a2ui_date_outside_range), color = MaterialTheme.colorScheme.error)
                     if (LocalCardReadOnly.current) Text(current.ifBlank { stringResource(R.string.a2ui_empty_value) })
-                    else OutlinedButton(onClick = { expanded = !expanded }, enabled = update != null && interactive, modifier = Modifier.fillMaxWidth()) {
-                        Text(current.ifBlank { stringResource(R.string.a2ui_select_date) }, Modifier.weight(1f))
-                        Icon(Icons.Outlined.ExpandMore, contentDescription = null)
-                    }
+                    else CardSelectorButton(
+                        text = current.ifBlank { stringResource(R.string.a2ui_select_date) },
+                        expanded = expanded, enabled = update != null && interactive,
+                        onClick = { expanded = !expanded },
+                    )
                     if (!LocalCardReadOnly.current && properties.bind(clearable) == true && current.isNotEmpty())
                         TextButton(onClick = {
                             if (interactive && update != null) change(current, "", -1) { update("") }
@@ -292,11 +294,11 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
                 val current = properties.bind(checkboxValue) ?: false
                 val update = properties.bindUpdater(checkboxValue)
                 val enabled = interactive && update != null
-                Row(modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(current, enabled = enabled, role = Role.Checkbox,
-                    onValueChange = { next -> if (enabled) change(current, next, -1) { update?.invoke(next) } }),
+                Row(modifier.fillMaxWidth().heightIn(min = 48.dp).cardChoiceSurface(current).toggleable(current, enabled = enabled, role = Role.Checkbox,
+                    onValueChange = { next -> if (enabled) change(current, next, -1) { update?.invoke(next) } }).padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Checkbox(current, onCheckedChange = null, enabled = enabled)
-                    Text(title, Modifier.weight(1f).padding(vertical = 8.dp))
+                    Text(title, Modifier.weight(1f).padding(vertical = 8.dp), style = MaterialTheme.typography.bodyMedium)
                 }
             }
             "Table" -> {
@@ -346,9 +348,12 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
                     }
                 }
                 Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (name == "Expandable") TextButton(onClick = {
-                        if (updateExpanded != null && !readOnly) change(expanded, !expanded, -1) { updateExpanded(!expanded) } else localExpanded = !expanded
-                    }, enabled = LocalCardBrowse.current && properties.bind(disabled) != true) { Text(title) }
+                    if (name == "Expandable") CardSelectorButton(
+                        text = title, expanded = expanded,
+                        onClick = {
+                            if (updateExpanded != null && !readOnly) change(expanded, !expanded, -1) { updateExpanded(!expanded) } else localExpanded = !expanded
+                        }, enabled = LocalCardBrowse.current && properties.bind(disabled) != true,
+                    )
                     else if (title.isNotBlank()) Text(title, style = MaterialTheme.typography.titleMedium)
                     if (name != "Expandable" || expanded) {
                         if (name == "Grid") BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -425,14 +430,14 @@ private object BaseCardButton : A2uiBasicCatalogV1.Button {
             }
         }
         Column(modifier) {
-            val buttonModifier = if (LocalCardGridCell.current) Modifier.fillMaxWidth().heightIn(min = 48.dp) else Modifier
+            val buttonModifier = if (LocalCardGridCell.current) Modifier.fillMaxWidth().heightIn(min = 48.dp) else Modifier.heightIn(min = 48.dp)
             val buttonPadding = if (LocalCardGridCell.current) PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                 else if (variant == A2uiBasicCatalogV1.Button.Variant.Borderless) ButtonDefaults.TextButtonContentPadding
                 else ButtonDefaults.ContentPadding
             when (variant) {
-                A2uiBasicCatalogV1.Button.Variant.Primary -> Button({ dispatchAction(action) }, modifier = buttonModifier, contentPadding = buttonPadding, enabled = enabled, content = content)
-                A2uiBasicCatalogV1.Button.Variant.Secondary -> OutlinedButton({ dispatchAction(action) }, modifier = buttonModifier, contentPadding = buttonPadding, enabled = enabled, content = content)
-                A2uiBasicCatalogV1.Button.Variant.Borderless -> TextButton({ dispatchAction(action) }, modifier = buttonModifier, contentPadding = buttonPadding, enabled = enabled, content = content)
+                A2uiBasicCatalogV1.Button.Variant.Primary -> Button({ dispatchAction(action) }, modifier = buttonModifier, shape = CardControlShape, contentPadding = buttonPadding, enabled = enabled, content = content)
+                A2uiBasicCatalogV1.Button.Variant.Secondary -> OutlinedButton({ dispatchAction(action) }, modifier = buttonModifier, shape = CardControlShape, contentPadding = buttonPadding, enabled = enabled, content = content)
+                A2uiBasicCatalogV1.Button.Variant.Borderless -> TextButton({ dispatchAction(action) }, modifier = buttonModifier, shape = CardControlShape, contentPadding = buttonPadding, enabled = enabled, content = content)
             }
             checks.firstOrNull { !it.condition }?.let { Text(it.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
         }

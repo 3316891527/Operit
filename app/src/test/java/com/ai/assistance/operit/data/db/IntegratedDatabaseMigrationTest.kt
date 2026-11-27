@@ -34,6 +34,7 @@ class IntegratedDatabaseMigrationTest {
                 AppDatabase.MIGRATION_27_28,
                 AppDatabase.MIGRATION_28_29,
                 AppDatabase.MIGRATION_29_30,
+                AppDatabase.MIGRATION_30_31,
             )
             var version = startVersion
             for (migration in migrations.filter { it.startVersion >= startVersion }) {
@@ -42,7 +43,7 @@ class IntegratedDatabaseMigrationTest {
                 version = migration.endVersion
             }
             assertEquals(AppDatabase.DATABASE_VERSION, version)
-            assertEquals(30, version)
+            assertEquals(31, version)
 
             db.query("SELECT title, folderId, lastUsedAt, displayOrder, locked, pinned, archived, chatKind, parentChatId FROM chats WHERE id = 'chat'").use { cursor ->
                 assertTrue(cursor.moveToFirst())
@@ -103,6 +104,18 @@ class IntegratedDatabaseMigrationTest {
             db.query("SELECT COUNT(*) FROM api_key_attempt_records").use { cursor ->
                 assertTrue(cursor.moveToFirst())
                 assertEquals(0, cursor.getInt(0))
+            }
+            db.query("SELECT COUNT(*) FROM token_usage_records WHERE requestId IS NULL").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(2, cursor.getInt(0))
+            }
+            db.query("SELECT COUNT(*) FROM token_request_logs").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(0, cursor.getInt(0))
+            }
+            db.query("SELECT epoch FROM token_stats_recording_state WHERE id = 1").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(0L, cursor.getLong(0))
             }
             db.query("PRAGMA foreign_key_check").use { cursor -> assertFalse(cursor.moveToFirst()) }
         }

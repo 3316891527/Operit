@@ -149,11 +149,18 @@ class Terminal internal constructor(
         val workspacePath = caller?.workspacePath
         val workspaceEnv = caller?.workspaceEnv
         return flow {
+            val traceStarted = System.nanoTime()
+            fun traceTerminal(phase: String) {
+                if (caller?.invokingToolName != "github:terminal_exec") return
+                AppLogger.d("ToolPkg", "package=github function=terminal_exec session=$sessionId commandId=$commandId nativeThread=${Thread.currentThread().id} phase=$phase elapsedMs=${(System.nanoTime() - traceStarted) / 1_000_000}")
+            }
+            traceTerminal("command.begin")
             val session = terminalState.value.sessions.firstOrNull { it.id == sessionId }
             val journal = fileJournal?.takeIf { !workspacePath.isNullOrBlank() && session?.terminalType == TerminalType.LOCAL }
             val prepareStarted = System.nanoTime()
             if (journal != null) AppLogger.d(TAG, "终端命令 $commandId 开始观察准备，会话=$sessionId")
             val observation = journal?.begin(origin, workspacePath, workspaceEnv)
+            traceTerminal("observation.ready")
             val executionStarted = System.nanoTime()
             var completion: CommandExecutionEvent? = null
             val execute: suspend () -> Unit = {
@@ -161,25 +168,46 @@ class Terminal internal constructor(
                     events = commandEvents, sessionId = sessionId, commandId = commandId,
                     submit = {
                         if (observation != null) AppLogger.d(TAG, "终端命令 $commandId 提交，观察准备=${(executionStarted - prepareStarted) / 1_000_000}ms")
+                        traceTerminal("command.submit.begin")
                         terminalManager.sendCommandToSession(sessionId, command, commandId)
+                        traceTerminal("command.submit.end")
                     },
-                    cancel = { terminalManager.cancelCommand(sessionId, commandId) },
+                    cancel = {
+                        traceTerminal("command.cancel.begin")
+                        try {
+                            terminalManager.cancelCommand(sessionId, commandId).also {
+                                traceTerminal("command.cancel.end outcome=${it.name}")
+                            }
+                        } catch (error: Exception) {
+                            traceTerminal("command.cancel.failed type=${error.javaClass.simpleName}")
+                            throw error
+                        }
+                    },
                     onCancellationOutcome = onCancellationOutcome,
                 ).collect { event ->
-                    if (event.isCompleted) completion = event else emit(event)
+                    if (event.isCompleted) {
+                        traceTerminal("command.completed")
+                        completion = event
+                    } else emit(event)
                 }
             }
             try {
                 // 只对命令从提交到退出计时。历史采集用时不能覆盖进程已经给出的退出码。
                 if (timeoutMs == null) execute() else withTimeout(timeoutMs) { execute() }
             } finally {
+                traceTerminal("command.collect.end completed=${completion != null}")
                 if (journal != null && observation != null) {
                     val finishStarted = System.nanoTime()
                     AppLogger.d(TAG, "终端命令 $commandId 执行阶段结束，完成事件=${completion != null}，耗时=${(finishStarted - executionStarted) / 1_000_000}ms")
                     journal.finish(observation)
+                    traceTerminal("observation.finish.returned")
                 }
             }
-            completion?.let { emit(it) }
+            completion?.let {
+                traceTerminal("command.result.begin")
+                emit(it)
+                traceTerminal("command.result.end")
+            }
         }
     }
 

@@ -8,10 +8,10 @@ import androidx.compose.foundation.lazy.grid.LazyGridItemInfo
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -21,9 +21,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 
-/** 手势开始前的选择顺序不变，拖动区间随指尖变化；反向移动会撤销本次超出区间的新增项。 */
+/** 起点决定整次手势选中或取消；回滑恢复区间外的原状态，保留仍选中图片的加入顺序。 */
 internal class GalleryDragSelection(
     private val visibleUris: List<String>,
     private val existing: List<String>,
@@ -31,11 +30,19 @@ internal class GalleryDragSelection(
 ) {
     init { require(anchor in visibleUris.indices) }
     private val existingSet = existing.toSet()
+    private val selecting = visibleUris[anchor] !in existingSet
+    private val added = linkedSetOf<String>()
 
     fun through(index: Int): List<String> {
         require(index in visibleUris.indices)
         val dragged = if (index >= anchor) anchor..index else anchor downTo index
-        return existing + dragged.map { visibleUris[it] }.filterNot { it in existingSet }
+        val rangeUris = dragged.map { visibleUris[it] }
+        val rangeSet = rangeUris.toSet()
+        if (!selecting) return existing.filterNot { it in rangeSet }
+        // 只撤销本次手势离开区间的新增项，已有项不移动，新项按指尖经过的方向追加。
+        added.retainAll(rangeSet)
+        rangeUris.filterNot { it in existingSet }.forEach { added.add(it) }
+        return existing + added
     }
 }
 
@@ -44,11 +51,8 @@ internal class GalleryDragSelection(
 internal fun galleryDragSelectionModifier(
     gridState: LazyGridState,
     visibleUris: List<String>,
-    selectedUris: List<String>,
-    onSelectionChanged: (List<String>) -> Unit,
+    selection: MutableState<List<String>>,
 ): Modifier {
-    val currentSelection = rememberUpdatedState(selectedUris)
-    val currentCallback = rememberUpdatedState(onSelectionChanged)
     var drag by remember(visibleUris) { mutableStateOf<GalleryDragSelection?>(null) }
     var pointer by remember { mutableStateOf(Offset.Zero) }
     val density = androidx.compose.ui.platform.LocalDensity.current
@@ -58,12 +62,13 @@ internal fun galleryDragSelectionModifier(
     fun selectAt(session: GalleryDragSelection, position: Offset) {
         val items = gridState.layoutInfo.visibleItemsInfo
         val index = nearestGalleryIndex(position, items) ?: return
-        val next = session.through(index)
-        if (next != currentSelection.value) currentCallback.value(next)
+        // 指针事件可能连续到达，读写同一份选择状态，回滑无需等待下一次重组。
+        selection.value = session.through(index)
     }
 
-    LaunchedEffect(drag, gridState) {
-        while (isActive && drag != null) {
+    LaunchedEffect(drag, gridState, selection) {
+        val session = drag ?: return@LaunchedEffect
+        while (isActive && drag === session) {
             val height = gridState.layoutInfo.viewportSize.height.toFloat()
             val delta = when {
                 height <= 0f -> 0f
@@ -73,13 +78,13 @@ internal fun galleryDragSelectionModifier(
             }
             if (delta != 0f) {
                 gridState.scrollBy(delta)
-                drag?.let { selectAt(it, pointer) }
+                if (drag === session) selectAt(session, pointer)
             }
             delay(16)
         }
     }
 
-    return Modifier.pointerInput(gridState, visibleUris) {
+    return Modifier.pointerInput(gridState, visibleUris, selection) {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false)
             val anchor = exactGalleryIndex(down.position, gridState.layoutInfo.visibleItemsInfo)
@@ -88,11 +93,11 @@ internal fun galleryDragSelectionModifier(
                 if (abs(slop.x) > abs(slop.y)) moved.consume()
             }
             if (change == null || !change.isConsumed) return@awaitEachGesture
-            val session = GalleryDragSelection(visibleUris, currentSelection.value, anchor)
+            val session = GalleryDragSelection(visibleUris, selection.value, anchor)
             drag = session
-            pointer = change.position
-            selectAt(session, pointer)
             try {
+                pointer = change.position
+                selectAt(session, pointer)
                 while (true) {
                     val event = awaitPointerEvent()
                     val moved = event.changes.firstOrNull { it.id == down.id } ?: break

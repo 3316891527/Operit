@@ -625,7 +625,7 @@
     <string name="context_panel_estimate_badge">推定</string>
     <string name="context_panel_footer_auto_summary">自動要約のしきい値 %1$s</string>
     <string name="context_panel_footer_summary_disabled">自動要約はオフです</string>
-    <string name="context_panel_last_request">最新のリクエスト %1$s · %2$s</string>
+    <string name="context_panel_last_request">直近の成功リクエスト · サーバー報告の入力：%1$s トークン</string>
     <string name="context_panel_loading">現在のウィンドウを推定中…</string>
     <string name="context_panel_mcp_tools">MCP / パッケージツール</string>
     <string name="context_panel_message_history">メッセージ履歴</string>

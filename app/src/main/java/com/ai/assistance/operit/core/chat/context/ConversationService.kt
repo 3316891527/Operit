@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.core.chat.context
+import com.ai.assistance.operit.data.stats.TokenRequestSource
 
 import com.ai.assistance.operit.core.agent.SubagentContextHistory
 import com.ai.assistance.operit.util.stream.MutableSharedStream
@@ -296,15 +297,17 @@ class ConversationService(
 
                 // 使用新的Stream API
                 val stream =
-                        summaryService.sendMessage(
-                                context = context,
-                                chatHistory = preparedHistory,
-                                modelParameters = modelParameters,
-                                enableThinking = summaryThinking.enableThinking,
-                                thinkingOptionId = summaryThinking.thinkingOptionId,
-                                recordTokenUsage = recordTokenUsage,
-                                onNonFatalError = progressReporter::retry,
-                        )
+                        withContext(TokenRequestSource(FunctionType.SUMMARY)) {
+                            summaryService.sendMessage(
+                                    context = context,
+                                    chatHistory = preparedHistory,
+                                    modelParameters = modelParameters,
+                                    enableThinking = summaryThinking.enableThinking,
+                                    thinkingOptionId = summaryThinking.thinkingOptionId,
+                                    recordTokenUsage = recordTokenUsage,
+                                    onNonFatalError = progressReporter::retry,
+                            )
+                        }
 
                 // 重试会发出回滚事件。这里按保存点截断，避免半截内容和完整重写拼进同一条摘要。
                 collectRevisableContent(
@@ -407,14 +410,16 @@ class ConversationService(
             val modelParameters = multiServiceManager.getModelParametersForFunction(FunctionType.TITLE_GENERATION)
             val titleService = multiServiceManager.getServiceForFunction(FunctionType.TITLE_GENERATION)
             val contentBuilder = StringBuilder()
-            titleService.sendMessage(
-                context = context,
-                chatHistory = preparedHistory,
-                modelParameters = modelParameters,
-                stream = false,
-                enableRetry = false,
-                recordTokenUsage = recordTokenUsage,
-            ).collect { content -> contentBuilder.append(content) }
+            withContext(TokenRequestSource(FunctionType.TITLE_GENERATION)) {
+                titleService.sendMessage(
+                    context = context,
+                    chatHistory = preparedHistory,
+                    modelParameters = modelParameters,
+                    stream = false,
+                    enableRetry = false,
+                    recordTokenUsage = recordTokenUsage,
+                )
+            }.collect { content -> contentBuilder.append(content) }
 
             val title = sanitizeConversationTitle(
                 ChatUtils.removeThinkingContent(contentBuilder.toString().trim())
@@ -1162,23 +1167,25 @@ class ConversationService(
 
         try {
             val stream =
-                translationService.sendMessage(
-                    context = context,
-                    chatHistory =
-                        chatHistory +
-                            PromptTurn(kind = PromptTurnKind.USER, content = translationPrompt),
-                    modelParameters = modelParameters,
-                    enableRetry = true,
-                    recordTokenUsage = recordTokenUsage,
-                    onNonFatalError = { error ->
-                        // 只统计实际错误文本，空提示不计为翻译失败。
-                        if (error.isNotBlank()) {
-                            reportedRetryCount =
-                                (reportedRetryCount + 1).coerceAtMost(maxRetryAttempts)
-                            onRetryError(reportedRetryCount, maxRetryAttempts, error)
-                        }
-                    },
-                )
+                withContext(TokenRequestSource(FunctionType.TRANSLATION)) {
+                    translationService.sendMessage(
+                        context = context,
+                        chatHistory =
+                            chatHistory +
+                                PromptTurn(kind = PromptTurnKind.USER, content = translationPrompt),
+                        modelParameters = modelParameters,
+                        enableRetry = true,
+                        recordTokenUsage = recordTokenUsage,
+                        onNonFatalError = { error ->
+                            // 只统计实际错误文本，空提示不计为翻译失败。
+                            if (error.isNotBlank()) {
+                                reportedRetryCount =
+                                    (reportedRetryCount + 1).coerceAtMost(maxRetryAttempts)
+                                onRetryError(reportedRetryCount, maxRetryAttempts, error)
+                            }
+                        },
+                    )
+                }
 
             val revisableStream = stream as? TextStreamEventCarrier
             val translatedContent =
@@ -1339,13 +1346,15 @@ class ConversationService(
             // 获取模型参数
             val modelParameters = multiServiceManager.getModelParametersForFunction(FunctionType.SUMMARY)
             
-            val stream = summaryService.sendMessage(
-                context = context,
-                chatHistory = chatHistory + PromptTurn(kind = PromptTurnKind.USER, content = descriptionPrompt),
-                modelParameters = modelParameters,
-                enableThinking = summaryThinking.enableThinking,
-                thinkingOptionId = summaryThinking.thinkingOptionId,
-            )
+            val stream = withContext(TokenRequestSource(FunctionType.SUMMARY)) {
+                summaryService.sendMessage(
+                    context = context,
+                    chatHistory = chatHistory + PromptTurn(kind = PromptTurnKind.USER, content = descriptionPrompt),
+                    modelParameters = modelParameters,
+                    enableThinking = summaryThinking.enableThinking,
+                    thinkingOptionId = summaryThinking.thinkingOptionId,
+                )
+            }
             
             collectRevisableContent(
                 stream = stream,
@@ -1399,11 +1408,13 @@ class ConversationService(
                     "$imageLink\n$userIntent"
                 }
                 val result = StringBuilder()
-                lease.service.sendMessage(
-                    context = context,
-                    chatHistory = listOf(PromptTurn(kind = PromptTurnKind.USER, content = prompt)),
-                    modelParameters = lease.modelParameters,
-                ).collect { result.append(it) }
+                withContext(TokenRequestSource(FunctionType.IMAGE_RECOGNITION)) {
+                    lease.service.sendMessage(
+                        context = context,
+                        chatHistory = listOf(PromptTurn(kind = PromptTurnKind.USER, content = prompt)),
+                        modelParameters = lease.modelParameters,
+                    )
+                }.collect { result.append(it) }
                 return ChatUtils.removeThinkingContent(result.toString()).trim()
             } finally {
                 withContext(NonCancellable) { lease.close() }
@@ -1434,11 +1445,13 @@ class ConversationService(
                         "$audioLink\n$userIntent"
                     }
                     val result = StringBuilder()
-                    lease.service.sendMessage(
-                        context = context,
-                        chatHistory = listOf(PromptTurn(kind = PromptTurnKind.USER, content = prompt)),
-                        modelParameters = lease.modelParameters,
-                    ).collect { result.append(it) }
+                    withContext(TokenRequestSource(FunctionType.AUDIO_RECOGNITION)) {
+                        lease.service.sendMessage(
+                            context = context,
+                            chatHistory = listOf(PromptTurn(kind = PromptTurnKind.USER, content = prompt)),
+                            modelParameters = lease.modelParameters,
+                        )
+                    }.collect { result.append(it) }
                     return ChatUtils.removeThinkingContent(result.toString()).trim()
                 } finally {
                     com.ai.assistance.operit.util.media.MediaPoolManager.removeMedia(mediaId)
@@ -1475,11 +1488,13 @@ class ConversationService(
                         "$videoLink\n$userIntent"
                     }
                     val result = StringBuilder()
-                    lease.service.sendMessage(
-                        context = context,
-                        chatHistory = listOf(PromptTurn(kind = PromptTurnKind.USER, content = prompt)),
-                        modelParameters = lease.modelParameters,
-                    ).collect { result.append(it) }
+                    withContext(TokenRequestSource(FunctionType.VIDEO_RECOGNITION)) {
+                        lease.service.sendMessage(
+                            context = context,
+                            chatHistory = listOf(PromptTurn(kind = PromptTurnKind.USER, content = prompt)),
+                            modelParameters = lease.modelParameters,
+                        )
+                    }.collect { result.append(it) }
                     return ChatUtils.removeThinkingContent(result.toString()).trim()
                 } finally {
                     com.ai.assistance.operit.util.media.MediaPoolManager.removeMedia(mediaId)

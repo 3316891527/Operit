@@ -16,18 +16,21 @@ import com.ai.assistance.operit.data.dao.ChatContentDao
 import com.ai.assistance.operit.data.dao.ChatDao
 import com.ai.assistance.operit.data.dao.MessageDao
 import com.ai.assistance.operit.data.dao.MessageVariantDao
+import com.ai.assistance.operit.data.dao.TokenRequestLogDao
 import com.ai.assistance.operit.data.dao.TokenUsageDao
 import com.ai.assistance.operit.data.model.ApiKeyAttemptRecordEntity
 import com.ai.assistance.operit.data.model.ChatEntity
 import com.ai.assistance.operit.data.model.MessageEntity
 import com.ai.assistance.operit.data.model.MessageVariantEntity
 import com.ai.assistance.operit.data.model.TokenStatsModelEntity
+import com.ai.assistance.operit.data.model.TokenRequestLogEntity
+import com.ai.assistance.operit.data.model.TokenStatsRecordingStateEntity
 import com.ai.assistance.operit.data.model.TokenUsageRecordEntity
 import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import java.util.UUID
 
-private const val APP_DATABASE_VERSION = 30
+private const val APP_DATABASE_VERSION = 31
 
 /** 应用数据库，包含聊天表和消息表 */
 @Database(
@@ -39,6 +42,8 @@ private const val APP_DATABASE_VERSION = 30
         MessageVariantEntity::class,
         MessageTranslationEntity::class,
         TokenUsageRecordEntity::class,
+        TokenRequestLogEntity::class,
+        TokenStatsRecordingStateEntity::class,
         TokenStatsModelEntity::class,
         ApiKeyAttemptRecordEntity::class,
     ],
@@ -57,6 +62,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun messageTranslationDao(): MessageTranslationDao
     abstract fun chatContentDao(): ChatContentDao
     abstract fun tokenUsageDao(): TokenUsageDao
+    abstract fun tokenRequestLogDao(): TokenRequestLogDao
     abstract fun apiKeyAttemptDao(): ApiKeyAttemptDao
 
     companion object {
@@ -68,6 +74,47 @@ abstract class AppDatabase : RoomDatabase() {
         internal val MIGRATION_27_28 = com.ai.assistance.operit.data.chat.archive.ChatArchiveMigration
         internal val MIGRATION_28_29 = com.ai.assistance.operit.data.chat.usage.ChatTokenUsageMigration
         internal val MIGRATION_29_30 = SubagentConversationMigration
+        /** 仅新增请求日志和清空代次，既有用量及价格不重写。 */
+        internal val MIGRATION_30_31 = object : Migration(30, 31) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE token_usage_records ADD COLUMN requestId TEXT")
+                db.execSQL("CREATE UNIQUE INDEX index_token_usage_records_requestId ON token_usage_records (requestId)")
+                db.execSQL(
+                    """
+                    CREATE TABLE token_request_logs (
+                        `requestId` TEXT NOT NULL PRIMARY KEY,
+                        `startedAtMs` INTEGER NOT NULL,
+                        `endedAtMs` INTEGER NOT NULL,
+                        `durationMs` INTEGER NOT NULL,
+                        `firstTokenLatencyMs` INTEGER,
+                        `configId` TEXT NOT NULL,
+                        `provider` TEXT NOT NULL,
+                        `model` TEXT NOT NULL,
+                        `functionType` TEXT,
+                        `executionModel` TEXT,
+                        `status` TEXT NOT NULL,
+                        `successfulAttempt` INTEGER,
+                        `observedAttemptNumbers` TEXT,
+                        `usageAttempt` INTEGER,
+                        `uncachedInputTokens` INTEGER,
+                        `cachedInputTokens` INTEGER,
+                        `cacheWriteTokens` INTEGER,
+                        `totalInputTokens` INTEGER,
+                        `outputTokens` INTEGER,
+                        `reasoningTokens` INTEGER,
+                        `reasoningIncludedInOutput` INTEGER,
+                        `cacheWriteSeparateBilling` INTEGER,
+                        `usageSource` TEXT
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX index_token_request_logs_startedAtMs ON token_request_logs (startedAtMs)")
+                db.execSQL("CREATE INDEX index_token_request_logs_configId_startedAtMs ON token_request_logs (configId, startedAtMs)")
+                db.execSQL("CREATE TABLE token_stats_recording_state (id INTEGER NOT NULL PRIMARY KEY, epoch INTEGER NOT NULL)")
+                db.execSQL("INSERT INTO token_stats_recording_state (id, epoch) VALUES (1, 0)")
+            }
+        }
+
 
         /** v26 → v27：新增消息翻译缓存，保留已有聊天及统计数据。 */
         internal val MIGRATION_26_27 =
@@ -712,7 +759,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_26_27,
                     MIGRATION_27_28,
                     MIGRATION_28_29,
-                    MIGRATION_29_30
+                    MIGRATION_29_30,
+                    MIGRATION_30_31
                 )
                 .build()
 

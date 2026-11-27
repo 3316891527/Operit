@@ -699,7 +699,8 @@ internal object JsNativeInterfaceDelegates {
         binaryHandlePrefix: String,
         binaryDataThreshold: Int,
         sendToolResult: (callbackId: String, result: String, isError: Boolean) -> Unit,
-        runtimeContext: ToolExecutionManager.ToolRuntimeContext? = null
+        runtimeContext: ToolExecutionManager.ToolRuntimeContext? = null,
+        executionCallId: String? = null,
     ) {
         val parsed =
             try {
@@ -714,9 +715,17 @@ internal object JsNativeInterfaceDelegates {
                 return
             }
 
+        val terminalStarted = System.nanoTime()
+        fun traceTerminal(phase: String) {
+            if (runtimeContext?.invokingToolName != "github:terminal_exec") return
+            AppLogger.d("ToolPkg", "package=github function=terminal_exec scriptCall=$executionCallId bridge=$callbackId nativeThread=${Thread.currentThread().id} tool=${parsed.aiTool.name} phase=$phase elapsedMs=${(System.nanoTime() - terminalStarted) / 1_000_000}")
+        }
+        traceTerminal("bridge.scheduled")
         Thread {
             try {
+                traceTerminal("native.begin")
                 val result = ToolExecutionManager.withToolRuntimeContext(runtimeContext) { toolHandler.executeTool(parsed.aiTool) }
+                traceTerminal("native.returned success=${result.success}")
 
                 if (!result.success) {
                     AppLogger.e(TAG, "[Async] Tool execution failed: ${result.error}")
@@ -729,8 +738,11 @@ internal object JsNativeInterfaceDelegates {
                         binaryHandlePrefix = binaryHandlePrefix,
                         binaryDataThreshold = binaryDataThreshold
                     )
+                traceTerminal("bridge.result.begin")
                 sendToolResult(callbackId, resultJson, !result.success)
+                traceTerminal("bridge.result.sent")
             } catch (e: Exception) {
+                traceTerminal("native.failed type=${e.javaClass.simpleName}")
                 AppLogger.e(TAG, "[Async] Error in async tool execution: ${e.message}", e)
                 sendToolResult(
                     callbackId,

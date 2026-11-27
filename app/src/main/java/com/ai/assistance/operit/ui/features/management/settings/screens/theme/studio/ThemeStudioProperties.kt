@@ -82,6 +82,14 @@ internal fun StudioProperties(state: ThemeStudioState) {
         }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 2.dp)) {
+        if (state.target.id == "statusBar") {
+            val surface = state.surface()
+            when {
+                surface.opacity == 0f -> StudioHint(stringResource(R.string.studio_status_bar_background_hidden))
+                surface.fillColor == null && surface.fillGradient == null && surface.layers.isEmpty() ->
+                    StudioHint(stringResource(R.string.studio_status_bar_background_empty))
+            }
+        }
         if (state.target.isBackground) StudioBackgroundTargetPicker(state)
         if (state.property == StudioProperty.States) {
             StudioSection(stringResource(R.string.studio_preview_state)) {
@@ -254,6 +262,7 @@ private fun StudioTextProperties(state: ThemeStudioState, onColor: (String, Stri
 private fun StudioSurfaceProperties(state: ThemeStudioState, onColor: (String, String, String?) -> Unit, onFont: () -> Unit) {
     val target = state.target
     val message = target.id in setOf("userMessage", "assistantMessage")
+    if (target.supports(StudioSurfaceControl.SystemBarIcons)) StudioStatusBarIconProperties(state)
     if (target.id == "input") StudioSection(stringResource(R.string.studio_input_placeholder)) {
         val placeholder = state.surface().placeholder
         OutlinedTextField(

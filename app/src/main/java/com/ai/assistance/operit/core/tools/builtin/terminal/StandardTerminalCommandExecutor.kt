@@ -87,7 +87,7 @@ class StandardTerminalCommandExecutor(private val context: Context) {
     }
 
     /** 在指定的终端会话中执行命令 */
-    fun executeCommandInSession(tool: AITool): ToolResult = runBlocking {
+    fun executeCommandInSession(tool: AITool): ToolResult = runTerminalWithCallerCancellation {
         executeCommandInSessionStream(tool).last()
     }
 

@@ -85,6 +85,14 @@ internal object PlatformCommandRegistry {
         command("character clear", "clear_active_character_card", "清除激活角色卡 / Clear active character card"),
         command("character import", "import_character_card_from_tavern_json", "导入 Tavern JSON / Import Tavern JSON", listOf("tavern_json")),
         command("character export", "export_character_card_to_tavern_json", "导出 Tavern JSON / Export Tavern JSON", listOf("character_card_id")),
+        command("theme targets", "list_theme_targets", "列出主题修改目标 / List theme targets"),
+        command("theme fields", "describe_theme_fields", "按组查询外观字段 / Discover appearance fields", optional = listOf("section")),
+        command("theme show", "get_theme_settings", "读取主题偏好及版本 / Read theme preferences and revision", jsonBody = true),
+        command("theme set", "set_theme_settings", "增量修改并核验主题 / Patch and verify theme preferences", jsonBody = true, bodyRequired = true),
+        command("waifu targets", "list_waifu_targets", "列出 Waifu 配置目标 / List Waifu targets"),
+        command("waifu fields", "describe_waifu_fields", "查询 Waifu 字段 / Discover Waifu fields"),
+        command("waifu show", "get_waifu_settings", "读取 Waifu 配置及版本 / Read Waifu settings and revision", jsonBody = true),
+        command("waifu set", "set_waifu_settings", "增量修改并核验 Waifu 配置 / Patch and verify Waifu settings", jsonBody = true, bodyRequired = true),
         command("performance show", "get_performance_metrics", "读取软件或插件性能 / Read performance metrics", optional = listOf("plugin_id")),
         command("tool list", "@list", "查询实际工具目录及参数 / Discover live tools", optional = listOf("query")),
         command("tool show", "@show", "查看工具的实际参数 / Show live tool parameters", listOf("tool_name")),
@@ -122,7 +130,13 @@ internal object PlatformCommandRegistry {
                 body.keys().forEach { key ->
                     require(!parameters.containsKey(key)) { "Parameter already supplied by command: $key" }
                     require(!key.startsWith("__operit_")) { "System context parameters cannot be supplied: $key" }
-                    parameters[key] = body.get(key).toString()
+                    val value = body.get(key)
+                    if (spec.path.startsWith("theme ") || spec.path.startsWith("waifu ")) {
+                        require(if (key == "changes") value is JSONObject else value is String) {
+                            "Settings parameter $key must be " + if (key == "changes") "an object" else "a string"
+                        }
+                    }
+                    parameters[key] = value.toString()
                 }
             }
         }

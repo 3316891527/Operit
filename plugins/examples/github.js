@@ -842,21 +842,40 @@ async function overwriteLocalFile(params) {
 }
 
 // src/local/terminal.ts
-var terminalSessionId = null;
 async function getTerminalSession(sessionName) {
-  if (terminalSessionId) return terminalSessionId;
   const session = await Tools.System.terminal.create(sessionName || "github_tools_session");
-  terminalSessionId = session.sessionId;
-  return terminalSessionId;
+  return session.sessionId;
 }
 async function terminalExec(params) {
-  const sessionId = await getTerminalSession(params.session_name);
-  const result = await Tools.System.terminal.exec(sessionId, params.command);
-  if (params.close) {
-    await Tools.System.terminal.close(sessionId);
-    terminalSessionId = null;
+  const traceId = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
+  const started = Date.now();
+  let stage = "create";
+  let sessionId;
+  const trace = (phase) => {
+    const session = sessionId === void 0 ? "" : " session=" + sessionId;
+    console.log("[github-terminal] trace=" + traceId + " phase=" + phase + " elapsedMs=" + (Date.now() - started) + session);
+  };
+  trace("begin");
+  try {
+    trace(stage + ".begin");
+    sessionId = await getTerminalSession(params.session_name);
+    trace(stage + ".end");
+    stage = "exec";
+    trace("exec.begin");
+    const result = await Tools.System.terminal.exec(sessionId, params.command);
+    trace("exec.end");
+    if (params.close) {
+      stage = "close";
+      trace("close.begin");
+      await Tools.System.terminal.close(sessionId);
+      trace("close.end");
+    }
+    trace("return");
+    return result;
+  } catch (error) {
+    trace(stage + ".failed");
+    throw error;
   }
-  return result;
 }
 
 // src/tools.ts

@@ -71,6 +71,7 @@ import com.ai.assistance.operit.util.markdown.MarkdownSourceKind
 import com.ai.assistance.operit.ui.common.markdown.links.openMarkdownLink
 import com.ai.assistance.operit.util.markdown.SmartString
 import com.ai.assistance.operit.util.stream.Stream
+import com.ai.assistance.operit.util.stream.StreamGroup
 import com.ai.assistance.operit.util.stream.StreamInterceptor
 import com.ai.assistance.operit.util.stream.StreamRollbackPrefix
 import com.ai.assistance.operit.util.stream.share
@@ -404,6 +405,87 @@ fun StreamMarkdownRenderer(
         fillMaxWidth: Boolean = true,
         renderContent: Boolean = true,
 ) {
+    StreamMarkdownRendererInternal(
+        markdownStream = markdownStream,
+        splitByBlock = { source, prefix ->
+            source.nativeMarkdownSplitByBlock(
+                flushIntervalMs = RENDER_INTERVAL_MS,
+                maxDeltaChars = null,
+                initialContent = prefix,
+            )
+        },
+        appendCollected = { collected, chunk -> collected.append(chunk); Unit },
+        modifier = modifier,
+        textColor = textColor,
+        fontSize = fontSize,
+        backgroundColor = backgroundColor,
+        onLinkClick = onLinkClick,
+        xmlRenderer = xmlRenderer,
+        nodeGrouper = nodeGrouper,
+        state = state,
+        enableDialogs = enableDialogs,
+        fillMaxWidth = fillMaxWidth,
+        renderContent = renderContent,
+    )
+}
+
+/** 聊天直接消费文本块，避免将同一增量逐字符送过显示链路。 */
+@Composable
+fun StreamMarkdownChunkRenderer(
+        markdownStream: Stream<String>,
+        modifier: Modifier = Modifier,
+        textColor: Color = LocalContentColor.current,
+        fontSize: TextUnit = Unspecified,
+        backgroundColor: Color = MaterialTheme.colorScheme.surface,
+        onLinkClick: ((String) -> Unit)? = null,
+        xmlRenderer: XmlContentRenderer = remember { DefaultXmlRenderer() },
+        nodeGrouper: MarkdownNodeGrouper = NoopMarkdownNodeGrouper,
+        state: StreamMarkdownRendererState? = null,
+        enableDialogs: Boolean = true,
+        fillMaxWidth: Boolean = true,
+        renderContent: Boolean = true,
+) {
+    StreamMarkdownRendererInternal(
+        markdownStream = markdownStream,
+        splitByBlock = { source, prefix ->
+            source.nativeMarkdownSplitByBlock(
+                flushIntervalMs = RENDER_INTERVAL_MS,
+                maxDeltaChars = null,
+                initialContent = prefix,
+            )
+        },
+        appendCollected = { collected, chunk -> collected.append(chunk); Unit },
+        modifier = modifier,
+        textColor = textColor,
+        fontSize = fontSize,
+        backgroundColor = backgroundColor,
+        onLinkClick = onLinkClick,
+        xmlRenderer = xmlRenderer,
+        nodeGrouper = nodeGrouper,
+        state = state,
+        enableDialogs = enableDialogs,
+        fillMaxWidth = fillMaxWidth,
+        renderContent = renderContent,
+    )
+}
+
+@Composable
+private fun <T> StreamMarkdownRendererInternal(
+        markdownStream: Stream<T>,
+        splitByBlock: (Stream<T>, String) -> Stream<StreamGroup<MarkdownProcessorType?>>,
+        appendCollected: (SmartString, T) -> Unit,
+        modifier: Modifier = Modifier,
+        textColor: Color = LocalContentColor.current,
+        fontSize: TextUnit = Unspecified,
+        backgroundColor: Color = MaterialTheme.colorScheme.surface,
+        onLinkClick: ((String) -> Unit)? = null,
+        xmlRenderer: XmlContentRenderer = remember { DefaultXmlRenderer() },
+        nodeGrouper: MarkdownNodeGrouper = NoopMarkdownNodeGrouper,
+        state: StreamMarkdownRendererState? = null,
+        enableDialogs: Boolean = true,
+        fillMaxWidth: Boolean = true,
+        renderContent: Boolean = true,
+) {
     if (renderContent) {
         val fragment = LocalMarkdownRenderFragment.current
         if (fragment != null) {
@@ -454,16 +536,16 @@ fun StreamMarkdownRenderer(
                 // 移除时间计算变量和日志
                 // 先创建拦截器
                 val processor =
-                        StreamInterceptor<Char, Char>(
+                        StreamInterceptor<T, T>(
                                 sourceStream = markdownStream,
                                 onEach = { it } // 先使用简单的转发函数，后面再设置
                         )
 
                 // 设置拦截器的onEach函数
-                processor.setOnEach { char ->
-                    // 收集字符到 state 的 collectedContent
-                    rendererState.collectedContent + char
-                    char
+                processor.setOnEach { chunk ->
+                    // 累计显示原文与节点变更均由当前渲染会话串行持有。
+                    appendCollected(rendererState.collectedContent, chunk)
+                    chunk
                 }
 
                 processor.interceptedStream
@@ -504,12 +586,7 @@ fun StreamMarkdownRenderer(
 
         try {
             var pendingHtmlBreakCount = 0
-            interceptedStream
-                .nativeMarkdownSplitByBlock(
-                    flushIntervalMs = RENDER_INTERVAL_MS,
-                    maxDeltaChars = null,
-                    initialContent = rollbackPrefix ?: "",
-                )
+            splitByBlock(interceptedStream, rollbackPrefix ?: "")
                 .collect { blockGroup ->
                 val blockType = blockGroup.tag ?: MarkdownProcessorType.PLAIN_TEXT
 
@@ -518,8 +595,9 @@ fun StreamMarkdownRenderer(
                         pendingHtmlBreakCount =
                             (pendingHtmlBreakCount + 1).coerceAtMost(MAX_CONSECUTIVE_RENDERED_NEWLINES)
                     } else {
+                        val firstNewIndex = nodes.size
                         appendHtmlBreakNode(nodes)
-                        batchUpdater.requestUpdate()
+                        batchUpdater.requestUpdate(firstNewIndex)
                     }
                     return@collect
                 }
@@ -529,7 +607,7 @@ fun StreamMarkdownRenderer(
                         appendHtmlBreakNode(nodes, pendingHtmlBreakCount)
                     }
                     nodes.add(MarkdownNode(type = blockType, initialContent = "---"))
-                    batchUpdater.requestUpdate()
+                    batchUpdater.requestUpdate(nodes.lastIndex)
                     pendingHtmlBreakCount = 0
                     return@collect
                 }
@@ -558,8 +636,9 @@ fun StreamMarkdownRenderer(
                         rollbackContinuesCurrentBlock
 
                 if (pendingHtmlBreakCount > 0 && !mergeWithPrevious) {
+                    val firstNewIndex = nodes.size
                     appendHtmlBreakNode(nodes, pendingHtmlBreakCount)
-                    batchUpdater.requestUpdate()
+                    batchUpdater.requestUpdate(firstNewIndex)
                     pendingHtmlBreakCount = 0
                 }
 
@@ -569,7 +648,7 @@ fun StreamMarkdownRenderer(
                     } else {
                         MarkdownNode(type = tempBlockType).also {
                             nodes.add(it)
-                            batchUpdater.requestUpdate()
+                            batchUpdater.requestUpdate(nodes.lastIndex)
                         }
                     }
                 val nodeIndex = nodes.lastIndex
@@ -592,7 +671,7 @@ fun StreamMarkdownRenderer(
 
                 if (tempBlockType == MarkdownProcessorType.XML_BLOCK) {
                     xmlNodeStreams[nodeIndex] = blockStream
-                    batchUpdater.requestUpdate()
+                    batchUpdater.requestUpdate(nodeIndex)
                 }
 
                 if (isInlineContainer) {
@@ -635,7 +714,7 @@ fun StreamMarkdownRenderer(
                                     chunk = chunk,
                                     pendingLineBreakState = pendingLineBreakState,
                                 )
-                            batchUpdater.requestUpdate()
+                            batchUpdater.requestUpdate(nodeIndex)
                         }
 
                         if (isInlineLatex && childNode != null) {
@@ -645,7 +724,7 @@ fun StreamMarkdownRenderer(
                             val childIndex = newNode.children.lastIndexOf(childNode)
                             if (childIndex != -1) {
                                 newNode.children[childIndex] = latexChildNode
-                                batchUpdater.requestStructuralUpdate()
+                                batchUpdater.requestStructuralUpdate(nodeIndex)
                             }
                         }
 
@@ -656,7 +735,7 @@ fun StreamMarkdownRenderer(
                             val lastIndex = newNode.children.lastIndex
                             if (lastIndex >= 0 && newNode.children[lastIndex] == childNode) {
                                 newNode.children.removeAt(lastIndex)
-                                batchUpdater.requestStructuralUpdate()
+                                batchUpdater.requestStructuralUpdate(nodeIndex)
                             }
                         }
                     }
@@ -667,7 +746,7 @@ fun StreamMarkdownRenderer(
                             if (skipRestoredXmlPrefix) {
                                 skipRestoredXmlPrefix = false
                             } else {
-                                batchUpdater.appendBlockChunk(newNode, contentChunk)
+                                batchUpdater.appendBlockChunk(newNode, contentChunk, nodeIndex)
                             }
                         }
                     } finally {
@@ -682,7 +761,7 @@ fun StreamMarkdownRenderer(
                     val latexNode =
                         MarkdownNode(type = MarkdownProcessorType.BLOCK_LATEX, initialContent = latexContent)
                     nodes[nodeIndex] = latexNode
-                    batchUpdater.requestStructuralUpdate()
+                    batchUpdater.requestStructuralUpdate(nodeIndex)
                 }
 
                 pendingHtmlBreakCount = 0
@@ -1325,6 +1404,7 @@ internal class BatchNodeUpdater(
         private val rendererId: String,
         private val scope: CoroutineScope
 ) {
+    private var dirtyFromIndex = Int.MAX_VALUE
     private val coordinator =
         RenderBatchCoordinator(
             scope = scope,
@@ -1332,16 +1412,20 @@ internal class BatchNodeUpdater(
             onFlush = ::performBatchUpdate,
         )
 
-    fun requestUpdate() = coordinator.requestUpdate()
-
-    fun requestStructuralUpdate() {
-        // Type and child-list mutations can preserve the parent content length.
-        requestUpdate()
+    fun requestUpdate(fromIndex: Int = 0) {
+        require(fromIndex >= 0)
+        dirtyFromIndex = minOf(dirtyFromIndex, fromIndex)
+        coordinator.requestUpdate()
     }
 
-    fun appendBlockChunk(node: MarkdownNode, contentChunk: String) {
+    fun requestStructuralUpdate(fromIndex: Int = 0) {
+        // 类型替换和子节点删除可保持文本长度不变，仍须提交真实结构变更。
+        requestUpdate(fromIndex)
+    }
+
+    fun appendBlockChunk(node: MarkdownNode, contentChunk: String, nodeIndex: Int = 0) {
         node.content + contentChunk
-        requestUpdate()
+        requestUpdate(nodeIndex)
     }
 
     fun completeXmlBlock(nodeIndex: Int) {
@@ -1351,13 +1435,17 @@ internal class BatchNodeUpdater(
     }
 
     private fun performBatchUpdate() {
+        if (dirtyFromIndex == Int.MAX_VALUE) return
+        val firstChangedIndex = dirtyFromIndex
+        dirtyFromIndex = Int.MAX_VALUE
         synchronizeRenderNodes(
             nodes,
             renderNodes,
             nodeAnimationStates,
             xmlNodeStreams,
             rendererId,
-            scope
+            scope,
+            fromIndex = firstChangedIndex,
         )
     }
 }
@@ -1369,13 +1457,15 @@ private fun synchronizeRenderNodes(
     nodeAnimationStates: MutableMap<String, Boolean>,
     xmlNodeStreams: MutableMap<Int, Stream<String>>,
     rendererId: String,
-    scope: CoroutineScope
+    scope: CoroutineScope,
+    fromIndex: Int = 0,
 ) {
     val keysToAnimate = mutableListOf<String>()
 
-    // 1. 更新现有节点并添加新节点
-    nodes.forEachIndexed { i, sourceNode ->
-        val stableNode = sourceNode.toStableNode()
+    // 已完成的历史节点保留快照，仅转换本批修改的后缀；回滚与最终同步仍可从零核对。
+    val firstChangedIndex = minOf(fromIndex, renderNodes.size, nodes.size)
+    for (i in firstChangedIndex until nodes.size) {
+        val stableNode = nodes[i].toStableNode()
         if (i < renderNodes.size) {
             // 如果节点内容发生变化，则更新
             if (renderNodes[i] != stableNode) {

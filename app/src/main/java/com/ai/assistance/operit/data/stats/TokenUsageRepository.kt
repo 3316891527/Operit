@@ -5,6 +5,8 @@ import androidx.room.withTransaction
 import com.ai.assistance.operit.data.dao.TokenUsageDao
 import com.ai.assistance.operit.data.db.AppDatabase
 import com.ai.assistance.operit.data.model.TokenStatsModelEntity
+import com.ai.assistance.operit.data.model.TokenRequestLogEntity
+import com.ai.assistance.operit.data.model.TokenStatsRecordingStateEntity
 import com.ai.assistance.operit.data.model.TokenUsageRecordEntity
 import com.ai.assistance.operit.data.preferences.ApiPreferences
 import com.ai.assistance.operit.util.logging.AppLogger
@@ -12,7 +14,26 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /** Room owner for successful formal-inference usage and pricing. */
-class TokenUsageRepository private constructor(context: Context) {
+class TokenUsageRepository private constructor(
+    context: Context,
+    private val databaseProvider: () -> AppDatabase,
+    private val statsPreferences: TokenStatsPreferences,
+    alreadyInitialized: Boolean,
+) {
+    private constructor(context: Context) : this(
+        context,
+        { AppDatabase.getDatabase(context.applicationContext) },
+        TokenStatsPreferences(context.applicationContext),
+        false,
+    )
+
+    /** 隔离回归使用独立数据库及偏好；模拟已完成旧统计迁移后的真实读写。 */
+    internal constructor(
+        context: Context,
+        database: AppDatabase,
+        preferences: TokenStatsPreferences,
+    ) : this(context, { database }, preferences, true)
+
     companion object {
         private const val TAG = "TokenUsageRepository"
         const val DETACHED_CONFIG_ID = "__operit_deleted_config__"
@@ -34,12 +55,11 @@ class TokenUsageRepository private constructor(context: Context) {
     }
 
     private val appContext = context.applicationContext
-    private val legacyDataSource = ApiPreferences.getInstance(appContext)
-    private val statsPreferences = TokenStatsPreferences(appContext)
+    private val legacyDataSource by lazy { ApiPreferences.getInstance(appContext) }
     private val importMutex = Mutex()
 
     @Volatile
-    private var initializationComplete = false
+    private var initializationComplete = alreadyInitialized
 
     suspend fun ensureInitialized() {
         if (initializationComplete) return
@@ -48,7 +68,7 @@ class TokenUsageRepository private constructor(context: Context) {
             if (statsPreferences.importedAtMs() == null) {
                 val snapshot = legacyDataSource.readTokenStatsMigrationSnapshot()
                 withDatabaseAccess {
-                    val database = AppDatabase.getDatabase(appContext)
+                    val database = databaseProvider()
                     database.withTransaction {
                         val dao = database.tokenUsageDao()
                         dao.insertRecords(
@@ -98,7 +118,39 @@ class TokenUsageRepository private constructor(context: Context) {
 
     internal suspend fun <T> withDao(block: suspend (TokenUsageDao) -> T): T {
         ensureInitialized()
-        return withDatabaseAccess { block(AppDatabase.getDatabase(appContext).tokenUsageDao()) }
+        return withDatabaseAccess { block(databaseProvider().tokenUsageDao()) }
+    }
+
+    /** 查询层复用初始化与恢复互斥，不另开数据库连接。 */
+    internal suspend fun <T> withDatabase(block: suspend (AppDatabase) -> T): T {
+        ensureInitialized()
+        return withDatabaseAccess { block(databaseProvider()) }
+    }
+
+    suspend fun beginRequest(): Long = withDatabase { database ->
+        database.withTransaction {
+            val dao = database.tokenRequestLogDao()
+            dao.initializeState(TokenStatsRecordingStateEntity())
+            dao.recordingEpoch()
+        }
+    }
+
+    /** 请求日志与成功用量只提交一次；清空前开始的请求不再写回。 */
+    suspend fun recordRequest(
+        log: TokenRequestLogEntity,
+        successFact: TokenUsageRecordEntity?,
+        epoch: Long,
+    ): Boolean = withDatabase { database ->
+        require(successFact == null ||
+            (log.status == TokenRequestLogEntity.SUCCESS && successFact.requestId == log.requestId))
+        database.withTransaction {
+            val dao = database.tokenRequestLogDao()
+            dao.initializeState(TokenStatsRecordingStateEntity())
+            if (dao.recordingEpoch() != epoch) return@withTransaction false
+            if (dao.insertLog(log) == -1L) return@withTransaction false
+            if (successFact != null) database.tokenUsageDao().insertRecord(successFact)
+            true
+        }
     }
 
     suspend fun record(record: TokenUsageRecordEntity) {
@@ -109,13 +161,14 @@ class TokenUsageRepository private constructor(context: Context) {
         if (trimmedId.isEmpty()) return
         ensureInitialized()
         withDatabaseAccess {
-            val database = AppDatabase.getDatabase(appContext)
+            val database = databaseProvider()
             database.withTransaction {
                 val dao = database.tokenUsageDao()
                 dao.detachRecordsFromConfig(
                     configId = trimmedId,
                     detachedConfigId = DETACHED_CONFIG_ID,
                 )
+                database.tokenRequestLogDao().detachFromConfig(trimmedId, DETACHED_CONFIG_ID)
                 dao.deleteStatsModelsByConfigId(trimmedId)
             }
         }
@@ -125,6 +178,15 @@ class TokenUsageRepository private constructor(context: Context) {
     suspend fun usedConfigurationIds(): List<String> = withDao { it.getUsedConfigurationIds() }
 
     suspend fun clearUsageRecords() {
-        withDao { dao -> dao.clearUsageRecords() }
+        withDatabase { database ->
+            database.withTransaction {
+                val logDao = database.tokenRequestLogDao()
+                logDao.initializeState(TokenStatsRecordingStateEntity())
+                val nextEpoch = Math.addExact(logDao.recordingEpoch(), 1L)
+                database.tokenUsageDao().clearUsageRecords()
+                logDao.clearLogs()
+                logDao.setRecordingEpoch(nextEpoch)
+            }
+        }
     }
 }
