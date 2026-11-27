@@ -30,6 +30,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
+import com.ai.assistance.operit.ui.common.markdown.LocalMarkdownImageStartAligned
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.timeline.LocalChatMessageSlice
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import com.ai.assistance.operit.ui.theme.script.themeScriptAvatarSize
@@ -56,8 +57,9 @@ internal fun WaifuReplyAvatarRow(
         return
     }
     val slice = LocalChatMessageSlice.current
-    val showHeader = !processOnly && (slice?.waifuReplyStart ?: true)
-    val showAvatar = showHeader || (!processOnly && slice?.waifuAvatarAfterStandalone == true)
+    // 标题可放在思考上方，后续回复继续有头像但不在过程和正文之间重复标题。
+    val showHeader = !joinedToPrevious && (slice?.waifuHeaderStart ?: true)
+    val showAvatar = !processOnly && ((slice?.waifuReplyStart ?: true) || slice?.waifuAvatarAfterStandalone == true)
     val theme = LocalThemePreferenceSnapshot.current
     val context = LocalContext.current
     val preferences = remember(context) { UserPreferencesManager.getInstance(context) }
@@ -122,7 +124,10 @@ internal fun WaifuReplyAvatarRow(
                     modifier = Modifier.padding(bottom = 4.dp),
                 )
             }
-            CompositionLocalProvider(LocalWaifuMessageLayout provides WaifuMessageLayout(joinedToPrevious)) { content() }
+            CompositionLocalProvider(
+                LocalWaifuMessageLayout provides WaifuMessageLayout(joinedToPrevious),
+                LocalMarkdownImageStartAligned provides true,
+            ) { content() }
         }
     }
 }

@@ -37,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,6 +66,9 @@ import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** 消息外壳可选择靠起始边排图，普通 Markdown 与全屏预览保持原有居中布局。 */
+internal val LocalMarkdownImageStartAligned = staticCompositionLocalOf { false }
 
 private const val TAG = "MarkdownImageRenderer"
 
@@ -110,6 +114,8 @@ fun MarkdownImageRenderer(
         return
     }
 
+    val startAligned = LocalMarkdownImageStartAligned.current
+    val imageAlignment = if (startAligned) Alignment.CenterStart else Alignment.Center
     val imageAlt = extractMarkdownImageAlt(imageMarkdown)
     val imageUrl = com.ai.assistance.operit.util.markdown.resolveMarkdownResource(extractMarkdownImageUrl(imageMarkdown), LocalMarkdownDocumentPath.current)
 
@@ -165,10 +171,10 @@ fun MarkdownImageRenderer(
                                     .crossfade(true)
                                     .build(),
                     contentDescription = null,
-                    modifier =
-                            Modifier.clip(RoundedCornerShape(12.dp))
-                                .align(Alignment.Center)
-                                    .heightIn(max = maxImageHeight.dp),
+                    modifier = Modifier.clip(RoundedCornerShape(12.dp))
+                        .align(imageAlignment)
+                        .heightIn(max = maxImageHeight.dp),
+                    alignment = imageAlignment,
                     contentScale = ContentScale.Fit,
                     onSuccess = { /* 移除复杂的宽高比计算 */},
                     loading = {
@@ -209,7 +215,7 @@ fun MarkdownImageRenderer(
                     modifier =
                             Modifier.fillMaxWidth() // 确保文本占据整个宽度
                                     .padding(horizontal = 2.dp, vertical = 1.dp),
-                    textAlign = TextAlign.Center, // 居中对齐
+                    textAlign = if (startAligned) TextAlign.Start else TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
             )

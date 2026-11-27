@@ -27,6 +27,7 @@ import com.ai.assistance.operit.ui.theme.script.LocalThemeSurfaceFragments
 import com.ai.assistance.operit.ui.theme.script.ThemeSurfaceFragment
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.timeline.LocalChatMessageSlice
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.timeline.rememberChatTimelineEntries
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.timeline.waifuTimelineJoinsPrevious
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.animateFloat
@@ -115,9 +116,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.chat.reference.AiReference
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.preferences.WaifuPreferences
-import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor
 import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuUnframedMessage
-import com.ai.assistance.operit.ui.features.conversation.chat.waifu.waifuJoinsPrevious
 import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuReplyAvatarRow
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details.MessageGenerationDetails
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details.formatMessageCompletionTime
@@ -468,10 +467,10 @@ fun ChatArea(
                         currentChatId = currentChatId,
                         message = message,
                         waifuEnabled = waifuEnabled,
-                        waifuJoinedToPrevious = waifuJoinsPrevious(
-                            timelineEntries.getOrNull(timelineIndex - 1)?.let { chatHistory[it.messageIndex] }, message, waifuEnabled,
-                            previousIsProcess = timelineEntries.getOrNull(timelineIndex - 1)?.waifuProcess == true,
+                        waifuJoinedToPrevious = waifuTimelineJoinsPrevious(
+                            chatHistory, timelineEntries.getOrNull(timelineIndex - 1), entry, waifuEnabled,
                         ),
+                        isWaifuProcess = entry.waifuProcess,
                         enableDialogs = enableDialogs,
                         userMessageColor = userMessageColor,
                         aiMessageColor = aiMessageColor,
@@ -525,8 +524,8 @@ fun ChatArea(
                     )
                 }
                 if (entry.slice?.last != false) {
-                    val next = timelineEntries.getOrNull(timelineIndex + 1)?.let { chatHistory[it.messageIndex] }
-                    val connected = next != null && waifuJoinsPrevious(message, next, waifuEnabled, previousIsProcess = entry.waifuProcess)
+                    val next = timelineEntries.getOrNull(timelineIndex + 1)
+                    val connected = next != null && waifuTimelineJoinsPrevious(chatHistory, entry, next, waifuEnabled)
                     Spacer(modifier = Modifier.height(if (connected) 2.dp else 8.dp))
                 }
 
@@ -629,6 +628,7 @@ private fun MessageItem(
     message: ChatMessage,
     waifuEnabled: Boolean,
     waifuJoinedToPrevious: Boolean = false,
+    isWaifuProcess: Boolean = false,
     enableDialogs: Boolean,
     userMessageColor: Color,
     aiMessageColor: Color,
@@ -679,9 +679,6 @@ private fun MessageItem(
     bubbleAiContentPaddingLeft: Float = 12f,
     bubbleAiContentPaddingRight: Float = 12f,
 ) {
-    val isWaifuProcess = waifuEnabled && message.sender == "ai" && remember(message.content) {
-        WaifuMessageProcessor.isProcessOnlyMessage(message.content)
-    }
     var showContextMenu by remember { mutableStateOf(false) }
     var showMessageInfoDialog by remember { mutableStateOf(false) }
     var showHiddenUserMessageDialog by remember { mutableStateOf(false) }
