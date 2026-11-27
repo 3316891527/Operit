@@ -40,4 +40,6 @@ base_pr: 278
 
 发布前做 Kotlin PSI、JavaScript 语法、四份封装逻辑同步、UTF-8、差异、仓库卫生、本地化差异和新增文档链接检查，再发起远端 Debug `assembleDebug` 与 Android Tests。登记启动后停止查询进度。
 
+PR Check #638 在 `Check bundled ToolPkg packages` 步骤发现示例 bundle 与 esbuild 的精确输出不一致：原静态核对只确认逻辑和语法，未覆盖生成器对引号、注释和 `undefined` 的变换。本次依据锁文件固定的 esbuild 0.25.12 实际运行 `npm run build:examples:github`，同步 APK 内置副本，再重新运行生成流程确认提交后无产物差异。此次按用户要求只执行 GitHub 示例包构建，未本地执行 Android 构建或 JVM 测试。
+
 [DONE] 已完成并发关闭修补、分阶段日志和回归源码。原四至五分钟等待仍需新 APK 的复现日志继续定位。
