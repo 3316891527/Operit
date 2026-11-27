@@ -2517,6 +2517,7 @@ class JsEngine(private val context: Context) {
                 toolHandler = toolHandler, callbackId = callbackId, toolType = toolType, toolName = toolName, paramsJson = paramsJson,
                 binaryDataRegistry = binaryDataRegistry, binaryHandlePrefix = BINARY_HANDLE_PREFIX, binaryDataThreshold = BINARY_DATA_THRESHOLD,
                 runtimeContext = resolveExecutionSession(callId)?.toolRuntimeContext,
+                executionCallId = callId,
                 sendToolResult = { callback, result, isError -> sendToolResult(callback, result, isError) },
             )
         }
