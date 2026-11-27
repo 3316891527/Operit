@@ -8114,7 +8114,7 @@
     <string name="context_panel_estimate_badge">Estimare</string>
     <string name="context_panel_footer_auto_summary">Rezumat automat la %1$s</string>
     <string name="context_panel_footer_summary_disabled">Rezumatul automat este dezactivat</string>
-    <string name="context_panel_last_request">Ultima cerere %1$s · %2$s</string>
+    <string name="context_panel_last_request">Ultima cerere reușită · Tokenuri de intrare raportate de server: %1$s</string>
     <string name="context_panel_loading">Se estimează fereastra curentă…</string>
     <string name="context_panel_mcp_tools">MCP / instrumente pachet</string>
     <string name="context_panel_message_history">Istoricul mesajelor</string>

@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.data.repository
+import com.ai.assistance.operit.api.chat.EnhancedAIService
 
 import com.ai.assistance.operit.core.chat.context.TokenUsageBreakdown
 import com.ai.assistance.operit.data.chat.deletion.ChatDeletionPolicy
@@ -1572,6 +1573,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                     messageDao.deleteAllMessagesForChat(chatId)
                     chatDao.resetChatTokenUsage(chatId)
                 }
+                EnhancedAIService.clearReportedContextInput(chatId)
                 A2uiStateStore.clearChat(context, chatId)
             }
         }
@@ -1735,6 +1737,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
             }
             SubagentCoordinator.getInstance(context).withChildrenRemoved(chatId) {
                 database.withTransaction { chatDao.deleteChat(chatId) }
+                EnhancedAIService.clearReportedContextInput(chatId)
                 chatDraftRepository.removeDraft(chatId)
                 A2uiStateStore.deleteChat(context, chatId)
                 true
