@@ -52,7 +52,7 @@ internal fun StudioPreview(state: ThemeStudioState, viewport: IntSize, modifier:
     val backdrop = rememberLayerBackdrop()
     val water = if (isWaterGlassSupported()) rememberLiquidState() else null
     StudioPreviewCanvas(viewport, modifier.padding(horizontal = 12.dp, vertical = 8.dp), fitWidth = !fullScreen, focusTarget = state.target.id) {
-        CompositionLocalProvider(LocalThemePreferenceSnapshot provides snapshot, LocalLiquidGlassBackdrop provides backdrop, LocalWaterGlassState provides water) {
+        CompositionLocalProvider(LocalIsThemePagePreview provides true, LocalThemePreferenceSnapshot provides snapshot, LocalLiquidGlassBackdrop provides backdrop, LocalWaterGlassState provides water) {
             MaterialTheme(colorScheme = colors, typography = typography) {
                 ThemeScriptHost(snapshot, draft = state.bundle) {
                     val previewStates = if (state.target.kind == StudioKind.Surface && state.property == StudioProperty.States) {
@@ -66,39 +66,46 @@ internal fun StudioPreview(state: ThemeStudioState, viewport: IntSize, modifier:
                         LocalContentColor provides themeScriptContentColor("background", MaterialTheme.colorScheme.onBackground),
                     ) {
                         Box(Modifier.fillMaxSize()) {
-                            if (state.scene != StudioScene.Pages) Box(Modifier.matchParentSize().layerBackdrop(backdrop).then(if (water == null) Modifier else Modifier.liquefiable(water)).background(MaterialTheme.colorScheme.background)) {
+                            Box(Modifier.matchParentSize().layerBackdrop(backdrop).then(if (water == null) Modifier else Modifier.liquefiable(water)).background(MaterialTheme.colorScheme.background)) {
                                 ThemePreviewBackground(values)
                                 Box(Modifier.fillMaxSize().themeScriptDecoration("background", values.requiredFloat("background_image_opacity")))
                             }
-                            when (state.scene) {
-                                StudioScene.Pages -> StudioPagePreview(state)
-                                StudioScene.Chat -> StudioChatPreview(state)
-                                StudioScene.Components -> StudioComponentsPreview(state)
-                                StudioScene.Navigation -> StudioNavigationPreview(state)
-                            }
-                            if (state.target.kind == StudioKind.Typography && state.textTarget != "global") {
-                                androidx.compose.foundation.layout.Box(Modifier.align(Alignment.Center).padding(16.dp)) {
-                                    val typography = MaterialTheme.typography
-                                    val sampleStyle = when (state.textTarget) {
-                                        "displayLarge" -> typography.displayLarge
-                                        "displayMedium" -> typography.displayMedium
-                                        "displaySmall" -> typography.displaySmall
-                                        "headlineLarge" -> typography.headlineLarge
-                                        "headlineMedium" -> typography.headlineMedium
-                                        "headlineSmall" -> typography.headlineSmall
-                                        "titleLarge" -> typography.titleLarge
-                                        "titleMedium" -> typography.titleMedium
-                                        "titleSmall" -> typography.titleSmall
-                                        "bodyLarge" -> typography.bodyLarge
-                                        "bodyMedium" -> typography.bodyMedium
-                                        "bodySmall" -> typography.bodySmall
-                                        "labelLarge" -> typography.labelLarge
-                                        "labelMedium" -> typography.labelMedium
-                                        "labelSmall" -> typography.labelSmall
-                                        else -> typography.bodyMedium
+                            Column(Modifier.fillMaxSize()) {
+                                StudioPick(state, "statusBar", Modifier.fillMaxWidth()) {
+                                    StudioStatusBarPreview(darkTheme = state.mode == "dark")
+                                }
+                                Box(Modifier.fillMaxWidth().weight(1f)) {
+                                    when (state.scene) {
+                                        StudioScene.Pages -> StudioPagePreview(state)
+                                        StudioScene.Chat -> StudioChatPreview(state)
+                                        StudioScene.Components -> StudioComponentsPreview(state)
+                                        StudioScene.Navigation -> StudioNavigationPreview(state)
                                     }
-                                    Text(studioTextTargetLabel(state.textTarget) + " · Aa 123", style = sampleStyle,
-                                        themeTarget = state.textTarget.takeUnless { it in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.textRoles })
+                                    if (state.target.kind == StudioKind.Typography && state.textTarget != "global") {
+                                        androidx.compose.foundation.layout.Box(Modifier.align(Alignment.Center).padding(16.dp)) {
+                                            val typography = MaterialTheme.typography
+                                            val sampleStyle = when (state.textTarget) {
+                                                "displayLarge" -> typography.displayLarge
+                                                "displayMedium" -> typography.displayMedium
+                                                "displaySmall" -> typography.displaySmall
+                                                "headlineLarge" -> typography.headlineLarge
+                                                "headlineMedium" -> typography.headlineMedium
+                                                "headlineSmall" -> typography.headlineSmall
+                                                "titleLarge" -> typography.titleLarge
+                                                "titleMedium" -> typography.titleMedium
+                                                "titleSmall" -> typography.titleSmall
+                                                "bodyLarge" -> typography.bodyLarge
+                                                "bodyMedium" -> typography.bodyMedium
+                                                "bodySmall" -> typography.bodySmall
+                                                "labelLarge" -> typography.labelLarge
+                                                "labelMedium" -> typography.labelMedium
+                                                "labelSmall" -> typography.labelSmall
+                                                else -> typography.bodyMedium
+                                            }
+                                            Text(studioTextTargetLabel(state.textTarget) + " · Aa 123", style = sampleStyle,
+                                                themeTarget = state.textTarget.takeUnless { it in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.textRoles })
+                                        }
+                                    }
                                 }
                             }
                         }

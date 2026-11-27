@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.services.core
+import com.ai.assistance.operit.data.stats.TokenRequestSource
 
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
@@ -1404,14 +1405,16 @@ class MessageCoordinationDelegate(
 
         val contentBuilder = StringBuilder()
         runCatching {
-            val stream = plannerService.sendMessage(
-                context = context,
-                chatHistory = listOf(PromptTurn(kind = PromptTurnKind.USER, content = prompt)),
-                modelParameters = modelParameters,
-                enableThinking = false,
-                stream = false,
-                preserveThinkInHistory = false,
-            )
+            val stream = withContext(TokenRequestSource(FunctionType.ROLE_RESPONSE_PLANNER)) {
+                plannerService.sendMessage(
+                    context = context,
+                    chatHistory = listOf(PromptTurn(kind = PromptTurnKind.USER, content = prompt)),
+                    modelParameters = modelParameters,
+                    enableThinking = false,
+                    stream = false,
+                    preserveThinkInHistory = false,
+                )
+            }
             stream.collect { chunk -> contentBuilder.append(chunk) }
         }.onFailure {
             AppLogger.e(TAG, "回答规划模型调用失败: ${it.message}", it)

@@ -55,6 +55,7 @@ import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
+import com.ai.assistance.operit.data.preferences.ThemeDraftMerge
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.ui.common.themetarget.ThemeTargetOption
 import com.ai.assistance.operit.ui.common.themetarget.ThemeTargetPickerSheet
@@ -68,6 +69,7 @@ import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -329,39 +331,50 @@ internal fun ThemeSettingsContentEditor(
             null -> Unit
         }
     }
+    suspend fun saveGlobalUserNameChanges(
+        draft: ThemeEditorSession,
+        baseline: String,
+        submitted: String,
+    ): String = withContext(NonCancellable) {
+        val saved = displayPreferencesManager.mutateGlobalUserProfile { current ->
+            ThemeDraftMerge.mergeGlobalUserName(baseline, submitted, current)
+        }["global_user_name"].orEmpty()
+        draft.markGlobalUserNameSaved(submitted, saved)
+        saved
+    }
+
     fun saveCurrentDraft() {
         val state = editorState ?: return
         val draft = state.session
         if (isSaving) return
         val target = state.target
         val savedValues = draft.currentValues
+        val baselineValues = draft.currentBaselineValues
         val savedGlobalUserName = draft.currentGlobalUserName
+        val baselineGlobalUserName = draft.currentBaselineGlobalUserName
         val savedLayout = draft.currentLayout
         val saveLayout = draft.hasLayoutChanges
         val saveTheme = draft.hasThemeChanges
         val saveGlobalUserName = draft.hasGlobalUserNameChanges
-        val resetRequested = draft.isResetRequested
         isSaving = true
         draft.beginSave(savedValues)
         scope.launch {
             try {
-                // 只改全局名字时不创建或覆盖角色主题，统一保存完成后再清除草稿的变更标记。
-                if (saveTheme) {
-                    if (resetRequested) {
-                        activePromptManager.resetThemeDraft(target, savedValues)
-                    } else {
-                        activePromptManager.commitThemeDraft(target, savedValues)
-                    }
-                }
-                if (saveGlobalUserName) {
-                    displayPreferencesManager.saveDisplaySettings(
-                        globalUserName = savedGlobalUserName
+                // 重置也是相对基线的草稿，不能清掉编辑期间由命令写入的新值。
+                val mergedValues = if (saveTheme) {
+                    activePromptManager.commitThemeDraftChanges(
+                        target, baselineValues, savedValues, onThemeSaved = draft::markThemeSaved,
                     )
+                } else {
+                    savedValues
                 }
+                val mergedGlobalUserName = if (saveGlobalUserName) {
+                    saveGlobalUserNameChanges(draft, baselineGlobalUserName, savedGlobalUserName)
+                } else savedGlobalUserName
                 if (saveLayout) preferencesManager.saveChatLayoutSettings(savedLayout)
-                draft.markSaved(savedValues, savedGlobalUserName, savedLayout)
+                draft.markSaved(mergedValues, mergedGlobalUserName, savedLayout)
                 showSaveSuccessMessage = true
-                finishPendingAction(allowNavigation = true)
+                finishPendingAction(allowNavigation = !draft.hasUnsavedChanges)
             } catch (e: CancellationException) {
                 draft.cancelSave()
                 throw e
@@ -382,34 +395,30 @@ internal fun ThemeSettingsContentEditor(
 
     fun applyCurrentThemeToAllCharacterCards() {
         val state = editorState ?: return
-        if (state.target !is ActivePrompt.CharacterCard) return
+        val target = state.target as? ActivePrompt.CharacterCard ?: return
         val draft = state.session
         if (isSaving || pendingAction != null) return
         val savedValues = draft.currentValues
+        val baselineValues = draft.currentBaselineValues
         val savedGlobalUserName = draft.currentGlobalUserName
+        val baselineGlobalUserName = draft.currentBaselineGlobalUserName
         val savedLayout = draft.currentLayout
         val saveLayout = draft.hasLayoutChanges
         val saveGlobalUserName = draft.hasGlobalUserNameChanges
-        val resetRequested = draft.isResetRequested
         isSaving = true
         showApplyToAllConfirm = false
         draft.beginSave(savedValues)
         scope.launch {
             try {
-                if (resetRequested) {
-                    activePromptManager.resetThemeDraft(state.target, savedValues)
-                } else {
-                    activePromptManager.commitThemeDraft(state.target, savedValues)
-                }
-                activePromptManager.applyVisualThemeToAllCharacterCards(savedValues)
+                val mergedValues = activePromptManager.applyThemeDraftChangesToAllCharacterCards(
+                    target, baselineValues, savedValues, onThemeSaved = draft::markThemeSaved,
+                )
                 // 全局名字只保存一次，不加入传播给各角色卡的视觉主题字段。
-                if (saveGlobalUserName) {
-                    displayPreferencesManager.saveDisplaySettings(
-                        globalUserName = savedGlobalUserName
-                    )
-                }
+                val mergedGlobalUserName = if (saveGlobalUserName) {
+                    saveGlobalUserNameChanges(draft, baselineGlobalUserName, savedGlobalUserName)
+                } else savedGlobalUserName
                 if (saveLayout) preferencesManager.saveChatLayoutSettings(savedLayout)
-                draft.markSaved(savedValues, savedGlobalUserName, savedLayout)
+                draft.markSaved(mergedValues, mergedGlobalUserName, savedLayout)
                 showSaveSuccessMessage = true
                 OKToast.success(
                         context,

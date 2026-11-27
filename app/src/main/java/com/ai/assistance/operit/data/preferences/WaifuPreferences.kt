@@ -179,6 +179,62 @@ class WaifuPreferences private constructor(private val context: Context) {
         }
     }
 
+    /** 读取固定角色或角色组；当前目标读取运行值，与既有设置页一致。 */
+    internal suspend fun loadSettingsForPrompt(target: ActivePrompt): WaifuSettings {
+        val targetPrefix = waifuPrefix(target)
+        val prompts = ActivePromptManager.getInstance(context)
+        return prompts.runThemeTransition {
+            requireExistingPrompt(target)
+            val prefix = if (prompts.getActivePrompt() == target) "" else targetPrefix
+            readSettings(context.waifuDataStore.data.first(), prefix)
+        }
+    }
+
+    /** 版本检查和字段合并在同一事务执行，切换角色与目标运行值同步受同一锁保护。 */
+    internal suspend fun mutateSettingsForPrompt(
+        target: ActivePrompt,
+        transform: (WaifuSettings) -> WaifuSettings,
+    ): WaifuSettings {
+        val prefix = waifuPrefix(target)
+        val prompts = ActivePromptManager.getInstance(context)
+        return prompts.runThemeTransition {
+            requireExistingPrompt(target)
+            val active = prompts.getActivePrompt() == target
+            var saved: WaifuSettings? = null
+            context.waifuDataStore.edit { preferences ->
+                val current = readSettings(preferences, if (active) "" else prefix)
+                val updated = transform(current)
+                writeSettings(preferences, prefix, updated)
+                if (active) writeSettings(preferences, "", updated)
+                saved = updated
+            }
+            requireNotNull(saved)
+        }
+    }
+
+    /** 删除角色也持有切换锁，在锁内复验，禁止为已删除目标重新创建配置。 */
+    private suspend fun requireExistingPrompt(target: ActivePrompt) {
+        when (target) {
+            is ActivePrompt.CharacterCard -> require(
+                target.id in CharacterCardManager.getInstance(context).characterCardListFlow.first()
+            ) { "Unknown character card: ${target.id}" }
+            is ActivePrompt.CharacterGroup -> require(
+                CharacterGroupCardManager.getInstance(context).getCharacterGroupCard(target.id) != null
+            ) { "Unknown character group: ${target.id}" }
+        }
+    }
+
+    private fun waifuPrefix(target: ActivePrompt): String = when (target) {
+        is ActivePrompt.CharacterCard -> {
+            require(target.id.isNotBlank())
+            getCharacterCardWaifuPrefix(target.id)
+        }
+        is ActivePrompt.CharacterGroup -> {
+            require(target.id.isNotBlank())
+            getCharacterGroupWaifuPrefix(target.id)
+        }
+    }
+
     private fun readSettings(preferences: Preferences, prefix: String) = WaifuSettings(
         enabled = preferences[booleanPreferencesKey(prefix + ENABLE_WAIFU_MODE.name)] ?: DEFAULT_ENABLE_WAIFU_MODE,
         charDelay = preferences[intPreferencesKey(prefix + WAIFU_CHAR_DELAY.name)] ?: DEFAULT_WAIFU_CHAR_DELAY,

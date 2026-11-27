@@ -45,9 +45,34 @@ class StreamingJsonXmlConverter {
         readingComplexValue = false
     }
 
-    private fun emitPrimitiveParam(events: MutableList<Event>) {
-        events.add(Event.Content(escapeXml(buffer.toString())))
-        events.add(Event.Tag("</param>"))
+    /** 同一输入块的连续正文只分发一次，标签仍保留为独立有序事件。 */
+    private inner class EventBuffer {
+        private val events = mutableListOf<Event>()
+        private val content = StringBuilder()
+
+        fun content(value: Char) { content.append(value) }
+        fun content(value: CharSequence) { content.append(value) }
+
+        fun tag(value: String) {
+            flushContent()
+            events.add(Event.Tag(value))
+        }
+
+        fun finish(): List<Event> {
+            flushContent()
+            return events
+        }
+
+        private fun flushContent() {
+            if (content.isEmpty()) return
+            events.add(Event.Content(escapeXml(content.toString())))
+            content.setLength(0)
+        }
+    }
+
+    private fun emitPrimitiveParam(events: EventBuffer) {
+        events.content(buffer)
+        events.tag("</param>")
         hasOpenParam = false
         buffer.setLength(0)
         resetPrimitiveTracking()
@@ -69,7 +94,7 @@ class StreamingJsonXmlConverter {
      * 处理 JSON 块并返回 XML 事件列表
      */
     fun feed(chunk: String): List<Event> {
-        val events = mutableListOf<Event>()
+        val events = EventBuffer()
 
         for (c in chunk) {
             when (state) {
@@ -92,7 +117,7 @@ class StreamingJsonXmlConverter {
                         when (c) {
                             '\\' -> keyEscape = true
                             '"' -> {
-                                events.add(Event.Tag("\n  <param name=\"${buffer}\">"))
+                                events.tag("\n  <param name=\"${buffer}\">")
                                 hasOpenParam = true
                                 state = State.WAIT_COLON
                             }
@@ -119,12 +144,12 @@ class StreamingJsonXmlConverter {
                 State.READ_STRING -> {
                     if (c == '"') {
                         state = State.WAIT_COMMA
-                        events.add(Event.Tag("</param>"))
+                        events.tag("</param>")
                         hasOpenParam = false
                     } else if (c == '\\') {
                         state = State.ESCAPE
                     } else {
-                        events.add(Event.Content(escapeXml(c.toString())))
+                        events.content(c)
                     }
                 }
                 State.ESCAPE -> {
@@ -144,7 +169,7 @@ class StreamingJsonXmlConverter {
                             '/' -> "/"
                             else -> c.toString()
                         }
-                        events.add(Event.Content(escapeXml(unescaped)))
+                        events.content(unescaped)
                         state = State.READ_STRING
                     }
                 }
@@ -154,7 +179,7 @@ class StreamingJsonXmlConverter {
                     if (unicodeCount == 4) {
                         try {
                             val code = buffer.toString().toInt(16)
-                            events.add(Event.Content(escapeXml(code.toChar().toString())))
+                            events.content(code.toChar())
                         } catch (_: Exception) { }
                         state = State.READ_STRING
                     }
@@ -213,18 +238,18 @@ class StreamingJsonXmlConverter {
                 }
             }
         }
-        return events
+        return events.finish()
     }
 
     /**
      * 刷新缓冲区，处理剩余的原始值
      */
     fun flush(): List<Event> {
-        val events = mutableListOf<Event>()
+        val events = EventBuffer()
         if (canFinalizePrimitiveOnFlush()) {
             emitPrimitiveParam(events)
         }
-        return events
+        return events.finish()
     }
 
     /**

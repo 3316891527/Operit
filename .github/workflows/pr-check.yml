@@ -595,7 +595,7 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          tasks=(":app:testDebugUnitTest")
+          tasks=(":quickjs:testDebugUnitTest" ":app:testDebugUnitTest")
           if [[ "$INSTRUMENTATION_REQUIRED" == "true" ]]; then
             tasks+=(":app:compileDebugAndroidTestKotlin" ":app:compileDebugAndroidTestJavaWithJavac")
           fi

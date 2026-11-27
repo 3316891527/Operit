@@ -7,26 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.collects.PricingCurrency
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
-import com.ai.assistance.operit.data.stats.TokenStatsPreferencesStore
-import com.ai.assistance.operit.data.stats.invalidTokenStatsConfigurationIds
-import com.ai.assistance.operit.data.stats.TokenActivityAggregator
-import com.ai.assistance.operit.data.stats.TokenActivityViewMode
-import com.ai.assistance.operit.data.stats.TokenActivityRangeData
-import com.ai.assistance.operit.data.stats.TokenCostCurrency
-import com.ai.assistance.operit.data.stats.TokenStatsDisplayModelBreakdown
-import com.ai.assistance.operit.data.stats.TokenStatsDisplayUnit
-import com.ai.assistance.operit.data.stats.TokenStatsPriceDraft
-import com.ai.assistance.operit.data.stats.TokenStatsLifetimeOverview
-import com.ai.assistance.operit.data.stats.TokenStatsPriceSetting
-import com.ai.assistance.operit.data.stats.TokenStatsQueryParams
-import com.ai.assistance.operit.data.stats.TokenStatsQueryService
-import com.ai.assistance.operit.data.stats.TokenStatsRangeData
-import com.ai.assistance.operit.data.stats.TokenStatsSettingsManager
-import com.ai.assistance.operit.data.stats.TokenUsageRepository
-import com.ai.assistance.operit.data.stats.TokenStatsSettingsStore
-import com.ai.assistance.operit.data.stats.TokenStatsTimeRange
-import com.ai.assistance.operit.data.stats.TokenStatsTimeRanges
+import com.ai.assistance.operit.data.stats.*
 import com.ai.assistance.operit.util.logging.AppLogger
+import java.time.Instant
 import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -40,6 +23,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+enum class TokenStatsTab { OVERVIEW, MODELS, CONFIGURATIONS, REQUESTS }
+enum class TokenStatsQuickRange { TODAY, YESTERDAY, WEEK, MONTH, THIS_MONTH, ALL }
+enum class TokenStatsInsightMetric { COST, TOKENS, REQUESTS }
+
 data class TokenActivityUiState(
     val loading: Boolean = true,
     val viewMode: TokenActivityViewMode = TokenActivityViewMode.DAILY,
@@ -50,29 +37,34 @@ data class TokenActivityUiState(
 data class TokenStatsUiState(
     val loading: Boolean = true,
     val errorMessage: String? = null,
-    val refreshVersion: Long = 0L,
-    val lifetime: TokenStatsLifetimeOverview? = null,
-    val range: TokenStatsRangeData? = null,
-    val currentRange: TokenStatsTimeRange? = null,
+    val tab: TokenStatsTab = TokenStatsTab.OVERVIEW,
+    val filter: TokenStatsInsightsFilter = TokenStatsInsightsFilter(),
+    val quickRange: TokenStatsQuickRange? = TokenStatsQuickRange.MONTH,
+    val overview: TokenStatsInsightsOverview? = null,
+    val catalog: TokenStatsInsightsOverview? = null,
+    val comparisonRange: TokenStatsTimeRange? = null,
+    val granularity: TokenStatsInsightsGranularity = TokenStatsInsightsGranularity.AUTO,
     val targetCurrency: PricingCurrency = PricingCurrency.CNY,
     val tokenDisplayUnit: TokenStatsDisplayUnit = TokenStatsDisplayUnit.MILLIONS,
     val manualRate: Double = TokenCostCurrency.DEFAULT_USD_TO_CNY_RATE,
     val rateIsEstimated: Boolean = true,
-    val selectedModels: Set<String> = emptySet(),
-    val availableDisplayModels: List<TokenStatsDisplayModelBreakdown> = emptyList(),
-    val knownModelNames: Map<String, String> = emptyMap(),
+    val monthlyBudgetCny: Double? = null,
+    val monthlyCost: TokenStatsCostSummary? = null,
+    val increaseIsRed: Boolean = true,
     val configurationNames: Map<String, String> = emptyMap(),
-    val hiddenConfigurationIds: Set<String> = emptySet(),
-    val clearingInvalidConfigurations: Boolean = false,
     val priceSettings: List<TokenStatsPriceSetting> = emptyList(),
-    val activity: TokenActivityUiState = TokenActivityUiState(),
-)
+    val requests: TokenStatsRequestPage? = null,
+    val requestSort: TokenStatsRequestSort = TokenStatsRequestSort.NEWEST,
+    val requestsLoading: Boolean = false,
+    val detail: TokenStatsRequestRow? = null,
+    val detailLoading: Boolean = false,
+    val clearing: Boolean = false,
+) {
+    val params: TokenStatsQueryParams get() = TokenStatsQueryParams(targetCurrency, manualRate)
+    val currentRange: TokenStatsTimeRange? get() = filter.range
+}
 
-data class TokenStatsActionMessage(
-    val text: String,
-    val isError: Boolean = false,
-    val kind: com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind = if (isError) com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Error else com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Success,
-)
+data class TokenStatsActionMessage(val text: String, val isError: Boolean = false)
 
 @android.annotation.SuppressLint("StaticFieldLeak")
 class TokenUsageStatisticsViewModel(
@@ -84,416 +76,267 @@ class TokenUsageStatisticsViewModel(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
 ) : ViewModel() {
     private val appContext = context.applicationContext
+    private val preferences = TokenStatsPreferences(appContext)
     private val manager = TokenStatsSettingsManager(appContext)
-    private val usageRepository = TokenUsageRepository.getInstance(appContext)
-    private val modelConfigManager = ModelConfigManager(appContext)
-    private val tag = "TokenUsageStatisticsViewModel"
-
-    private val _state = MutableStateFlow(TokenStatsUiState())
-    val state: StateFlow<TokenStatsUiState> = _state.asStateFlow()
-
-    private val _actionMessage = MutableStateFlow<TokenStatsActionMessage?>(null)
-    val actionMessage: StateFlow<TokenStatsActionMessage?> = _actionMessage.asStateFlow()
-
-    private var loadGeneration = 0
+    private val repository = TokenUsageRepository.getInstance(appContext)
+    private val configurations = ModelConfigManager(appContext)
+    private val mutableState = MutableStateFlow(TokenStatsUiState())
+    val state: StateFlow<TokenStatsUiState> = mutableState.asStateFlow()
+    private val messages = MutableStateFlow<TokenStatsActionMessage?>(null)
+    val actionMessage: StateFlow<TokenStatsActionMessage?> = messages.asStateFlow()
+    private var initialized = false
+    private var loadGeneration = 0L
+    private var pageGeneration = 0L
+    private var detailGeneration = 0L
     private var loadJob: Job? = null
-    private var modeRangeJob: Job? = null
-    private val knownModelNames = linkedMapOf<String, String>()
-    private val knownModelProviderModels = linkedMapOf<String, Set<String>>()
+    private var pageJob: Job? = null
+    private var detailJob: Job? = null
+    private var rangeSaveJob: Job? = null
 
-    fun consumeActionMessage() {
-        _actionMessage.value = null
-    }
+    fun consumeActionMessage() { messages.value = null }
+    fun selectTab(tab: TokenStatsTab) { mutableState.update { it.copy(tab = tab) } }
+    fun loadForEntry() { if (!initialized && loadJob?.isActive != true) load(true) }
 
-    fun load() = loadInternal(loadViewMode = false)
-
-    fun loadForEntry() = loadInternal(loadViewMode = true)
-
-    fun setActivityViewMode(mode: TokenActivityViewMode) {
-        val snapshot = _state.value
-        // Tapping a mode re-anchors the window to today: daily spans today, weekly
-        // rolls back seven days, monthly/yearly roll back one calendar unit, and
-        // cumulative ends today while keeping the first recorded date.
-        val anchorDate = java.time.Instant.ofEpochMilli(nowMs()).atZone(zone).toLocalDate()
-        val providerModels = providerModelsFor(snapshot)
-        modeRangeJob?.cancel()
-        modeRangeJob = viewModelScope.launch(dispatcher) {
-            try {
-                val historyStartDate = if (mode == TokenActivityViewMode.CUMULATIVE) {
-                    TokenStatsQueryService.earliestOccurredDate(
-                        appContext,
-                        TokenStatsQueryParams(providerModels = providerModels),
-                        zone,
-                    )
-                } else {
-                    null
-                }
-                val range = activityRangeForMode(mode, anchorDate, historyStartDate, zone)
-                    ?: return@launch
-                settings.saveActivityViewMode(mode)
-                settings.saveTimeRange(range)
-                _state.update {
-                    it.copy(
-                        currentRange = range,
-                        activity = it.activity.copy(viewMode = mode),
-                    )
-                }
-                load()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                AppLogger.e(tag, "Failed to change token activity view mode", e)
-            }
+    private suspend fun initialize() {
+        if (initialized) return
+        val rate = settings.loadRateWithEstimate()
+        val currency = settings.loadTargetCurrency()
+        val unit = settings.loadTokenDisplayUnit()
+        val storedRange = settings.loadTimeRange()
+        val chosen = preferences.hasSelectedInsightsRange()
+        val options = preferences.loadInsightsOptions()
+        val range = if (chosen || storedRange != null) storedRange else quickRange(TokenStatsQuickRange.MONTH)
+        mutableState.update {
+            it.copy(filter = it.filter.copy(range = range), quickRange = if (chosen && storedRange == null) TokenStatsQuickRange.ALL else if (storedRange != null) null else TokenStatsQuickRange.MONTH,
+                manualRate = rate.first, rateIsEstimated = rate.second, targetCurrency = currency,
+                tokenDisplayUnit = unit, increaseIsRed = options.first, monthlyBudgetCny = options.second)
         }
+        initialized = true
     }
 
-    fun toggleTokenDisplayUnit() {
-        val unit = _state.value.tokenDisplayUnit.toggled()
-        _state.update { it.copy(tokenDisplayUnit = unit) }
-        viewModelScope.launch(dispatcher) {
-            try {
-                settings.saveTokenDisplayUnit(unit)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                AppLogger.e(tag, "Failed to save token display unit", e)
-            }
-        }
+    private fun cancelReads() {
+        loadGeneration++; pageGeneration++; detailGeneration++
+        loadJob?.cancel(); pageJob?.cancel(); detailJob?.cancel()
     }
 
-    private fun loadInternal(loadViewMode: Boolean) {
-        loadJob?.cancel()
-        val generation = ++loadGeneration
-        val filterSnapshot = _state.value
+    fun load(rebuildCatalog: Boolean = false) {
+        if (state.value.clearing) return
+        cancelReads()
+        val generation = loadGeneration
+        mutableState.update { it.copy(loading = true, requestsLoading = true, errorMessage = null, detail = null, detailLoading = false) }
         loadJob = viewModelScope.launch(dispatcher) {
             try {
-                val rateInfo = settings.loadRateWithEstimate()
-                val currency = settings.loadTargetCurrency()
-                val tokenDisplayUnit = settings.loadTokenDisplayUnit()
-                val hiddenConfigurationIds = settings.loadHiddenConfigurationIds()
-                val entryViewMode = if (loadViewMode) settings.loadActivityViewMode() else null
-                val range = settings.loadTimeRange() ?: defaultDateRange(nowMs(), zone)
-
-                if (generation != loadGeneration) return@launch
-                _state.update {
-                    it.copy(
-                        loading = true,
-                        errorMessage = null,
-                        activity = it.activity.copy(
-                            loading = true,
-                            viewMode = entryViewMode ?: it.activity.viewMode,
-                        ),
-                    )
-                }
-
-                val result = coroutineScope {
-                    val pricesDeferred = async(Dispatchers.IO) { manager.allPriceSettings() }
-                    val selectedProviderModels = providerModelsFor(filterSnapshot)
-                    val rangeParams = TokenStatsQueryParams(
-                        targetCurrency = currency,
-                        manualRate = rateInfo.first,
-                        providerModels = selectedProviderModels,
-                    )
-                    val availableParams = rangeParams.copy(providerModels = null)
-                    val lifetimeDeferred = async(Dispatchers.IO) {
-                        TokenStatsQueryService.lifetimeOverview(
-                            appContext,
-                            TokenStatsQueryParams(
-                                targetCurrency = currency,
-                                manualRate = rateInfo.first,
-                            ),
-                        )
+                initialize()
+                val snapshot = state.value
+                coroutineScope {
+                    val overview = async { TokenStatsInsightsService.overview(appContext, snapshot.filter, snapshot.params, zone, snapshot.granularity, snapshot.comparisonRange) }
+                    val page = async { TokenStatsInsightsService.requestPage(appContext, snapshot.filter, snapshot.params, snapshot.requestSort, 0, 30) }
+                    val catalogFilter = TokenStatsInsightsFilter(range = snapshot.currentRange)
+                    val catalog = async {
+                        if (rebuildCatalog || snapshot.catalog == null) {
+                            // 无额外筛选时目录与总览完全相同，复用本次结果但不携带对比数据。
+                            if (snapshot.filter == catalogFilter) overview.await().copy(comparison = null)
+                            else TokenStatsInsightsService.overview(appContext, catalogFilter, snapshot.params, zone, snapshot.granularity)
+                        } else snapshot.catalog
                     }
-                    val rangeDeferred = async(Dispatchers.IO) {
-                        TokenStatsQueryService.rangeData(appContext, range, rangeParams, zone)
-                    }
-                    val availableDeferred = async(Dispatchers.IO) {
-                        if (selectedProviderModels == null) {
-                            null
-                        } else {
-                            TokenStatsQueryService.rangeData(
-                                appContext,
-                                range,
-                                availableParams,
-                                zone,
-                            )
+                    val monthly = async {
+                        if (snapshot.monthlyBudgetCny == null) null else {
+                            val monthlyFilter = TokenStatsInsightsFilter(range = monthRange())
+                            when {
+                                snapshot.filter == monthlyFilter -> overview.await().totals.cost
+                                catalogFilter == monthlyFilter && (rebuildCatalog || snapshot.catalog == null) -> requireNotNull(catalog.await()).totals.cost
+                                // 预算只需要费用，不计算趋势、分组和费用构成。
+                                else -> TokenStatsInsightsService.costSummary(appContext, monthlyFilter, snapshot.params)
+                            }
                         }
                     }
-                    val activityDeferred = async(Dispatchers.IO) {
-                        TokenStatsQueryService.activitySnapshot(appContext, range, rangeParams, zone)
-                    }
-                    val heatmapDeferred = async(Dispatchers.IO) {
-                        runCatching {
-                            val today = java.time.Instant.ofEpochMilli(nowMs()).atZone(zone).toLocalDate()
-                            val heatmapRange = TokenStatsTimeRanges.customRange(
-                                today.minusDays(364L).atStartOfDay(zone).toInstant().toEpochMilli(),
-                                today.plusDays(1L).atStartOfDay(zone).toInstant().toEpochMilli(),
-                            )
-                            val snapshot =
-                                TokenStatsQueryService.activitySnapshot(appContext, heatmapRange, rangeParams, zone)
-                            TokenActivityAggregator.rangeData(snapshot, heatmapRange)
-                        }.getOrNull()
-                    }
-                    val rangeData = rangeDeferred.await()
-                    val configurationNamesDeferred = async(Dispatchers.IO) {
-                        // getModelConfig fabricates a name for a missing ID; summaries are the real list.
-                        modelConfigManager.getAllConfigSummaries().associate { it.id to it.name }
-                    }
-                    QueryLoadResult(
-                        lifetime = lifetimeDeferred.await(),
-                        range = rangeData,
-                        available = availableDeferred.await() ?: rangeData,
-                        prices = pricesDeferred.await(),
-                        configurationNames = configurationNamesDeferred.await(),
-                        activity = TokenActivityAggregator.rangeData(activityDeferred.await(), range),
-                        heatmap = heatmapDeferred.await(),
-                    )
+                    val prices = async(Dispatchers.IO) { manager.allPriceSettings() }
+                    val names = async(Dispatchers.IO) { configurations.getAllConfigSummaries().associate { it.id to it.name } }
+                    val result = overview.await(); val requests = page.await(); val choices = catalog.await()
+                    val month = monthly.await(); val priceList = prices.await(); val configNames = names.await()
+                    if (generation != loadGeneration) return@coroutineScope
+                    mutableState.update { it.copy(loading = false, requestsLoading = false, overview = result, requests = requests, catalog = choices, monthlyCost = month, priceSettings = priceList, configurationNames = configNames) }
                 }
-
-                if (generation != loadGeneration) return@launch
-                rememberModelNames(result.lifetime.displayModels)
-                rememberModelNames(result.range?.displayModels.orEmpty())
-                rememberModelNames(result.available?.displayModels.orEmpty())
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        errorMessage = null,
-                        lifetime = result.lifetime,
-                        range = result.range,
-                        currentRange = range,
-                        targetCurrency = currency,
-                        tokenDisplayUnit = tokenDisplayUnit,
-                        manualRate = rateInfo.first,
-                        rateIsEstimated = rateInfo.second,
-                        availableDisplayModels = result.available?.displayModels.orEmpty(),
-                        knownModelNames = knownModelNames.toMap(),
-                        configurationNames = result.configurationNames,
-                        hiddenConfigurationIds = hiddenConfigurationIds,
-                        priceSettings = result.prices,
-                        activity = it.activity.copy(
-                            loading = false,
-                            rangeData = result.activity,
-                            heatmap = result.heatmap,
-                        ),
-                        refreshVersion = it.refreshVersion + 1L,
-                    )
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                if (generation == loadGeneration) {
-                    _state.update {
-                        it.copy(
-                            loading = false,
-                            errorMessage = stringResolver(R.string.token_stats_load_failed),
-                            activity = it.activity.copy(loading = false),
-                        )
-                    }
-                }
-                AppLogger.e(tag, "Token statistics load failed", e)
+            } catch (error: CancellationException) { throw error } catch (error: Exception) {
+                AppLogger.e(TAG, "统计加载失败", error)
+                if (generation == loadGeneration) mutableState.update { it.copy(loading = false, requestsLoading = false, errorMessage = stringResolver(R.string.token_stats_load_failed)) }
             }
         }
     }
 
-    private fun rememberModelNames(models: List<TokenStatsDisplayModelBreakdown>) {
-        models.forEach {
-            knownModelNames[it.displayModelId] = it.displayName
-            knownModelProviderModels[it.displayModelId] =
-                knownModelProviderModels[it.displayModelId].orEmpty() + it.providerModels
-        }
+    fun setFilter(filter: TokenStatsInsightsFilter) {
+        if (state.value.clearing) return
+        val changedRange = filter.range != state.value.currentRange
+        mutableState.update { it.copy(filter = filter, quickRange = if (changedRange) null else it.quickRange) }
+        if (changedRange) persistRange() else load()
     }
-
-    private fun providerModelsFor(state: TokenStatsUiState): Set<String>? {
-        val providerModelsByDisplayId = knownModelProviderModels.toMutableMap().apply {
-            state.availableDisplayModels.forEach { model ->
-                this[model.displayModelId] = this[model.displayModelId].orEmpty() + model.providerModels
-            }
-        }
-        if (state.selectedModels.isEmpty()) return null
-        return state.selectedModels
-            .asSequence()
-            .flatMap { providerModelsByDisplayId[it].orEmpty().asSequence() }
-            .toSet()
+    fun resetFilters() { setFilter(TokenStatsInsightsFilter(range = state.value.currentRange)) }
+    fun setGranularity(value: TokenStatsInsightsGranularity) {
+        mutableState.update { it.copy(granularity = value) }; load()
     }
-
+    fun setComparison(range: TokenStatsTimeRange?) {
+        mutableState.update { it.copy(comparisonRange = range) }; load()
+    }
+    fun comparePrevious() {
+        val range = state.value.currentRange ?: return
+        val duration = range.endMs - range.startMs
+        if (range.startMs < Long.MIN_VALUE + duration) return
+        setComparison(TokenStatsTimeRange(range.startMs - duration, range.startMs))
+    }
+    fun selectQuickRange(value: TokenStatsQuickRange) {
+        if (state.value.clearing) return
+        mutableState.update { it.copy(quickRange = value, filter = it.filter.copy(range = quickRange(value)), comparisonRange = null) }
+        persistRange()
+    }
     fun setCustomRange(startMs: Long, endMs: Long): Boolean {
-        modeRangeJob?.cancel()
-        when (validateCustomRange(startMs, endMs, zone, MAX_CUSTOM_RANGE_DAYS)) {
-            CustomRangeValidation.INVALID_BOUNDS -> {
-                _actionMessage.value = TokenStatsActionMessage(
-                    stringResolver(R.string.token_stats_custom_range_invalid),
-                    isError = true,
-                    kind = com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Warning,
-                )
-                return false
-            }
-            CustomRangeValidation.TOO_LONG -> {
-                // A generated cumulative range may exceed the manual range limit;
-                // confirming it unchanged must remain a valid no-op selection.
-                val currentRange = _state.value.currentRange
-                if (currentRange?.let { it.startMs == startMs && it.endMs == endMs } == true) {
-                    return saveCustomRange(TokenStatsTimeRanges.customRange(startMs, endMs))
-                }
-                _actionMessage.value = TokenStatsActionMessage(
-                    stringResolver(R.string.token_stats_custom_range_too_long),
-                    isError = true,
-                    kind = com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Warning,
-                )
-                return false
-            }
-            CustomRangeValidation.VALID -> Unit
+        val validation = validateCustomRange(startMs, endMs, zone, MAX_CUSTOM_RANGE_DAYS)
+        if (validation == CustomRangeValidation.INVALID_BOUNDS || (validation == CustomRangeValidation.TOO_LONG && state.value.currentRange != safeRange(startMs, endMs))) {
+            failure(if (validation == CustomRangeValidation.TOO_LONG) R.string.token_stats_custom_range_too_long else R.string.token_stats_custom_range_invalid)
+            return false
         }
-        return saveCustomRange(TokenStatsTimeRanges.customRange(startMs, endMs))
+        setFilter(state.value.filter.copy(range = TokenStatsTimeRange(startMs, endMs)))
+        return true
+    }
+    private fun safeRange(start: Long, end: Long): TokenStatsTimeRange? =
+        if (end > start) TokenStatsTimeRange(start, end) else null
+
+    private fun persistRange() {
+        rangeSaveJob?.cancel()
+        cancelReads()
+        val range = state.value.currentRange
+        rangeSaveJob = viewModelScope.launch(dispatcher) {
+            try {
+                preferences.markInsightsRangeSelected()
+                settings.saveTimeRange(range)
+                load(true)
+            } catch (error: CancellationException) { throw error } catch (error: Exception) {
+                AppLogger.e(TAG, "保存统计范围失败", error); failure(R.string.token_stats_load_failed)
+            }
+        }
+    }
+    private fun quickRange(value: TokenStatsQuickRange): TokenStatsTimeRange? {
+        val today = Instant.ofEpochMilli(nowMs()).atZone(zone).toLocalDate()
+        val start = when (value) {
+            TokenStatsQuickRange.TODAY -> today
+            TokenStatsQuickRange.YESTERDAY -> today.minusDays(1)
+            TokenStatsQuickRange.WEEK -> today.minusDays(6)
+            TokenStatsQuickRange.MONTH -> today.minusDays(29)
+            TokenStatsQuickRange.THIS_MONTH -> today.withDayOfMonth(1)
+            TokenStatsQuickRange.ALL -> return null
+        }
+        val end = if (value == TokenStatsQuickRange.YESTERDAY) today else today.plusDays(1)
+        return TokenStatsTimeRange(start.atStartOfDay(zone).toInstant().toEpochMilli(), end.atStartOfDay(zone).toInstant().toEpochMilli())
+    }
+    private fun monthRange(): TokenStatsTimeRange {
+        val start = Instant.ofEpochMilli(nowMs()).atZone(zone).toLocalDate().withDayOfMonth(1)
+        return TokenStatsTimeRange(start.atStartOfDay(zone).toInstant().toEpochMilli(), start.plusMonths(1).atStartOfDay(zone).toInstant().toEpochMilli())
+    }
+    fun showRequests(
+        model: String? = null, configId: String? = null, range: TokenStatsTimeRange? = null,
+        functionType: String? = null, peak: TokenStatsPeakPeriod? = null, executionModel: String? = null,
+    ) {
+        val current = state.value.filter
+        selectTab(TokenStatsTab.REQUESTS)
+        setFilter(current.copy(
+            models = if (model != null) setOf(model) else current.models,
+            configIds = if (configId != null) setOf(configId) else current.configIds,
+            range = range ?: current.range,
+            functionTypes = if (functionType != null) setOf(functionType) else current.functionTypes,
+            peakPeriods = if (peak != null) setOf(peak) else current.peakPeriods,
+            executionModels = if (executionModel != null) setOf(executionModel) else current.executionModels,
+        ))
+    }
+    fun setRequestSort(sort: TokenStatsRequestSort) {
+        mutableState.update { it.copy(requestSort = sort) }; requestPage(0)
+    }
+    fun requestPage(index: Int) {
+        if (index < 0 || state.value.loading || state.value.clearing) return
+        pageJob?.cancel()
+        val generation = ++pageGeneration
+        val snapshot = state.value
+        mutableState.update { it.copy(requestsLoading = true) }
+        pageJob = viewModelScope.launch(dispatcher) {
+            try {
+                val page = TokenStatsInsightsService.requestPage(appContext, snapshot.filter, snapshot.params, snapshot.requestSort, index, 30)
+                if (generation == pageGeneration) mutableState.update { it.copy(requests = page, requestsLoading = false) }
+            } catch (error: CancellationException) { throw error } catch (error: Exception) {
+                AppLogger.e(TAG, "请求分页读取失败", error)
+                if (generation == pageGeneration) { mutableState.update { it.copy(requestsLoading = false) }; failure(R.string.token_stats_load_failed) }
+            }
+        }
+    }
+    fun showDetail(id: String) {
+        if (state.value.clearing) return
+        detailJob?.cancel()
+        val generation = ++detailGeneration
+        val params = state.value.params
+        mutableState.update { it.copy(detail = null, detailLoading = true) }
+        detailJob = viewModelScope.launch(dispatcher) {
+            try {
+                val detail = TokenStatsInsightsService.requestDetail(appContext, id, params)
+                if (generation == detailGeneration) mutableState.update { it.copy(detail = detail, detailLoading = false) }
+            } catch (error: CancellationException) { throw error } catch (error: Exception) {
+                AppLogger.e(TAG, "请求详情读取失败", error)
+                if (generation == detailGeneration) { mutableState.update { it.copy(detailLoading = false) }; failure(R.string.token_stats_load_failed) }
+            }
+        }
+    }
+    fun dismissDetail() {
+        detailGeneration++; detailJob?.cancel()
+        mutableState.update { it.copy(detail = null, detailLoading = false) }
     }
 
-    private fun saveCustomRange(range: TokenStatsTimeRange): Boolean {
-        viewModelScope.launch(dispatcher) {
-            settings.saveTimeRange(range)
-            load()
+    fun saveSettings(currency: PricingCurrency, rate: Double, unit: TokenStatsDisplayUnit, increaseIsRed: Boolean, budgetCny: Double?): Boolean {
+        if (!rate.isFinite() || rate <= 0.0 || (budgetCny != null && (!budgetCny.isFinite() || budgetCny <= 0.0))) return false
+        mutate(R.string.token_stats_pricing_save_failed) {
+            settings.saveTargetCurrency(currency); settings.saveRate(rate); settings.saveTokenDisplayUnit(unit)
+            preferences.saveInsightsOptions(increaseIsRed, budgetCny)
+            mutableState.update { it.copy(targetCurrency = currency, manualRate = rate, rateIsEstimated = false, tokenDisplayUnit = unit, increaseIsRed = increaseIsRed, monthlyBudgetCny = budgetCny) }
         }
         return true
     }
-
-    fun toggleModel(displayModelId: String) {
-        modeRangeJob?.cancel()
-        _state.update { state ->
-            val selected = state.selectedModels.toMutableSet()
-            if (!selected.add(displayModelId)) selected.remove(displayModelId)
-            state.copy(selectedModels = selected)
-        }
-        load()
-    }
-
-    fun selectAllModels() {
-        modeRangeJob?.cancel()
-        _state.update { it.copy(selectedModels = emptySet()) }
-        load()
-    }
-
-    fun setTargetCurrency(currency: PricingCurrency) {
-        viewModelScope.launch(dispatcher) {
-            settings.saveTargetCurrency(currency)
-            load()
-        }
-    }
-
-    fun setManualRate(rate: Double): Boolean {
-        if (!rate.isFinite() || rate <= 0.0) return false
-        viewModelScope.launch(dispatcher) {
-            settings.saveRate(rate)
-            load()
-        }
-        return true
-    }
-
-    fun savePrice(draft: TokenStatsPriceDraft) {
-        viewModelScope.launch(dispatcher) {
-            try {
-                manager.savePrice(draft)
-                load()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _actionMessage.value = TokenStatsActionMessage(
-                    stringResolver(R.string.token_stats_pricing_save_failed),
-                    isError = true,
-                )
-            }
-        }
-    }
-
-    fun clearInvalidConfigurations() {
-        if (_state.value.loading || _state.value.clearingInvalidConfigurations) return
-        _state.update { it.copy(clearingInvalidConfigurations = true) }
-        viewModelScope.launch(dispatcher) {
-            try {
-                val usedConfigIds = usageRepository.usedConfigurationIds()
-                val configurations = modelConfigManager.getAllConfigSummaries()
-                val configurationNames = configurations.associate { it.id to it.name }
-                val invalidIds = invalidTokenStatsConfigurationIds(usedConfigIds, configurationNames.keys)
-                val hiddenIds = settings.hideConfigurationIds(invalidIds)
-                _state.update {
-                    it.copy(configurationNames = configurationNames, hiddenConfigurationIds = hiddenIds)
-                }
-                // Cancel any earlier load before it can publish the old visibility settings.
-                load()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                AppLogger.e(tag, "Failed to hide deleted configurations in statistics", e)
-                _actionMessage.value = TokenStatsActionMessage(
-                    stringResolver(R.string.token_stats_clear_invalid_configurations_failed),
-                    isError = true,
-                )
-            } finally {
-                _state.update { it.copy(clearingInvalidConfigurations = false) }
-            }
-        }
-    }
-
-    fun clearUsageRecords() {
-        viewModelScope.launch(dispatcher) {
-            try {
-                usageRepository.clearUsageRecords()
-                load()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                AppLogger.e(tag, "清空 Token 使用量失败", e)
-                _actionMessage.value = TokenStatsActionMessage(
-                    stringResolver(R.string.token_stats_usage_reset_failed),
-                    isError = true,
-                )
-            }
-        }
-    }
-
+    fun savePrice(draft: TokenStatsPriceDraft) { mutate(R.string.token_stats_pricing_save_failed) { manager.savePrice(draft) } }
     fun deletePrice(setting: TokenStatsPriceSetting) {
-        viewModelScope.launch(dispatcher) {
-            try {
-                if (setting.scope == com.ai.assistance.operit.data.stats.TokenStatsPriceScope.CONFIG) {
-                    manager.resetConfigPrice(setting.providerModel, requireNotNull(setting.configId))
-                } else {
-                    manager.restoreBuiltInPrice(setting.providerModel)
-                }
-                load()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _actionMessage.value = TokenStatsActionMessage(
-                    stringResolver(R.string.token_stats_pricing_delete_failed),
-                    isError = true,
-                )
-            }
+        mutate(R.string.token_stats_pricing_delete_failed) {
+            if (setting.scope == TokenStatsPriceScope.CONFIG) manager.resetConfigPrice(setting.providerModel, requireNotNull(setting.configId))
+            else manager.restoreBuiltInPrice(setting.providerModel)
         }
     }
-
+    fun clearInvalidConfigurations() {
+        mutate(R.string.token_stats_clear_invalid_configurations_failed) {
+            val names = configurations.getAllConfigSummaries().associate { it.id to it.name }
+            val invalid = invalidTokenStatsConfigurationIds(repository.usedConfigurationIds(), names.keys)
+            settings.hideConfigurationIds(invalid)
+            mutableState.update { it.copy(configurationNames = names) }
+        }
+    }
+    private fun mutate(failureResource: Int, action: suspend () -> Unit) {
+        if (state.value.clearing) return
+        viewModelScope.launch(dispatcher) {
+            try { action(); load(true) } catch (error: CancellationException) { throw error } catch (error: Exception) { AppLogger.e(TAG, "保存统计设置失败", error); failure(failureResource) }
+        }
+    }
+    fun clearUsageRecords() {
+        if (state.value.clearing) return
+        cancelReads(); rangeSaveJob?.cancel()
+        mutableState.update { it.copy(clearing = true, loading = false, requestsLoading = false, detail = null, detailLoading = false) }
+        viewModelScope.launch(dispatcher) {
+            try {
+                repository.clearUsageRecords()
+                mutableState.update { it.copy(overview = null, catalog = null, requests = null, monthlyCost = null) }
+            } catch (error: CancellationException) { throw error } catch (error: Exception) { AppLogger.e(TAG, "清空统计用量失败", error); failure(R.string.token_stats_usage_reset_failed) }
+            finally { mutableState.update { it.copy(clearing = false) } }
+            load(true)
+        }
+    }
+    private fun failure(resource: Int) { messages.value = TokenStatsActionMessage(stringResolver(resource), true) }
     class Factory(context: Context) : ViewModelProvider.Factory {
         private val appContext = context.applicationContext
-
         @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            TokenUsageStatisticsViewModel(appContext) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = TokenUsageStatisticsViewModel(appContext) as T
     }
-
     companion object {
         const val MAX_CUSTOM_RANGE_DAYS = 3 * 366L
+        private const val TAG = "TokenUsageStatisticsViewModel"
     }
-}
-
-private data class QueryLoadResult(
-    val lifetime: TokenStatsLifetimeOverview,
-    val range: TokenStatsRangeData?,
-    val available: TokenStatsRangeData?,
-    val prices: List<TokenStatsPriceSetting>,
-    val configurationNames: Map<String, String>,
-    val activity: TokenActivityRangeData,
-    val heatmap: TokenActivityRangeData?,
-)
-
-private fun defaultDateRange(nowMs: Long, zone: ZoneId): TokenStatsTimeRange {
-    val today = java.time.Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate()
-    val start = today.minusDays(29L).atStartOfDay(zone).toInstant().toEpochMilli()
-    val end = today.plusDays(1L).atStartOfDay(zone).toInstant().toEpochMilli()
-    return TokenStatsTimeRanges.customRange(start, end)
 }

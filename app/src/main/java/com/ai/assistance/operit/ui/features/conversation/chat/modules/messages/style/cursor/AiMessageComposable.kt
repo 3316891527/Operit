@@ -34,12 +34,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownRenderer
+import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownChunkRenderer
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.list.ChatMessageHeightMemory
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.stream.rememberRevisableTextStream
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.CustomXmlRenderer
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.ThinkToolsXmlNodeGrouper
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.links.LinkPreviewDialog
-import com.ai.assistance.operit.util.markdown.toCharStream
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.ToolCollapseMode
@@ -211,11 +211,9 @@ fun AiMessageComposable(
             val streamToRender = if (LocalMarkdownRenderFragment.current != null) null else rememberRevisableTextStream(overrideStream ?: message.contentStream)
             if (streamToRender != null) {
                 // 对于正在流式传输的消息，使用流式渲染器
-                // 将contentStream保存到本地变量以避免智能转换问题
-                val charStream = remember(streamToRender) { streamToRender.toCharStream() }
-
-                StreamMarkdownRenderer(
-                    markdownStream = charStream,
+                // 保留上游增量块，避免显示层再次逐字符转发。
+                StreamMarkdownChunkRenderer(
+                    markdownStream = streamToRender,
                     textColor = themedTextColor,
                     backgroundColor = backgroundColor,
                     onLinkClick = rememberedOnLinkClick,

@@ -1,4 +1,6 @@
 package com.ai.assistance.operit.core.tools.agent
+import com.ai.assistance.operit.data.model.FunctionType
+import com.ai.assistance.operit.data.stats.TokenRequestSource
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -763,13 +765,15 @@ class PhoneAgent(
         val modelStarted = System.nanoTime()
         performance.modelCalls++
         val fullResponse = try {
-            uiService.sendMessage(
-                context = context,
-                chatHistory = observationHistory.forModel(_contextHistory).toPromptTurns(),
-                enableThinking = false,
-                stream = true,
-                preserveThinkInHistory = true
-            ).collectRevisionAppliedText().trim()
+            withContext(TokenRequestSource(FunctionType.UI_CONTROLLER)) {
+                uiService.sendMessage(
+                    context = context,
+                    chatHistory = observationHistory.forModel(_contextHistory).toPromptTurns(),
+                    enableThinking = false,
+                    stream = true,
+                    preserveThinkInHistory = true
+                )
+            }.collectRevisionAppliedText().trim()
         } finally {
             val elapsed = (System.nanoTime() - modelStarted) / 1_000_000
             performance.modelMs += elapsed

@@ -62,7 +62,13 @@ private sealed interface ContextWindowLoadState {
 @Composable
 fun ChatContextUsageDialog(actualViewModel: ChatViewModel, onDismiss: () -> Unit) {
     val chatId by actualViewModel.currentChatId.collectAsState()
-    val perRequestTokens by actualViewModel.perRequestTokenCount.collectAsState()
+    val reportedInputTokens = chatId?.let { id ->
+        // 会话切换时重建收集状态，不把旧会话的最后一个值带入新面板。
+        key(actualViewModel, id) {
+            val reports = remember { actualViewModel.reportedContextInputTokens(id) }
+            reports.collectAsState().value
+        }
+    }
     val maxWindowSizeInK by actualViewModel.maxWindowSizeInK.collectAsState()
     val summaryThreshold by actualViewModel.summaryTokenThreshold.collectAsState()
     val enableSummary by actualViewModel.enableSummary.collectAsState()
@@ -182,7 +188,7 @@ fun ChatContextUsageDialog(actualViewModel: ChatViewModel, onDismiss: () -> Unit
                                 }
                                 is ContextWindowLoadState.Loaded -> ContextWindowUsageContent(
                                     breakdown = state.breakdown,
-                                    lastRequestInputTokens = perRequestTokens?.first,
+                                    lastReportedInputTokens = reportedInputTokens,
                                     canSummarize = !isLoading && !summarizing && history.isNotEmpty(),
                                     isSummarizing = summarizing,
                                     onSummarizeNow = actualViewModel::manuallySummarizeConversation

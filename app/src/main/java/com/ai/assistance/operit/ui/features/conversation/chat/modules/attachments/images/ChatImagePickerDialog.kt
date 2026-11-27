@@ -93,7 +93,8 @@ fun ChatImagePickerDialog(
     var access by remember { mutableStateOf(imageLibraryAccess(context)) }
     var refreshVersion by remember { mutableStateOf(0) }
     var loadState by remember { mutableStateOf<GalleryLoadState>(GalleryLoadState.Loading) }
-    var selectedUris by rememberSaveable { mutableStateOf(listOf<String>()) }
+    val selection = rememberSaveable { mutableStateOf(emptyList<String>()) }
+    var selectedUris by selection
     var selectedAlbumId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedAlbumName by rememberSaveable { mutableStateOf<String?>(null) }
     var albumMenuExpanded by remember { mutableStateOf(false) }
@@ -156,8 +157,7 @@ fun ChatImagePickerDialog(
     val dragSelection = galleryDragSelectionModifier(
         gridState = gridState,
         visibleUris = remember(visibleImages) { visibleImages.map { it.uri.toString() } },
-        selectedUris = selectedUris,
-        onSelectionChanged = { selectedUris = it },
+        selection = selection,
     )
     val selectedPreview = remember(images, selectedUris) {
         val firstSelected = selectedUris.firstOrNull()

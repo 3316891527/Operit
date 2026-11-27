@@ -3481,6 +3481,9 @@ class ChatViewModel(context: Context) : ViewModel() {
         messageCoordinationDelegate.enqueueSelectedMessagesForMemoryAutoSave(messages)
     }
 
+    internal fun reportedContextInputTokens(chatId: String): StateFlow<Long?> =
+        EnhancedAIService.getChatInstance(context, chatId).reportedContextInputTokens
+
     suspend fun loadContextWindowBreakdown(chatId: String): ContextWindowBreakdown =
         withContext(Dispatchers.IO) {
             messageCoordinationDelegate.loadContextWindowBreakdown(chatId)

@@ -16,7 +16,10 @@ private val Context.tokenStatsDataStore: DataStore<Preferences> by
     preferencesDataStore(name = "token_stats_preferences")
 
 /** Statistics presentation settings. Usage, grouping, and pricing stay in Room. */
-internal class TokenStatsPreferences(context: Context) {
+internal class TokenStatsPreferences(
+    context: Context,
+    private val dataStore: DataStore<Preferences> = context.applicationContext.tokenStatsDataStore,
+) {
     companion object {
         private val TARGET_CURRENCY = stringPreferencesKey("target_currency")
         private val TOKEN_DISPLAY_UNIT = stringPreferencesKey("token_display_unit")
@@ -25,11 +28,26 @@ internal class TokenStatsPreferences(context: Context) {
         private val TIME_RANGE_END = longPreferencesKey("time_range_end")
         private val ACTIVITY_VIEW_MODE = stringPreferencesKey("activity_view_mode")
         private val HIDDEN_CONFIGURATION_IDS = stringSetPreferencesKey("hidden_configuration_ids")
+        private val INSIGHTS_RANGE_CHOSEN = longPreferencesKey("insights_range_chosen")
+        private val INSIGHTS_INCREASE_RED = longPreferencesKey("insights_increase_red")
+        private val INSIGHTS_BUDGET_CNY = doublePreferencesKey("insights_budget_cny")
         private val IMPORTED_AT = longPreferencesKey("imported_at_ms")
     }
 
-    private val dataStore = context.applicationContext.tokenStatsDataStore
 
+    suspend fun hasSelectedInsightsRange(): Boolean = dataStore.data.first()[INSIGHTS_RANGE_CHOSEN] == 1L
+    suspend fun markInsightsRangeSelected() { dataStore.edit { it[INSIGHTS_RANGE_CHOSEN] = 1L } }
+    suspend fun loadInsightsOptions(): Pair<Boolean, Double?> {
+        val values = dataStore.data.first()
+        return (values[INSIGHTS_INCREASE_RED] != 0L) to values[INSIGHTS_BUDGET_CNY]
+    }
+    suspend fun saveInsightsOptions(increaseIsRed: Boolean, budgetCny: Double?) {
+        require(budgetCny == null || budgetCny.isFinite() && budgetCny > 0.0)
+        dataStore.edit {
+            it[INSIGHTS_INCREASE_RED] = if (increaseIsRed) 1L else 0L
+            if (budgetCny == null) it.remove(INSIGHTS_BUDGET_CNY) else it[INSIGHTS_BUDGET_CNY] = budgetCny
+        }
+    }
     suspend fun importedAtMs(): Long? = dataStore.data.first()[IMPORTED_AT]
 
     suspend fun completeMigration(importedAtMs: Long, releasedUsdToCnyRate: Double?) {

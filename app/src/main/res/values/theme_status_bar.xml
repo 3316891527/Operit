@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="theme_area_system_status_bar">状态栏</string>
+    <string name="studio_status_bar_icons">系统图标</string>
+    <string name="studio_status_bar_follow_theme">跟随主题</string>
+    <string name="studio_status_bar_dark_icons">深色图标</string>
+    <string name="studio_status_bar_light_icons">浅色图标</string>
+    <string name="studio_status_bar_icons_hint">跟随主题时，浅色主题用黑色图标，深色主题用白色图标。预览中的时间、信号和电量是固定样例。</string>
+    <string name="studio_status_bar_background_empty">添加填色、渐变或图层后，不透明度才会改变背景效果。</string>
+    <string name="studio_status_bar_background_hidden">背景不透明度为 0。调高后可看到填色、渐变和图层。</string>
+    <string name="studio_status_bar_preview_description">状态栏预览：固定时间 9:41、满格信号和电量样例</string>
+</resources>

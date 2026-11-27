@@ -303,6 +303,31 @@ class DisplayPreferencesManager private constructor(private val context: Context
         }
     }
 
+    /** 同一份偏好快照读取资料，避免头像和名字来自不同的保存时刻。 */
+    internal suspend fun globalUserProfile(): Map<String, String> =
+        readGlobalUserProfile(context.displayPreferencesDataStore.data.first())
+
+    /** 只在本次资料事务内校验版本并修改明确指定的资料键。 */
+    internal suspend fun mutateGlobalUserProfile(
+        transform: (Map<String, String>) -> Map<String, String>,
+    ): Map<String, String> {
+        val saved = editResourcePreferences { preferences ->
+            val updated = transform(readGlobalUserProfile(preferences))
+            require(updated.keys.all { it == "global_user_avatar_uri" || it == "global_user_name" })
+            listOf(KEY_GLOBAL_USER_AVATAR_URI, KEY_GLOBAL_USER_NAME).forEach { key ->
+                val value = updated[key.name]
+                if (value.isNullOrBlank()) preferences.remove(key) else preferences[key] = value
+            }
+        }
+        return readGlobalUserProfile(saved)
+    }
+
+    private fun readGlobalUserProfile(preferences: Preferences): Map<String, String> = buildMap {
+        listOf(KEY_GLOBAL_USER_AVATAR_URI, KEY_GLOBAL_USER_NAME).forEach { key ->
+            preferences[key]?.takeIf { it.isNotBlank() }?.let { put(key.name, it) }
+        }
+    }
+
     fun isExperimentalVirtualDisplayEnabled(): Boolean {
         return runBlocking {
             enableExperimentalVirtualDisplay.first()

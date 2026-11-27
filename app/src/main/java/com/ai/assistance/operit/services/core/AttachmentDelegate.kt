@@ -64,7 +64,9 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
             if (drafts.remove(chatId)) _attachments.value = emptyList()
         }
     }
+    private val attachmentRequestMutex = Mutex()
     private val imageAttachmentMutex = Mutex()
+
     private val imageAttachmentIndex = ImageAttachmentIndex()
 
 
@@ -107,6 +109,14 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
         return withContext(Dispatchers.IO + owner) { block() }
     }
 
+    internal suspend fun <T> withOrderedAttachmentDraft(block: suspend () -> T): T {
+        // 等待前固定草稿，并在切到 IO 前按请求顺序排队，避免复制速度改变图库选择顺序。
+        val owner = currentCoroutineContext()[DraftOwner]
+            ?: synchronized(attachmentListLock) { DraftOwner(drafts.captureTarget()) }
+        return withContext(owner) {
+            attachmentRequestMutex.withLock { withAttachmentDraft(block) }
+        }
+    }
     internal suspend fun removeMentionFromCapturedDraft(token: String, workspace: Boolean) {
         val target = requireNotNull(currentCoroutineContext()[DraftOwner]).target
         val path = if (workspace) workspaceMentionAttachmentPath(normalizeWorkspaceRelativePath(token))
@@ -239,24 +249,24 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
     /** Handles a file or image attachment selected by the user 确保在IO线程执行所有文件操作 */
     suspend fun handleAttachment(filePath: String) =
-            withAttachmentDraft {
+            withOrderedAttachmentDraft {
                 try {
                     when {
                         filePath == "screen_capture" -> {
                             captureScreenContent()
-                            return@withAttachmentDraft
+                            return@withOrderedAttachmentDraft
                         }
                         filePath == "notifications_capture" -> {
                             captureNotifications()
-                            return@withAttachmentDraft
+                            return@withOrderedAttachmentDraft
                         }
                         filePath == "location_capture" -> {
                             captureLocation()
-                            return@withAttachmentDraft
+                            return@withOrderedAttachmentDraft
                         }
                         filePath.startsWith(PACKAGE_ATTACHMENT_PREFIX) -> {
                             attachPackageInternal(filePath.removePrefix(PACKAGE_ATTACHMENT_PREFIX).trim())
-                            return@withAttachmentDraft
+                            return@withOrderedAttachmentDraft
                         }
                     }
 
@@ -275,13 +285,13 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                         val localPath = if (filePath.startsWith("file://")) Uri.parse(filePath).path else filePath
                         if (localPath.isNullOrBlank()) {
                             OKToast.warning(context, context.getString(R.string.attachment_cannot_attach, filePath)).show()
-                            return@withAttachmentDraft
+                            return@withOrderedAttachmentDraft
                         }
 
                         val file = java.io.File(localPath)
                         if (!file.exists()) {
                             OKToast.warning(context, context.getString(R.string.attachment_file_not_exist)).show()
-                            return@withAttachmentDraft
+                            return@withOrderedAttachmentDraft
                         }
 
                         sourceUri = Uri.fromFile(file)
@@ -295,7 +305,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                     val resolvedMimeType = KnownTextFiles.mimeType(fileName.orEmpty()) ?: mimeType
                     if (resolvedUri == null || resolvedFileName.isNullOrBlank() || resolvedMimeType.isNullOrBlank()) {
                         OKToast.warning(context, context.getString(R.string.attachment_cannot_attach, filePath)).show()
-                        return@withAttachmentDraft
+                        return@withOrderedAttachmentDraft
                     }
 
                     AppLogger.d(TAG, "Copying attachment source to a local temporary file: $resolvedUri")
@@ -303,7 +313,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                     if (tempFile == null || !tempFile.exists()) {
                         AppLogger.e(TAG, "Failed to create temp file from source: $resolvedUri")
                         OKToast.warning(context, context.getString(R.string.attachment_cannot_attach, resolvedFileName)).show()
-                        return@withAttachmentDraft
+                        return@withOrderedAttachmentDraft
                     }
 
                     val attachmentInfo =
@@ -332,7 +342,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                     if (addedAttachment == null) {
                         tempFile.delete()
                         OKToast.warning(context, context.getString(R.string.attachment_image_duplicate, resolvedFileName)).show()
-                        return@withAttachmentDraft
+                        return@withOrderedAttachmentDraft
                     }
                     // 成功提示只确认添加结果，避免文件名撑大提示卡片。
                     OKToast.success(context, R.string.attachment_added).show()

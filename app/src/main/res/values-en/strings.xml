@@ -8175,7 +8175,7 @@
     <string name="context_panel_estimate_badge">Estimate</string>
     <string name="context_panel_footer_auto_summary">Auto-summary at %1$s</string>
     <string name="context_panel_footer_summary_disabled">Auto-summary is off</string>
-    <string name="context_panel_last_request">Latest request %1$s · %2$s</string>
+    <string name="context_panel_last_request">Last successful request · Server-reported input: %1$s tokens</string>
     <string name="context_panel_loading">Estimating the current window…</string>
     <string name="context_panel_mcp_tools">MCP / package tools</string>
     <string name="context_panel_message_history">Message history</string>

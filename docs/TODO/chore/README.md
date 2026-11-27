@@ -8,6 +8,8 @@
 
 ## 计划索引
 
+- [1.12.2+31 正式发行](release-plus31/index.md)
+
 - [1.12.2+27 正式发行](release-plus27/index.md)
 - [插件开发材料归组](plugin-source-layout/index.md) · `plugin-source-layout`
 - [根目录普通文件归组](root-file-layout/index.md) · `root-file-layout`
