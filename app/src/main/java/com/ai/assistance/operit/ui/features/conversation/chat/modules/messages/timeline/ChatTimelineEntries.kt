@@ -66,6 +66,7 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.r
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.isVisibleChatMarkdownNode
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.thinkToolsGroupTitle
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.stream.rememberRevisableTextStream
+import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
 import com.ai.assistance.operit.util.markdown.toCharStream
 import kotlinx.coroutines.flow.Flow
@@ -94,6 +95,7 @@ internal data class ChatMessageSlice(
     val shellFirst: Boolean = first,
     val shellLast: Boolean = last,
     val waifuReplyStart: Boolean = first,
+    val waifuAvatarAfterStandalone: Boolean = false,
 )
 
 internal val LocalChatMessageSlice = staticCompositionLocalOf<ChatMessageSlice?> { null }
@@ -242,7 +244,7 @@ internal fun rememberChatTimelineEntries(
                             else -> rows.map { row -> ChatMarkdownFragment(state, nodes, grouper, mode, row, cardStore) }
                         }
                     }
-                    val entries = remember(messageKey, index, fragments, split, state, grouper, appearance, standaloneNodes, isWaifuProcess) {
+                    val entries = remember(messageKey, index, fragments, split, state, grouper, appearance, standaloneNodes, isWaifuProcess, waifuEnabled) {
                         fun standaloneAt(index: Int) = (fragments.getOrNull(index)?.row as? ThinkToolsRow.Content)?.let { it.index in standaloneNodes } == true
                         val replyBlock = if (isWaifuProcess) -1 else fragments.indexOfFirst { fragment ->
                             fragment.processHeader == null && when (val row = fragment.row) {
@@ -251,7 +253,20 @@ internal fun rememberChatTimelineEntries(
                                 else -> false
                             }
                         }
+                        // 独立块后的正文已另起外壳，头像也应归这段正文；标题仍只属于首个回复片段。
+                        var awaitingReplyAvatar = false
                         fragments.mapIndexed { blockIndex, fragment ->
+                            val standaloneContent = standaloneAt(blockIndex)
+                            val avatarAfterStandalone = awaitingReplyAvatar && !standaloneContent &&
+                                (fragment.row as? ThinkToolsRow.Content)?.let { row ->
+                                    val node = row.node ?: nodes[row.index]
+                                    node.type != MarkdownProcessorType.HTML_BREAK && isWaifuReplyNode(node)
+                                } == true
+                            if (standaloneContent && waifuEnabled && !isWaifuProcess) {
+                                awaitingReplyAvatar = true
+                            } else if (avatarAfterStandalone) {
+                                awaitingReplyAvatar = false
+                            }
                             val blockKey = if (blockIndex == 0) "first" else fragment.row!!.key
                             ChatTimelineEntry(
                                 key = "$messageKey/$blockKey",
@@ -265,8 +280,9 @@ internal fun rememberChatTimelineEntries(
                                     state = state,
                                     grouper = grouper,
                                     appearance = appearance,
-                                    standaloneContent = standaloneAt(blockIndex),
+                                    standaloneContent = standaloneContent,
                                     waifuReplyStart = blockIndex == replyBlock,
+                                    waifuAvatarAfterStandalone = avatarAfterStandalone,
                                     // 独立卡片两侧的正文各自闭合外壳，消息首尾身份仍用于标题、统计和操作。
                                     shellFirst = blockIndex == 0 || standaloneAt(blockIndex - 1),
                                     shellLast = blockIndex == fragments.lastIndex || standaloneAt(blockIndex + 1),
