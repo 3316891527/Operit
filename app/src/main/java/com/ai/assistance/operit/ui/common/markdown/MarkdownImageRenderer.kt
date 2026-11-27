@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.SubcomposeAsyncImage
+import coil.request.ErrorResult
 import coil.request.ImageRequest
 import com.ai.assistance.operit.R
 import java.io.File
@@ -142,6 +143,13 @@ fun MarkdownImageRenderer(
 
     // 全屏预览状态
     var showFullScreen by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val request = remember(context, imageUrl) {
+        ImageRequest.Builder(context).data(imageUrl).crossfade(true).build()
+    }
+    var failedResult by remember(request) { mutableStateOf<ErrorResult?>(null) }
+    var lastLoggedFailure by remember(request) { mutableStateOf<MarkdownImageLoadDiagnostic?>(null) }
+    var showErrorDetails by remember(request, imageMarkdown) { mutableStateOf(false) }
 
     // 无障碍朗读描述：只朗读块类型
     val accessibilityDesc = if (imageAlt.isNotEmpty()) {
@@ -162,21 +170,34 @@ fun MarkdownImageRenderer(
                         Modifier.wrapContentHeight()
                             .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp)) // 增加圆角大小为12dp
-                                .clickable(enabled = enableDialogs) { showFullScreen = true }
+                                .clickable(enabled = enableDialogs && failedResult == null) { showFullScreen = true }
         ) {
             SubcomposeAsyncImage(
-                    model =
-                            ImageRequest.Builder(LocalContext.current)
-                                    .data(imageUrl)
-                                    .crossfade(true)
-                                    .build(),
+                    model = request,
                     contentDescription = null,
                     modifier = Modifier.clip(RoundedCornerShape(12.dp))
                         .align(imageAlignment)
                         .heightIn(max = maxImageHeight.dp),
                     alignment = imageAlignment,
                     contentScale = ContentScale.Fit,
-                    onSuccess = { /* 移除复杂的宽高比计算 */},
+                    onLoading = {
+                        failedResult = null
+                        showErrorDetails = false
+                    },
+                    onSuccess = {
+                        failedResult = null
+                        lastLoggedFailure = null
+                    },
+                    onError = { state ->
+                        val result = state.result
+                        failedResult = result
+                        val diagnostic = formatMarkdownImageLoadDiagnostic(imageUrl, imageMarkdown, result.throwable)
+                        // 只在 Coil 回调中记录脱敏文本，同一请求的同一错误不重复写入。
+                        if (diagnostic != lastLoggedFailure) {
+                            lastLoggedFailure = diagnostic
+                            AppLogger.w(TAG, diagnostic.logMessage())
+                        }
+                    },
                     loading = {
                         Box(
                                 modifier =
@@ -195,15 +216,20 @@ fun MarkdownImageRenderer(
                         }
                     },
                     error = {
-                        Text(
-                                text = stringResource(R.string.image_load_failed),
-                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                        )
+                        MarkdownImageLoadErrorLabel(expanded = showErrorDetails) {
+                            showErrorDetails = !showErrorDetails
+                        }
                     }
             )
+        }
+
+        // 详情放在图片高度约束和预览点击区域之外，便于选择和复制。
+        val failure = failedResult
+        if (showErrorDetails && failure != null) {
+            val diagnostic = remember(failure, imageUrl, imageMarkdown) {
+                formatMarkdownImageLoadDiagnostic(imageUrl, imageMarkdown, failure.throwable)
+            }
+            MarkdownImageLoadErrorDetails(diagnostic)
         }
 
         // 显示图片说明，仅在需要时显示

@@ -42,6 +42,24 @@ class WaifuEmotionImagesTest {
     }
 
     @Test
+    fun selectionDiagnosticsReportOnlyNewOccurrencesWithTheirResolvedResources() {
+        val reported = mutableListOf<Pair<String, String>>()
+        val images = WaifuEmotionImages(
+            mapOf("test" to listOf("file:///fixture-a.png", "file:///fixture-b.png")),
+            chooseIndex = { reported.size % it },
+            onSelection = { category, resource -> reported += category to resource },
+        )
+
+        assertEquals("![](file:///fixture-a.png)", images.snapshot().render("test"))
+        val rebuilt = images.snapshot()
+        assertEquals("![](file:///fixture-a.png)", rebuilt.render("test"))
+        assertEquals("![](file:///fixture-b.png)", rebuilt.render("test"))
+        assertEquals("![](file:///fixture-a.png)", images.snapshot().render("test"))
+        assertNull(images.snapshot().render("unknown"))
+        assertEquals(listOf("test" to "file:///fixture-a.png", "test" to "file:///fixture-b.png"), reported)
+    }
+
+    @Test
     fun unavailableCategoriesDoNotSelectAnImage() {
         val images = WaifuEmotionImages(mapOf("empty" to emptyList()), chooseIndex = { error("没有素材时不选图") })
         assertFalse(images.hasCategory("missing"))

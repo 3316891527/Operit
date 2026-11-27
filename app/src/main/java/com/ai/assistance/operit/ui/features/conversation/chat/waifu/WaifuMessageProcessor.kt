@@ -477,7 +477,9 @@ object WaifuMessageProcessor {
                     urls.getOrPut(emoji.emotionCategory) { mutableListOf() }.add(url)
                 }
             }
-            WaifuEmotionImages(urls)
+            WaifuEmotionImages(urls, onSelection = { category, resource ->
+                AppLogger.d("WaifuEmotionImages", "source=emotion category=$category resource=$resource")
+            })
         }
     }
     

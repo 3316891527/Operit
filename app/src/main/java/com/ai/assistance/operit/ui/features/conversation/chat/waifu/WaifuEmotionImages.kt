@@ -12,6 +12,7 @@ internal fun waifuEmotionCategory(xml: String): String? =
 internal class WaifuEmotionImages(
     private val urlsByCategory: Map<String, List<String>>,
     private val chooseIndex: (Int) -> Int = { Random.nextInt(it) },
+    private val onSelection: (category: String, resource: String) -> Unit = { _, _ -> },
 ) {
     private val chosenByCategory = mutableMapOf<String, MutableList<String>>()
 
@@ -28,7 +29,12 @@ internal class WaifuEmotionImages(
             val occurrence = occurrences.getOrDefault(category, 0)
             occurrences[category] = occurrence + 1
             val chosen = chosenByCategory.getOrPut(category) { mutableListOf() }
-            if (occurrence == chosen.size) chosen += urls[chooseIndex(urls.size)]
+            if (occurrence == chosen.size) {
+                val resource = urls[chooseIndex(urls.size)]
+                chosen += resource
+                // 只记录真实的新选图；流式快照重算不能重复记录，空 alt 也不能当作来源依据。
+                onSelection(category, resource)
+            }
             // 表情是装饰图片，不让既有的朗读清理把分类名当作正文。
             return "![](${chosen[occurrence]})"
         }
