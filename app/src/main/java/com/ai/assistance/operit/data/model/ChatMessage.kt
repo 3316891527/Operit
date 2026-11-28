@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.model
 
+import com.ai.assistance.operit.core.chat.tools.timing.ToolCallExecution
 import com.ai.assistance.operit.core.chat.tools.timing.ToolTimingState
 import android.os.Parcel
 import android.os.Parcelable
@@ -38,6 +39,8 @@ data class ChatMessage(
                 null, // 修改为Stream<String>类型，与EnhancedAIService.sendMessage返回类型匹配
         @Transient
         val toolTimingState: ToolTimingState? = null,
+        @Transient
+        val toolTimingStartIndex: Int = 0, // 当前分段起点对应的整轮工具调用序号
 ) : Parcelable {
     init {
         ChatMessageTimestampAllocator.observe(timestamp)
@@ -46,11 +49,20 @@ data class ChatMessage(
         }
     }
 
+    /** 将整轮实时记录转换成当前分段的局部序号，保留缺失序号。 */
+    fun localToolTimings(records: List<ToolCallExecution>): List<ToolCallExecution> {
+        return records.mapNotNull { record ->
+            if (record.callIndex < toolTimingStartIndex) null
+            else if (toolTimingStartIndex == 0) record
+            else record.copy(callIndex = record.callIndex - toolTimingStartIndex)
+        }
+    }
+
     /** 编辑和流式更新仍会修改 content，保存前必须消除旧片段快照。 */
     fun resolvedSections(content: String = this.content): List<MessageSection> {
         val current = if (MessageSectionCodec.render(sections) == content) sections
             else MessageSectionCodec.parse(content)
-        val records = toolTimingState?.records?.value?.associateBy { it.callIndex }
+        val records = toolTimingState?.let { state -> localToolTimings(state.records.value).associateBy { it.callIndex } }
         val savedCalls = sections.filterIsInstance<MessageSection.ToolCall>()
         var callIndex = 0
         return current.map { section ->
@@ -71,6 +83,7 @@ data class ChatMessage(
         content = content,
         sections = resolvedSections(content),
         toolTimingState = null,
+        toolTimingStartIndex = 0,
     )
 
     fun displaySections(): List<MessageSection> =

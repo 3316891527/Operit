@@ -35,6 +35,7 @@ class IntegratedDatabaseMigrationTest {
                 AppDatabase.MIGRATION_28_29,
                 AppDatabase.MIGRATION_29_30,
                 AppDatabase.MIGRATION_30_31,
+                AppDatabase.MIGRATION_31_32,
             )
             var version = startVersion
             for (migration in migrations.filter { it.startVersion >= startVersion }) {
@@ -43,7 +44,7 @@ class IntegratedDatabaseMigrationTest {
                 version = migration.endVersion
             }
             assertEquals(AppDatabase.DATABASE_VERSION, version)
-            assertEquals(31, version)
+            assertEquals(32, version)
 
             db.query("SELECT title, folderId, lastUsedAt, displayOrder, locked, pinned, archived, chatKind, parentChatId FROM chats WHERE id = 'chat'").use { cursor ->
                 assertTrue(cursor.moveToFirst())
@@ -92,10 +93,12 @@ class IntegratedDatabaseMigrationTest {
                 assertEquals("候选回复", cursor.getString(0))
                 assertEquals(1, cursor.getInt(1))
             }
-            db.query("SELECT inputPricePerMillion, peakPricingEnabled, longContextPricingEnabled, weekendOffPeakPricingEnabled, holidayOffPeakPricingEnabled FROM token_stats_models").use { cursor ->
+            db.query("SELECT inputPricePerMillion, peakPricingEnabled, longContextPricingEnabled, weekendOffPeakPricingEnabled, holidayOffPeakPricingEnabled, billingMultiplier FROM token_stats_models").use { cursor ->
                 assertTrue(cursor.moveToFirst())
                 assertEquals(2.5, cursor.getDouble(0), 0.0)
                 for (index in 1..4) assertTrue(cursor.isNull(index))
+                assertFalse(cursor.isNull(5))
+                assertEquals(1.0, cursor.getDouble(5), 0.0)
             }
             db.query("SELECT COUNT(*) FROM token_usage_records").use { cursor ->
                 assertTrue(cursor.moveToFirst())

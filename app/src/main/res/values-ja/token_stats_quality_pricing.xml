@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="token_stats_billing_multiplier">料金倍率</string>
+    <string name="token_stats_billing_multiplier_note">既定値は 1。0.1 は基本料金の 10% です。トークン課金とリクエスト課金の小計に一度だけ適用します。</string>
+    <string name="token_stats_formula_billing_multiplier">小計 × %1$s（料金倍率）</string>
+    <string name="token_stats_request_tps">TPS（出力トークン/秒）</string>
+    <string name="token_stats_design_quality_samples">%1$s サンプル</string>
+    <string name="token_stats_design_quality_note">各指標は有効なサンプルを個別に集計し、最低件数は設けません。P95 は昇順の ⌈0.95 × 件数⌉ 番目。TPS は成功リクエストの出力トークン ÷（全体時間 − 最初のトークンまでの時間）の平均です。未記録の履歴項目は対象の指標から除外します。</string>
+    <string name="token_stats_design_formula_currency">料金の通貨：%1$s</string>
+</resources>

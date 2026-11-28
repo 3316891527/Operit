@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace
 
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeTextField as TextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
@@ -636,7 +638,7 @@ internal fun FileBrowser(
             searchVisible = !searchVisible
             if (!searchVisible) searchQuery = ""
         }
-        WorkspaceBrowserMenuItem(stringResource(R.string.file_manager_sort), Icons.Default.Sort) { showSortMenu = true }
+        WorkspaceBrowserMenuItem(stringResource(R.string.file_manager_sort), Icons.AutoMirrored.Filled.Sort) { showSortMenu = true }
         WorkspaceBrowserMenuItem(stringResource(R.string.file_manager_refresh), Icons.Default.Refresh, !isLoading) { loadDirectory(currentPath) }
         WorkspaceBrowserMenuItem(stringResource(R.string.file_manager_new), Icons.Default.Add, !isLoading) { showCreateFileDialog = true }
         WorkspaceBrowserMenuItem(stringResource(R.string.workspace_multi_select), Icons.Default.CheckBox, !isLoading, selectionMode) {
@@ -982,7 +984,7 @@ internal fun FileBrowser(
         Column(modifier = Modifier.fillMaxSize()) {
             if (showHeader) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onCancel) { Icon(Icons.Default.ArrowBack, stringResource(R.string.file_manager_return)) }
+                    IconButton(onClick = onCancel) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.file_manager_return)) }
                     Text(stringResource(if (onBindWorkspace == null) R.string.files else R.string.select_existing_workspace),
                         style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                     if (menuHost == null) WorkspaceBrowserMenuButton(localMenuHost)

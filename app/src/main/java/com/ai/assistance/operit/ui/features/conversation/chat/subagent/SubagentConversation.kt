@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.subagent
 
+import android.content.ClipData
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,17 +25,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.agent.SubagentMessage
 import com.ai.assistance.operit.core.agent.SubagentTask
@@ -137,6 +139,8 @@ private fun TranscriptMarkdown(content: String) {
 
 @Composable
 private fun SubagentToolCard(tool: SubagentTranscriptBlock.Tool) {
+    val clipboard = LocalClipboard.current
+    val clipboardScope = rememberCoroutineScope()
     var expanded by rememberSaveable { mutableStateOf(tool.phase == SubagentToolPhase.RUNNING || tool.phase == SubagentToolPhase.PREPARING) }
     var showParameters by rememberSaveable { mutableStateOf(false) }
     val active = tool.phase == SubagentToolPhase.RUNNING || tool.phase == SubagentToolPhase.PREPARING
@@ -182,8 +186,11 @@ private fun SubagentToolCard(tool: SubagentTranscriptBlock.Tool) {
                     }
                     val body = if (showParameters) tool.parameters else tool.output
                     if (!body.isNullOrEmpty()) {
-                        val clipboard = LocalClipboardManager.current
-                        IconButton(onClick = { clipboard.setText(AnnotatedString(body)) }) {
+                        IconButton(onClick = {
+                            clipboardScope.launch {
+                                clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", body)))
+                            }
+                        }) {
                             Icon(Icons.Default.ContentCopy, stringResource(R.string.subagent_tool_copy), Modifier.size(16.dp))
                         }
                     }

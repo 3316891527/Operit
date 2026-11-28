@@ -73,8 +73,13 @@ internal fun EditorSelectionToolbar(
                         EditorSelectionAction.COPY -> Icons.Default.ContentCopy
                         EditorSelectionAction.PASTE -> Icons.Default.ContentPaste
                     }
-                    TooltipBox(positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                        tooltip = { PlainTooltip { Text(label) } }, state = rememberTooltipState()) {
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            positioning = TooltipAnchorPosition.Above
+                        ),
+                        tooltip = { PlainTooltip { Text(label) } },
+                        state = rememberTooltipState()
+                    ) {
                         IconButton(onClick = { onAction(action) }, modifier = Modifier.size(44.dp),
                             enabled = !readOnly || action !in setOf(EditorSelectionAction.CUT, EditorSelectionAction.PASTE)) {
                             Icon(icon, label, if (action == EditorSelectionAction.FIND_IN_SELECTION)

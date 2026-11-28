@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="token_stats_billing_multiplier">Pengganda bil</string>
+    <string name="token_stats_billing_multiplier_note">Lalai: 1. Nilai 0.1 mengenakan 10% daripada kos asas. Digunakan sekali pada jumlah kecil untuk bil token dan setiap permintaan.</string>
+    <string name="token_stats_formula_billing_multiplier">Jumlah kecil × %1$s (pengganda bil)</string>
+    <string name="token_stats_request_tps">TPS (token output/s)</string>
+    <string name="token_stats_design_quality_samples">%1$s sampel</string>
+    <string name="token_stats_design_quality_note">Setiap metrik menggunakan sampel sah sendiri tanpa bilangan minimum. P95 ialah item ⌈0.95 × bilangan sampel⌉ selepas diisih. TPS ialah purata token output ÷ (tempoh penuh − kependaman token pertama) bagi permintaan berjaya. Medan sejarah yang tiada tidak disertakan.</string>
+    <string name="token_stats_design_formula_currency">Mata wang harga: %1$s</string>
+</resources>

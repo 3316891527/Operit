@@ -18,7 +18,6 @@ import androidx.compose.runtime.collectAsState
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardStateStore
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.rememberMessageToolExecutions
 import com.ai.assistance.operit.ui.common.markdown.messageSectionsForRendering
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalInsideToolGroup
 import com.ai.assistance.operit.ui.common.markdown.lazy.MarkdownCardStateStore
 import com.ai.assistance.operit.ui.common.markdown.lazy.markdownNodeIdentityKeys
 import androidx.compose.animation.core.animateFloatAsState
@@ -170,7 +169,9 @@ internal fun rememberChatTimelineEntries(
                         ).also { it.expansionOverrides = overrides }
                     }
                     val timingSnapshot = rememberMessageToolExecutions(message)
+                    val timingLive = message.toolTimingState != null
                     grouper.executionTimings = timingSnapshot
+                    grouper.toolTimingsLive = timingLive
                     val stream = rememberRevisableTextStream(message.contentStream)
                     if (stream != null) {
                         StreamMarkdownChunkRenderer(markdownStream = stream, state = state, renderContent = false)
@@ -218,7 +219,7 @@ internal fun rememberChatTimelineEntries(
                     // 自动展开由整段消息的渲染模式驱动，XML 子流仅负责卡片内容。
                     val expansionSnapshot = overrides.toMap()
                     val rows = remember(
-                        split, groups, nodes, grouper, mode, expansionSnapshot, timingSnapshot,
+                        split, groups, nodes, grouper, mode, expansionSnapshot, timingSnapshot, timingLive,
                         showThinkingProcess, showStatusTags, isWaifuProcess,
                     ) {
                         if (isWaifuProcess) {
@@ -419,7 +420,6 @@ private class ChatMarkdownFragment(
                     )
                     is ThinkToolsRow.WaifuTool -> {
                         CompositionLocalProvider(
-                            LocalInsideToolGroup provides true,
                             LocalMarkdownCardNodeIndex provides item.call.index,
                         ) {
                             Box(Modifier.fillMaxWidth().waifuProcessRail(textColor)) {
@@ -432,7 +432,6 @@ private class ChatMarkdownFragment(
                             else Modifier.padding(start = if (item.inGroup) 24.dp else 0.dp)
                         Box(Modifier.fillMaxWidth().then(indentation)) {
                             // 已出现的块离屏后重新进入时不重播淡入，避免快速滑动时闪烁。
-                            CompositionLocalProvider(LocalInsideToolGroup provides item.inGroup) {
                             AnimatedNode(
                                 nodeKey = item.key,
                                 node = item.node ?: nodes[item.index],
@@ -447,7 +446,6 @@ private class ChatMarkdownFragment(
                                 fillMaxWidth = true,
                                 isLastNode = item.index == nodes.lastIndex,
                             )
-                            }
                         }
                     }
                 }

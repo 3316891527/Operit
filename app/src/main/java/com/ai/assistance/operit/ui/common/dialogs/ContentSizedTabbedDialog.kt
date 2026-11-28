@@ -17,9 +17,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.rememberScrollState
@@ -33,9 +31,8 @@ import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconBut
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
@@ -44,7 +41,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
@@ -114,17 +110,17 @@ fun ContentSizedTabbedDialog(
                                     }
                                 }
                             }
-                            TabRow(
+                            PrimaryTabRow(
                                 selectedTabIndex = pagerState.currentPage,
                                 containerColor = Color.Transparent,
                                 contentColor = MaterialTheme.colorScheme.primary,
-                                indicator = { positions ->
-                                    TabRowDefaults.SecondaryIndicator(
-                                        modifier = Modifier.tabIndicatorOffset(positions[pagerState.currentPage])
-                                            .wrapContentSize(Alignment.BottomCenter)
-                                            .width(24.dp)
-                                            .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp)),
+                                indicator = {
+                                    TabRowDefaults.PrimaryIndicator(
+                                        modifier = Modifier.tabIndicatorOffset(pagerState.currentPage),
+                                        width = 24.dp,
                                         height = 3.dp,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        shape = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
                                     )
                                 },
                                 divider = {

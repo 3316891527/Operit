@@ -76,6 +76,60 @@ internal fun insightsCostComposition(record: TokenUsageRecordEntity, pricing: Re
     }
     return TokenStatsInsightsCostComposition(input, cached, write, output, 0.0, (total - input - cached - write - output).coerceAtLeast(0.0))
 }
+
+/** 只保留计数和均值；完整耗时交给调用者的临时有序表。 */
+internal class InsightsQualityAccumulator(private val addDuration: (Long) -> Unit) {
+    private val firstToken = SampleMean()
+    private val priced = SampleMean()
+    private val tps = SampleMean()
+    private var durationSamples = 0L
+
+    fun add(row: TokenStatsRequestRow) {
+        if (row.isIndividualRequest) {
+            row.firstTokenLatencyMs?.takeIf { it >= 0L }?.let { firstToken.add(it.toDouble()) }
+            row.durationMs?.takeIf { it >= 0L }?.let {
+                addDuration(it)
+                durationSamples++
+            }
+        }
+        val cost = row.cost
+        // 未关联的零账目不是已定价；部分定价也不能作为完整费用样本。
+        if (row.hasUsageFact && row.configId != TokenUsageRepository.DETACHED_CONFIG_ID && row.requestCount > 0L &&
+            cost.totalContributionCount == row.requestCount && cost.unknownContributionCount == 0L &&
+            cost.knownAmount.isFinite() && cost.knownAmount >= 0.0
+        ) {
+            priced.add(cost.knownAmount / row.requestCount.toDouble(), row.requestCount)
+        }
+        tokenStatsOutputTokensPerSecond(row)?.let { tps.add(it) }
+    }
+
+    fun result(durationAtRank: (Long) -> Long): TokenStatsInsightsQuality = TokenStatsInsightsQuality(
+        averageFirstTokenLatencyMs = firstToken.value,
+        firstTokenLatencySamples = firstToken.count,
+        // 最近秩是 ceil(0.95 × n)；用整数表达避免乘法溢出和浮点边界误差。
+        p95DurationMs = if (durationSamples > 0L) durationAtRank(durationSamples - durationSamples / 20L) else null,
+        durationSamples = durationSamples,
+        averagePricedRequestCost = priced.value,
+        pricedRequestSamples = priced.count,
+        averageSuccessfulTokensPerSecond = tps.value,
+        successfulTokensPerSecondSamples = tps.count,
+    )
+
+    private class SampleMean {
+        var count = 0L
+            private set
+        private var mean = 0.0
+        val value: Double? get() = mean.takeIf { count > 0L }
+
+        fun add(value: Double, weight: Long = 1L) {
+            // 直接更新均值，不让大量有效费用累加溢出。
+            val totalWeight = count.toDouble() + weight.toDouble()
+            mean += (value - mean) * (weight.toDouble() / totalWeight)
+            count = TokenCostCalculator.saturatedAdd(count, weight)
+        }
+    }
+}
+
 internal class InsightsAccumulator(private val params: TokenStatsQueryParams) {
     private var requests = 0L
     private var facts = 0L

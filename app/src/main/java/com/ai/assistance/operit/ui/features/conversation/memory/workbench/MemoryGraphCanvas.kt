@@ -222,7 +222,7 @@ internal fun MemoryGraphCanvas(
                 val line = curve(edge, index) ?: return@forEachIndexed
                 val active = edge.id == selectedEdgeId || selectedId == edge.sourceId || selectedId == edge.targetId
                 val ink = if (active) colors.primary else colors.outline.copy(alpha = if (selectedId == null || overview) .7f else .25f)
-                val path = Path().apply { moveTo(line.start.x, line.start.y); quadraticBezierTo(line.control.x, line.control.y, line.end.x, line.end.y) }
+                val path = Path().apply { moveTo(line.start.x, line.start.y); quadraticTo(line.control.x, line.control.y, line.end.x, line.end.y) }
                 drawPath(path, ink, style = Stroke(width = (if (active) 1.8f else 1.1f) * density, pathEffect = if (edge.isCrossFolderLink) PathEffect.dashPathEffect(floatArrayOf(4f * density, 5f * density)) else null))
                 if (active && !overview) {
                     val direction = (line.end - line.control) / (line.end - line.control).getDistance().coerceAtLeast(1f)

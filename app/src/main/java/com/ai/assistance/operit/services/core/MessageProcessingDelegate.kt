@@ -66,6 +66,28 @@ import com.ai.assistance.operit.data.config.model.ApiProviderType
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
+import com.ai.assistance.operit.data.model.MessageSection
+
+private fun ChatMessage.waifuToolCallCount(): Int = sections.count { it is MessageSection.ToolCall }
+
+internal fun ChatMessage.bindWaifuToolTimings(previous: ChatMessage?, turnState: ToolTimingState): ChatMessage {
+    // sections 由 ChatMessage 使用标准 codec 解析；结果和代码中的工具示例不占调用位置。
+    val startIndex = previous?.let { it.toolTimingStartIndex + it.waifuToolCallCount() } ?: 0
+    val holder = turnState.takeIf { waifuToolCallCount() > 0 }
+    return if (toolTimingState === holder && toolTimingStartIndex == startIndex) this
+    else copy(toolTimingState = holder, toolTimingStartIndex = startIndex)
+}
+
+internal fun ChatMessage.freezeWaifuSegment(sourceMessage: ChatMessage): ChatMessage =
+    freezeToolTimings().copy(
+        inputTokens = sourceMessage.inputTokens,
+        outputTokens = sourceMessage.outputTokens,
+        cachedInputTokens = sourceMessage.cachedInputTokens,
+        sentAt = sourceMessage.sentAt,
+        outputDurationMs = sourceMessage.outputDurationMs,
+        waitDurationMs = sourceMessage.waitDurationMs,
+        completedAt = sourceMessage.completedAt,
+    )
 
 /** Cancellation bypasses provider EOF finalization, so close only Operit's own reasoning envelope. */
 internal fun finalizeInterruptedStreamingContent(content: String): String {
@@ -264,6 +286,12 @@ class MessageProcessingDelegate(
     )
 
     private val chatRuntimes = ConcurrentHashMap<String, ChatRuntime>()
+
+    internal suspend fun liveWaifuTimingSnapshot(chatId: String): List<ChatMessage> = withContext(Dispatchers.Main) {
+        // 分段只在主线程增删，跨会话加载也在这里取得一致快照，不创建新的运行态。
+        chatRuntimes[chatKey(chatId)]?.activeStreamingTurn?.segmentedMessages
+            ?.filter { it.toolTimingState != null }.orEmpty()
+    }
 
     fun steeringTurnId(chatId: String): String? =
         chatRuntimes[chatId]?.steering?.takeIf { it.canSteer && it.inputInbox.isOpen() }?.inputInbox?.turnId
@@ -489,6 +517,18 @@ class MessageProcessingDelegate(
         val waitDurationMs: Long,
     )
 
+    private suspend fun persistWaifuTerminalSegments(
+        chatId: String,
+        segments: MutableList<ChatMessage>,
+        sourceMessage: ChatMessage,
+    ) = withContext(NonCancellable + Dispatchers.Main) {
+        for (index in segments.indices) {
+            val frozen = segments[index].freezeWaifuSegment(sourceMessage)
+            segments[index] = frozen
+            addMessageToChat(chatId, frozen)
+        }
+    }
+
     private fun readCurrentTurnCancellationSnapshot(chatId: String): TurnCancellationSnapshot? {
         val service =
             EnhancedAIService.getChatInstance(context, chatId)
@@ -567,20 +607,7 @@ class MessageProcessingDelegate(
             if (segmentedMessages == null) {
                 persistAssistantMessage(chatId, finalMessage, steering)
             } else {
-                segmentedMessages.forEach { segmentMessage ->
-                    addMessageToChat(
-                        chatId,
-                        segmentMessage.copy(
-                            inputTokens = finalMessage.inputTokens,
-                            outputTokens = finalMessage.outputTokens,
-                            cachedInputTokens = finalMessage.cachedInputTokens,
-                            sentAt = finalMessage.sentAt,
-                            outputDurationMs = finalMessage.outputDurationMs,
-                            waitDurationMs = finalMessage.waitDurationMs,
-                            completedAt = completedAt,
-                        ),
-                    )
-                }
+                persistWaifuTerminalSegments(chatId, segmentedMessages, finalMessage)
             }
         }
     }
@@ -602,8 +629,7 @@ class MessageProcessingDelegate(
             steering?.canSteer = false
             steering?.inputInbox?.seal()
             val currentTurnOptions = chatRuntime.currentTurnOptions
-            val activeTurn =
-                if (keepPartialResponse) chatRuntime.activeStreamingTurn else null
+            val activeTurn = chatRuntime.activeStreamingTurn
             val cancellationSnapshot =
                 if (keepPartialResponse) readCurrentTurnCancellationSnapshot(chatId) else null
             val jobsToCancel =
@@ -621,11 +647,18 @@ class MessageProcessingDelegate(
                 jobsToCancel.forEach { job -> job.cancel() }
                 jobsToCancel.forEach { job -> job.join() }
 
-                if (activeTurn != null) {
+                if (activeTurn != null && keepPartialResponse) {
                     detachStreamingAiMessage(
                         chatId = chatId,
                         activeTurn = activeTurn,
                         snapshot = cancellationSnapshot,
+                    )
+                } else if (activeTurn != null && activeTurn.segmentedMessages != null) {
+                    // 破坏性操作随即执行；只固定现有分段，不创建整轮消息。
+                    activeTurn.message.toolTimingState?.stopActive(messageTimingNow())
+                    persistWaifuTerminalSegments(
+                        chatId, activeTurn.segmentedMessages,
+                        activeTurn.message.copy(completedAt = System.currentTimeMillis()),
                     )
                 }
 
@@ -1106,8 +1139,15 @@ class MessageProcessingDelegate(
                             }
                             updateSendPhase(activeChatId, chatRuntime, turnId, "persist_response")
                             val finalizeMessageStartTime = messageTimingNow()
-                            val interruptedTurn =
-                                if (shouldFinalizeInterruptedMessage) chatRuntime.activeStreamingTurn else null
+                            val activeTurn = chatRuntime.activeStreamingTurn
+                            val interruptedTurn = activeTurn?.takeIf {
+                                shouldFinalizeInterruptedMessage ||
+                                    (sendCancelled && !chatRuntime.cancellationInProgress && it.segmentedMessages != null)
+                            }
+                            if (interruptedTurn?.segmentedMessages != null) {
+                                // 流收集是独立 Job，先等它处理完末次撤回，再冻结真实分段。
+                                chatRuntime.streamCollectionJob?.cancelAndJoin()
+                            }
                             val deferTurnCompleteToAsyncJob =
                                 if (interruptedTurn != null && chatId != null) {
                                     // Network errors can arrive after partial output; do not overwrite it as a completed reply.
@@ -1487,6 +1527,7 @@ class MessageProcessingDelegate(
                         var isFirstWaifuAutoReadSegment = true
                         var waifuSpeechNeedsInterrupt = false
                         var lastWaifuProcessPublishedAt = 0L
+                        val publishedWaifuToolPositions = mutableMapOf<Long, Pair<Int, Int>>()
                         val waifuMessageStore = WaifuSegmentMessageStore(
                             messages = waifuEmittedMessages,
                             createMessage = { segment ->
@@ -1502,6 +1543,7 @@ class MessageProcessingDelegate(
                                 )
                             },
                             reviseMessage = { message, content -> message.copy(content = content, sections = emptyList()) },
+                            prepareMessage = { message, previous -> message.bindWaifuToolTimings(previous, toolTimingState) },
                             publishPreview = { message ->
                                 val now = messageTimingNow()
                                 if (effectivePersistTurn && chatId != null &&
@@ -1514,11 +1556,16 @@ class MessageProcessingDelegate(
                             },
                             publishRevision = { message ->
                                 val now = messageTimingNow()
+                                val toolPosition = (message.toolTimingStartIndex to message.waifuToolCallCount())
+                                    .takeIf { message.toolTimingState != null }
+                                val structureChanged = publishedWaifuToolPositions[message.timestamp] != toolPosition
                                 if (effectivePersistTurn && chatId != null &&
-                                    now - lastWaifuProcessPublishedAt >= 100L
+                                    (structureChanged || now - lastWaifuProcessPublishedAt >= 100L)
                                 ) {
-                                    // 内存始终保留最新内容，终态统一落盘；增量限制频率避免工具长输出逐字写库。
+                                    // 工具结构变化立即展示；计时由共享状态通知，长输出仍限制写库频率。
                                     addMessageToChat(chatId, message)
+                                    if (toolPosition == null) publishedWaifuToolPositions.remove(message.timestamp)
+                                    else publishedWaifuToolPositions[message.timestamp] = toolPosition
                                     lastWaifuProcessPublishedAt = now
                                 }
                                 tryEmitScrollToBottomThrottled(chatId)
@@ -1526,6 +1573,10 @@ class MessageProcessingDelegate(
                             appendMessage = { segmentMessage, interrupt ->
                                 if (effectivePersistTurn && chatId != null) {
                                     addMessageToChat(chatId, segmentMessage)
+                                    if (segmentMessage.toolTimingState != null) {
+                                        publishedWaifuToolPositions[segmentMessage.timestamp] =
+                                            segmentMessage.toolTimingStartIndex to segmentMessage.waifuToolCallCount()
+                                    }
                                 }
                                 if (getIsAutoReadEnabled() &&
                                     !WaifuMessageProcessor.isProcessOnlyMessage(segmentMessage.content)
@@ -1545,30 +1596,18 @@ class MessageProcessingDelegate(
                                     waifuSpeechNeedsInterrupt = true
                                 }
                                 lastWaifuProcessPublishedAt = 0L
+                                val removedTimestamps = messages.map { it.timestamp }
+                                removedTimestamps.forEach { publishedWaifuToolPositions.remove(it) }
                                 if (effectivePersistTurn && chatId != null) {
-                                    retractStreamingMessages(chatId, messages.map { it.timestamp })
+                                    retractStreamingMessages(chatId, removedTimestamps)
                                 }
                             },
                         )
 
                         suspend fun syncWaifuMessageMetrics(sourceMessage: ChatMessage) {
-                            if (!effectivePersistTurn || chatId == null || waifuEmittedMessages.isEmpty()) return
-
-                            withContext(Dispatchers.Main) {
-                                waifuEmittedMessages.indices.forEach { index ->
-                                    val updatedMessage =
-                                        waifuEmittedMessages[index].copy(
-                                            inputTokens = sourceMessage.inputTokens,
-                                            outputTokens = sourceMessage.outputTokens,
-                                            cachedInputTokens = sourceMessage.cachedInputTokens,
-                                            sentAt = sourceMessage.sentAt,
-                                            outputDurationMs = sourceMessage.outputDurationMs,
-                                            waitDurationMs = sourceMessage.waitDurationMs,
-                                            completedAt = sourceMessage.completedAt,
-                                        )
-                                    waifuEmittedMessages[index] = updatedMessage
-                                    addMessageToChat(chatId, updatedMessage)
-                                }
+                            toolTimingState.stopActive(messageTimingNow())
+                            if (effectivePersistTurn && chatId != null) {
+                                persistWaifuTerminalSegments(chatId, waifuEmittedMessages, sourceMessage)
                             }
                         }
                         syncWaifuMessageMetricsHandler = { sourceMessage ->
@@ -1871,10 +1910,6 @@ class MessageProcessingDelegate(
                                 )
                         }
                         aiMessage = aiMessage.copy(completedAt = System.currentTimeMillis())
-
-                        if (isWaifuModeEnabled) {
-                            syncWaifuMessageMetricsHandler?.invoke(aiMessage)
-                        }
 
                         shouldNotifyTurnComplete = true
                         finalInputStateAfterSend = EnhancedInputProcessingState.Completed

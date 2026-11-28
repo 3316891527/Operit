@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.editor.completion
 
+import androidx.compose.material.icons.automirrored.filled.Label
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -98,7 +100,7 @@ fun CompletionItemRow(
                 CompletionItemKind.METHOD -> Icons.Default.PlayArrow
                 CompletionItemKind.VARIABLE -> Icons.Default.DataObject
                 CompletionItemKind.CLASS -> Icons.Default.Class
-                CompletionItemKind.PROPERTY -> Icons.Default.Label
+                CompletionItemKind.PROPERTY -> Icons.AutoMirrored.Filled.Label
                 CompletionItemKind.SNIPPET -> Icons.Default.ContentCopy
                 else -> Icons.Default.TextFields
             },

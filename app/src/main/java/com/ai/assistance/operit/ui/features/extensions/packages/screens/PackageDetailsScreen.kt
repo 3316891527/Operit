@@ -557,7 +557,8 @@ internal fun PackageDetailsScreen(
                         }
                     } else {
                         Column(modifier = Modifier.fillMaxWidth()) {
-                            ScrollableTabRow(
+                            SecondaryScrollableTabRow(
+                                contentColor = TabRowDefaults.primaryContentColor,
                                 selectedTabIndex = selectedTabIndex,
                                 edgePadding = 0.dp
                             ) {

@@ -71,7 +71,6 @@
     <string name="token_stats_design_p95_duration">P95 完整耗时</string>
     <string name="token_stats_design_average_cost">已定价请求均费</string>
     <string name="token_stats_design_output_speed">输出速度 · 成功请求均值</string>
-    <string name="token_stats_design_quality_note">耗时为整次模型请求。首字延迟仅统计有该字段的请求。</string>
     <string name="token_stats_design_model_ranking">模型费用排行</string>
     <string name="token_stats_design_all_models">全部模型</string>
     <string name="token_stats_design_config_tokens">%1$d 个配置 · %2$s Token</string>
@@ -87,7 +86,6 @@
     <string name="token_stats_design_formula_title">费用是怎样算出的</string>
     <string name="token_stats_design_edit_configuration_price">编辑此配置价格</string>
     <string name="token_stats_design_first_token">首字延迟</string>
-    <string name="token_stats_design_formula_currency">单位：%1$s · 时段倍率 × 长上下文倍率</string>
     <string name="token_stats_design_formula_exchange">汇率：%1$s %2$s/%3$s</string>
     <string name="token_stats_design_formula_total">合计：%1$s</string>
     <string name="token_stats_design_filter_search">搜索筛选项</string>

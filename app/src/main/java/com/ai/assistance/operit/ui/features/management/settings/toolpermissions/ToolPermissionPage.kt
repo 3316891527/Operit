@@ -16,7 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -74,7 +74,7 @@ fun ToolPermissionPage() {
                         )
                         IconButton(onClick = { help = true }) {
                             Icon(
-                                Icons.Outlined.HelpOutline,
+                                Icons.AutoMirrored.Outlined.HelpOutline,
                                 stringResource(R.string.tool_permission_instruction_title),
                                 tint = appBarColor,
                                 modifier = Modifier.size(20.dp),

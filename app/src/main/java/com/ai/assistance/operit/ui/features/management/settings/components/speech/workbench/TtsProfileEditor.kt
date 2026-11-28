@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.features.management.settings.components.speech.workbench
 
+import androidx.compose.material.icons.automirrored.filled.List
+
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
@@ -50,7 +54,7 @@ internal fun TtsProfileEditor(draft: TtsProfileDraft, onChange: (TtsProfileDraft
                 stringResource(type.titleRes()),
                 { enginePanel = true },
                 description = stringResource(if (type.local) R.string.speech_workbench_local else R.string.speech_workbench_online),
-                icon = Icons.Default.VolumeUp,
+                icon = Icons.AutoMirrored.Filled.VolumeUp,
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             when (type) {
@@ -241,7 +245,7 @@ private fun OnlineTtsVoiceFields(profile: TtsProfile, onChange: (TtsHttpConfig) 
             VoiceServiceType.OPENAI_WS_TTS -> stringResource(R.string.speech_services_openai_ws_model_hint)
             else -> ""
         },
-        trailing = if (type == VoiceServiceType.OPENAI_TTS) { { IconButton(onClick = { panel = "model" }) { Icon(Icons.Default.List, stringResource(R.string.speech_services_openai_model_select), Modifier.size(20.dp)) } } } else null,
+        trailing = if (type == VoiceServiceType.OPENAI_TTS) { { IconButton(onClick = { panel = "model" }) { Icon(Icons.AutoMirrored.Filled.List, stringResource(R.string.speech_services_openai_model_select), Modifier.size(20.dp)) } } } else null,
     )
     SpeechWorkbenchField(
         stringResource(R.string.speech_services_openai_voice_id), config.voiceId, { onChange(config.copy(voiceId = it)) },
@@ -254,7 +258,7 @@ private fun OnlineTtsVoiceFields(profile: TtsProfile, onChange: (TtsHttpConfig) 
             VoiceServiceType.OPENAI_WS_TTS -> stringResource(R.string.speech_services_openai_ws_voice_id_hint)
             else -> ""
         },
-        trailing = { IconButton(onClick = { panel = "voice" }) { Icon(Icons.Default.List, stringResource(R.string.speech_services_openai_voice_select), Modifier.size(20.dp)) } },
+        trailing = { IconButton(onClick = { panel = "voice" }) { Icon(Icons.AutoMirrored.Filled.List, stringResource(R.string.speech_services_openai_voice_select), Modifier.size(20.dp)) } },
     )
     val selection = panel
     if (selection != null) SpeechChoicePanel(

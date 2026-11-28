@@ -6,7 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -54,7 +54,7 @@ internal fun WorkspaceGitBlameDialog(
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.fillMaxSize().systemBarsPadding()) {
                 Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { if (showDiff) showDiff = false else onDismiss() }) { Icon(Icons.Default.ArrowBack, stringResource(R.string.back)) }
+                    IconButton(onClick = { if (showDiff) showDiff = false else onDismiss() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
                     Text(stringResource(if (showDiff) R.string.workspace_blame_commit_diff else R.string.workspace_blame_title),
                         Modifier.weight(1f), fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, stringResource(R.string.close)) }

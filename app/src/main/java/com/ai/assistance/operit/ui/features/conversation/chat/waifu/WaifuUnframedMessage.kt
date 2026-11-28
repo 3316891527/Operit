@@ -44,6 +44,7 @@ internal fun WaifuUnframedMessage(
         ThinkToolsXmlNodeGrouper(showThinkingProcess = theme.showThinkingProcess, groupProcessNodes = !processMode)
     }
     grouper.executionTimings = rememberMessageToolExecutions(message)
+    grouper.toolTimingsLive = message.toolTimingState != null
     ProvideAiMarkdownTextLayoutSettings {
         key(message.timestamp) {
             val stream = if (LocalMarkdownRenderFragment.current != null) null else rememberRevisableTextStream(message.contentStream)

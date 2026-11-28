@@ -129,7 +129,7 @@ internal fun HubModelImportSheet(entries: List<HubEntry>, source: ModelDownloadS
     val purpose = SpeechModelPurpose.valueOf(purposeName)
     var error by remember { mutableStateOf<String?>(null) }
     SpeechWorkbenchSheet(stringResource(R.string.hub_explore_title), onDismiss) {
-        TabRow(selectedTabIndex = tab) {
+        SecondaryTabRow(selectedTabIndex = tab, contentColor = TabRowDefaults.primaryContentColor) {
             listOf(R.string.hub_catalog, R.string.hub_repository, R.string.hub_local_file).forEachIndexed { index, title ->
                 Tab(selected = tab == index, onClick = { tab = index; error = null }, text = { Text(stringResource(title)) })
             }

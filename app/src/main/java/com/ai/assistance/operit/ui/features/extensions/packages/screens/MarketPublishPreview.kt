@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -22,7 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.SecondaryTabRow
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -104,7 +104,7 @@ internal fun MarketPublishPreviewDialog(
                     navigationIcon = {
                         IconButton(onClick = onDismiss) {
                             Icon(
-                                imageVector = Icons.Default.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.cancel)
                             )
                         }
@@ -117,7 +117,7 @@ internal fun MarketPublishPreviewDialog(
                         )
                 )
 
-                TabRow(
+                SecondaryTabRow(
                     selectedTabIndex = selectedMode,
                     containerColor = MaterialTheme.colorScheme.background,
                     contentColor = MaterialTheme.colorScheme.primary
@@ -214,7 +214,7 @@ internal fun MarketPublishPreviewDialog(
                                 logoPainter = detailLogoPainter
                             )
 
-                            TabRow(
+                            SecondaryTabRow(
                                 selectedTabIndex = selectedDetailTab,
                                 containerColor = MaterialTheme.colorScheme.background,
                                 contentColor = MaterialTheme.colorScheme.primary

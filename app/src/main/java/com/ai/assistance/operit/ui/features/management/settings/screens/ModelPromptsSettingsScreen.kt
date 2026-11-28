@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.features.management.settings.screens
 
+import androidx.compose.material.icons.automirrored.filled.Sort
+
+import androidx.compose.material.icons.automirrored.filled.Label
+
 import com.ai.assistance.operit.ui.features.management.settings.components.rememberPromptEditorState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -877,7 +881,7 @@ fun ModelPromptsSettingsScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 // 标签栏（移除旧配置选项）
-                TabRow(selectedTabIndex = currentTab) {
+                SecondaryTabRow(selectedTabIndex = currentTab, contentColor = TabRowDefaults.primaryContentColor) {
                     Tab(
                         selected = currentTab == 0,
                         onClick = { currentTab = 0 }
@@ -905,7 +909,7 @@ fun ModelPromptsSettingsScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(
-                                Icons.Default.Label,
+                                Icons.AutoMirrored.Filled.Label,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -2051,7 +2055,7 @@ fun CharacterCardTab(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Sort,
+                                imageVector = Icons.AutoMirrored.Filled.Sort,
                                 contentDescription = stringResource(R.string.character_card_sort),
                                 modifier = Modifier.size(18.dp)
                             )
@@ -2062,7 +2066,7 @@ fun CharacterCardTab(
                             onDismissRequest = { sortMenuExpanded = false },
                         ) {
                             CharacterCardMenuItem(
-                                icon = Icons.Default.Sort,
+                                icon = Icons.AutoMirrored.Filled.Sort,
                                 label = stringResource(R.string.character_card_sort_default),
                                 onClick = {
                                     sortOptionNameState.value = CharacterCardSortOption.DEFAULT.name

@@ -29,7 +29,7 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ViewSidebar
+import androidx.compose.material.icons.automirrored.filled.ViewSidebar
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
@@ -323,7 +323,7 @@ internal fun WorkspaceChangesScreen(
                         onOpenFile = onOpenFile, onRefresh = { refresh++ }, modifier = Modifier.fillMaxSize())
                 } else {
                     Row(Modifier.fillMaxWidth().height(32.dp), verticalAlignment = Alignment.CenterVertically) {
-                        ChangeIconButton(Icons.Default.ViewSidebar, stringResource(R.string.workspace_changes_toggle_files), { showFiles = !showFiles })
+                        ChangeIconButton(Icons.AutoMirrored.Filled.ViewSidebar, stringResource(R.string.workspace_changes_toggle_files), { showFiles = !showFiles })
                         ChangeIconButton(Icons.Default.Refresh, stringResource(R.string.workspace_changes_refresh), { refresh++ }, enabled = !loading)
                     }
                     HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.4f))

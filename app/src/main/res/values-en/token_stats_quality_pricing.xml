@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="token_stats_billing_multiplier">Billing multiplier</string>
+    <string name="token_stats_billing_multiplier_note">Default: 1. A value of 0.1 bills 10% of the base cost. Applied once to the subtotal for token and per-request billing.</string>
+    <string name="token_stats_formula_billing_multiplier">Subtotal × %1$s (billing multiplier)</string>
+    <string name="token_stats_request_tps">TPS (output tokens/s)</string>
+    <string name="token_stats_design_quality_samples">%1$s samples</string>
+    <string name="token_stats_design_quality_note">Each metric uses its own valid samples, with no minimum count. P95 is item ⌈0.95 × sample count⌉ after sorting. TPS averages output tokens ÷ (total duration − first-token latency) for successful requests. Missing historical fields are excluded from the relevant metric.</string>
+    <string name="token_stats_design_formula_currency">Pricing currency: %1$s</string>
+</resources>

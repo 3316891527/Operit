@@ -1272,9 +1272,10 @@ private fun PatchUpdateProgressDialog(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-                        if (state.progressPercent != null) {
+                        val progressPercent = state.progressPercent
+                        if (progressPercent != null) {
                             LinearProgressIndicator(
-                                progress = state.progressPercent / 100f,
+                                progress = { progressPercent / 100f },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         } else {
@@ -1308,7 +1309,7 @@ private fun PatchUpdateProgressDialog(
                                     0f
                                 }
                             LinearProgressIndicator(
-                                progress = progress.coerceIn(0f, 1f),
+                                progress = { progress.coerceIn(0f, 1f) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Text(
@@ -1480,9 +1481,10 @@ private fun FullUpdateProgressDialog(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-                        if (state.progressPercent != null) {
+                        val progressPercent = state.progressPercent
+                        if (progressPercent != null) {
                             LinearProgressIndicator(
-                                progress = state.progressPercent / 100f,
+                                progress = { progressPercent / 100f },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         } else {

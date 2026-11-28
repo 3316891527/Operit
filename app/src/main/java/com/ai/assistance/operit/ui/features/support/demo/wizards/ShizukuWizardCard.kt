@@ -117,13 +117,14 @@ fun ShizukuWizardCard(
                 Column(modifier = Modifier.padding(12.dp)) {
                     // 进度指示器
                     LinearProgressIndicator(
-                            progress =
-                                    when {
-                                        !isShizukuInstalled -> 0f
-                                        !isShizukuRunning -> 0.33f
-                                        !hasShizukuPermission -> 0.66f
-                                        else -> 1f
-                                    },
+                            progress = {
+                                when {
+                                    !isShizukuInstalled -> 0f
+                                    !isShizukuRunning -> 0.33f
+                                    !hasShizukuPermission -> 0.66f
+                                    else -> 1f
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant

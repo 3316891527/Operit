@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.waifu
 
+import android.content.ClipData
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -17,15 +18,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownRenderer
 import com.ai.assistance.operit.ui.common.markdown.XmlRenderPluginRegistry
@@ -135,7 +138,8 @@ private fun WaifuSpecializedToolResult(
 @Composable
 private fun WaifuToolRawDetails(slot: String, label: String, text: String, textColor: Color) {
     var expanded by rememberMarkdownCardValue(slot, false)
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val clipboardScope = rememberCoroutineScope()
     Row(
         Modifier.fillMaxWidth().padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -151,7 +155,11 @@ private fun WaifuToolRawDetails(slot: String, label: String, text: String, textC
             Icons.Default.ContentCopy,
             contentDescription = stringResource(R.string.copy),
             tint = textColor.copy(alpha = 0.45f),
-            modifier = Modifier.clickable(role = Role.Button) { clipboard.setText(AnnotatedString(text)) }.padding(6.dp).size(14.dp),
+            modifier = Modifier.clickable(role = Role.Button) {
+                clipboardScope.launch {
+                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", text)))
+                }
+            }.padding(6.dp).size(14.dp),
         )
     }
     if (expanded && text.isNotEmpty()) {

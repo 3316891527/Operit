@@ -135,7 +135,7 @@ internal fun ResourceHubScreen(model: ResourceHubViewModel, requested: String?, 
                 }
             }
             item {
-                TabRow(selectedTabIndex = tab, modifier = Modifier.fillMaxWidth()) {
+                SecondaryTabRow(selectedTabIndex = tab, modifier = Modifier.fillMaxWidth(), contentColor = TabRowDefaults.primaryContentColor) {
                     listOf(R.string.hub_models, R.string.hub_resources).forEachIndexed { index, title ->
                         Tab(selected = index == tab, onClick = { tab = index; query = "" }, text = { Text(stringResource(title)) })
                     }

@@ -2,7 +2,7 @@
 
 客户端统一查询 `3316891527/Operit-Kong-patch` 的 GitHub Releases。该仓库保存所有正式版和补丁版；`3316891527/Operit` 只保留源码和开发协作，不发布应用或离线资源；固定离线资源位于 `3316891527/Operit-Kong-resources`。更新检查、补丁生成和 APK 还原仍在源码仓库实现。
 
-`1.12.2+15` 已完成发行分仓，本次准备的发行版本为 `1.12.2+25`、versionCode 81。沿用统一更新仓库与现有签名，使用 `v1.12.2+24` 的完整 APK 生成增量包。仓库创建、历史迁移、权限和完整回归见[分仓计划](../../../docs/TODO/chore/release-repositories/index.md)。
+`1.12.2+15` 已完成发行分仓。当前正式发行版本设置为 `2.0.0`、versionCode 88，高于 `1.12.2+31` 的 87。沿用统一发行仓库、现有包名和签名；跨基础版本提供完整 APK。仓库创建、历史迁移、权限和完整回归见[分仓计划](../../../docs/TODO/chore/release-repositories/index.md)。
 
 ## 渠道与安装
 
@@ -12,11 +12,16 @@
 
 ## 发布方法
 
-源码仓库的 [Build 工作流](../../../.github/workflows/build.yml)选择 `main`、任务 `:app:verifyCiPreviewRelease`，勾选 `publish_release`，填写非空 Markdown 更新说明和可选 `previous_tag`。本次使用已发布的 `v1.12.2+24` 为基础；留空时选择补丁仓库中同一基础版本且低于目标的最新已公开 APK。普通构建保持 `publish_release=false`。
+源码仓库的 [Build 工作流](../../../.github/workflows/build.yml)选择 `main`、任务 `:app:verifyCiPreviewRelease`，在确认公开发行后才勾选 `publish_release`。
+
+- 正式 `2.0.0` 的更新说明只维护在 [2.0.0.md](releases/2.0.0.md)。签名 APK 的版本为 `2.0.0` 时，派发的 `release_notes` 留空；脚本读取构建提交内的正文，发布到 `v2.0.0` 的 Release，应用内更新历史读取同一份正文。
+- 其他版本继续填写非空 Markdown 更新说明。`previous_tag` 仅用于同一基础版本的增量更新；留空时选择补丁仓库中同一基础版本且低于目标的最新已公开 APK。`2.0.0` 不以 `1.12.2+n` 为增量基线，首次发行时提供完整 APK。
+
+普通构建保持 `publish_release=false`。合并源码不会公开发行；生成的内部产物和草稿不会在应用更新历史中显示。
 
 工作流需要源码仓库的 Actions secret `OPERIT_DISTRIBUTION_TOKEN`，授予源码、补丁、资源仓库的 Contents 写入权限及源码仓库 Actions 读取权限。内置 `github.token` 不能向另外两个仓库发布。权限预检在签名构建前执行；缺少配置时明确失败。既有发行仓库和专用 secret 继续使用；本次保持 `complete_repository_migration=false`，不重复执行历史迁移清理。
 
-发布脚本读取 APK 的真实版本，检查 Kong 包名、固定证书和递增内部版本号。所有应用版本均只发往补丁仓库，先完成草稿上传及核验再公开；源码仓库不发布应用副本。已有 Release 不覆盖。
+发布脚本读取 APK 的真实版本，检查 Kong 包名与固定证书；同基础版本的增量链还检查内部版本号递增。跨基础版本完整包的 versionCode 也必须高于已公开 Kong，需在正式发行前另行核对。所有应用版本均只发往补丁仓库，先完成草稿上传及核验再公开；源码仓库不发布应用副本。已有 Release 不覆盖。
 
 当前 Build 发行步骤仅向统一更新仓库发布，不创建源码仓库版本标签，发行摘要也不再声明 sourceTag。源码提交和源码归档地址仍记录在正文与摘要中。发行仓库自己的 tag 继续承载 Release，已有标签不删除或移动。直接调用未变换的 publish_release.py 仍保留历史源码标签逻辑，正式发行应通过当前工作流。
 
@@ -34,7 +39,9 @@ python3 ci/distribution/updates/publish_release.py \
   --prepare-only
 ```
 
-此模式执行 APK 校验、基础包下载、补丁生成和逐字节还原，输出 `release-plan.json`、完整 APK 对应摘要及可用增量包。只准备模式的产物不代表已经发布的版本。
+上例适用于手工提供说明的版本；准备正式 `2.0.0` 时删除 `--notes` 参数，脚本会读取同一份仓库内正文。
+
+此模式执行 APK 校验、基础包下载、补丁生成和逐字节还原，输出 `release-plan.json`、`release-notes.md`、完整 APK 对应摘要及可用增量包。只准备模式的产物不代表已经发布的版本。
 
 ## 补丁协议与校验
 
@@ -48,13 +55,13 @@ python3 ci/distribution/updates/publish_release.py \
 
 ## 验证状态
 
-原有发布回归继续覆盖版本、基线、包名、签名、原始记录复用及逐字节还原。新增回归覆盖发行分流、草稿上传顺序、只准备模式、源码标签保护、迁移完整性、资源清单改址及产物检查。客户端 JVM 回归继续覆盖完整包、增量、渠道、数字排序、草稿过滤和文案提取。
+原有发布回归继续覆盖版本、基线、包名、签名、原始记录复用及逐字节还原。既有回归覆盖发行分流、草稿上传顺序、只准备模式、源码标签保护、迁移完整性、资源清单改址及产物检查。本轮新增四项受管正文回归源码，覆盖 2.0.0 只准备、拒绝派发覆盖、正文文件缺失或格式错误，以及其他版本参数兼容；另新增四项正式历史合并回归源码。客户端 JVM 回归继续覆盖完整包、增量、渠道、数字排序、草稿过滤和文案提取。
 
-本次未在本地执行编译、构建或测试。工作分支派发、不公开版本的构建结果及真实迁移收据分别记录；准备好的回归用例不等于通过结果。早期更新实现的已通过验证属于历史证据：[Android Build](https://github.com/3316891527/Operit/actions/runs/40199253010) 与 [Android Tests](https://github.com/3316891527/Operit/actions/runs/40198980173)，不覆盖本次分仓。
+本次未在本地执行编译、构建或测试。非发行工作分支验证的启动与结果在 PR 和交付回执中记录；准备好的回归用例不等于通过结果。早期更新实现的已通过验证属于历史证据：[Android Build](https://github.com/3316891527/Operit/actions/runs/40199253010) 与 [Android Tests](https://github.com/3316891527/Operit/actions/runs/40198980173)，不覆盖本轮 2.0.0 准备。
 
 
 ## 发布后清理本轮工作分支
 
-历史 `1.12.2+22` 发布曾使用 branch-cleanup-plan.json。本次 `1.12.2+25` 保持 `cleanup_merged_branches=false`，保留功能分支和联合测试分支；历史清理名单不用于本轮发行。该选项默认关闭。
+历史 `1.12.2+22` 发布曾使用 branch-cleanup-plan.json。本轮 2.0.0 发行保持 `cleanup_merged_branches=false`，保留独立 PR、功能分支和联合测试分支；历史清理名单不用于本轮准备。该选项默认关闭。
 
 清理先核对公开 Release 与本次 release-plan.json 的版本、源码提交、附件大小和 SHA-256；仍有开放 PR 或包含本次发行未合入提交的分支会保留。实际删除使用观察到的分支头作为租约，构建期间新增的提交不会被误删。结果写入 branch-cleanup-report.json 并随发行报告上传，不需要持续轮询工作流。

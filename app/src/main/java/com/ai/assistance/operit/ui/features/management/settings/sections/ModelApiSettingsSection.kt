@@ -39,8 +39,8 @@ import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Login
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Search
 
 import androidx.compose.material3.*
@@ -1506,7 +1506,7 @@ private fun AntigravityAuthSettingsBlock(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(onClick = onLogin, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.Login, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.antigravity_login_action))
             }
@@ -1553,7 +1553,7 @@ private fun AntigravityAuthSettingsBlock(
                 nowMillis = quotaNowMillis,
             )
             OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.Logout, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.antigravity_logout_action))
             }
@@ -1681,7 +1681,7 @@ private fun CodexAuthSettingsBlock(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(onClick = onLogin, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.Login, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.codex_login_action))
             }
@@ -1732,7 +1732,7 @@ private fun CodexAuthSettingsBlock(
             )
 
             OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.Logout, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.codex_logout_action))
             }

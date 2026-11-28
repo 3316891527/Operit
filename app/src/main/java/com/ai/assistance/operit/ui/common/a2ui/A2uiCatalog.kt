@@ -17,7 +17,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -466,7 +466,7 @@ private object CardIcon : A2uiComponent {
         if (vector == null) {
             val warn = LocalCardIconWarning.current
             LaunchedEffect(name) { warn() }
-            Icon(Icons.Outlined.HelpOutline, stringResource(R.string.a2ui_icon_missing), modifier.size(iconSize),
+            Icon(Icons.AutoMirrored.Outlined.HelpOutline, stringResource(R.string.a2ui_icon_missing), modifier.size(iconSize),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             val description = accessibility?.let {
