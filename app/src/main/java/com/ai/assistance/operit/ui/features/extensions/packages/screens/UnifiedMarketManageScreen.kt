@@ -30,7 +30,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Extension
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material3.AlertDialog
@@ -382,7 +382,7 @@ private fun CreatorAccountHeader(
                     }
                     IconButton(onClick = onLogout) {
                         Icon(
-                            imageVector = Icons.Default.Logout,
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
                             contentDescription = stringResource(R.string.logout),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

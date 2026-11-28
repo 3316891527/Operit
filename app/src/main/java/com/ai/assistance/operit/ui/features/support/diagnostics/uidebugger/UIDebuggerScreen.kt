@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.support.diagnostics.uidebugger
 
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import android.content.Intent
 import android.net.Uri
@@ -54,7 +56,7 @@ fun UIDebuggerScreen(
                 }
             ) {
                 Icon(
-                    Icons.Default.OpenInNew,
+                    Icons.AutoMirrored.Filled.OpenInNew,
                     contentDescription = stringResource(R.string.ui_debugger_launch_floating)
                 )
             }
@@ -69,7 +71,7 @@ fun UIDebuggerScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
-                Icons.Default.OpenInNew,
+                Icons.AutoMirrored.Filled.OpenInNew,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.primary

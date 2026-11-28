@@ -39,7 +39,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -594,7 +593,7 @@ fun PackageManagerScreen(
                     .padding(paddingValues)
         ) {
             // 固定四栏必须等分整行；长名称在各自栏内换行，不能由文字宽度决定标签宽度。
-            TabRow(
+            PrimaryTabRow(
                 selectedTabIndex = selectedTab.ordinal,
                 modifier = Modifier.fillMaxWidth(),
                 divider = {
@@ -603,17 +602,13 @@ fun PackageManagerScreen(
                         color = MaterialTheme.colorScheme.outlineVariant
                     )
                 },
-                indicator = { tabPositions ->
-                    if (selectedTab.ordinal < tabPositions.size) {
-                        TabRowDefaults.PrimaryIndicator(
-                            modifier =
-                                Modifier.tabIndicatorOffset(
-                                    tabPositions[selectedTab.ordinal]
-                                ),
-                            height = 2.dp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                indicator = {
+                    TabRowDefaults.PrimaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(selectedTab.ordinal),
+                        width = 24.dp,
+                        height = 2.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             ) {
                 // 插件标签

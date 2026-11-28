@@ -30,7 +30,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.SecondaryTabRow
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -130,7 +131,7 @@ fun PerformanceMonitorScreen() {
         Column(
             modifier = Modifier.fillMaxSize().padding(paddingValues)
         ) {
-            TabRow(selectedTabIndex = selectedTabIndex) {
+            SecondaryTabRow(selectedTabIndex = selectedTabIndex, contentColor = TabRowDefaults.primaryContentColor) {
                 PerformanceTab.entries.forEachIndexed { index, tab ->
                     Tab(
                         selected = selectedTabIndex == index,

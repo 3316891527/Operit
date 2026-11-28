@@ -13,7 +13,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.DriveFileMove
+import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material3.*
@@ -89,7 +89,7 @@ internal fun ChatBatchActionBar(
                     stringResource(if (unlock) R.string.unlock_chat else R.string.lock_chat), enabled) {
                     onAction(if (unlock) ChatBatchAction.UNLOCK else ChatBatchAction.LOCK)
                 }
-                ChatBatchButton(Modifier.weight(1f), Icons.Default.DriveFileMove,
+                ChatBatchButton(Modifier.weight(1f), Icons.AutoMirrored.Filled.DriveFileMove,
                     stringResource(R.string.chat_batch_move), enabled, onMove)
                 ChatBatchButton(Modifier.weight(1f), Icons.Default.Delete, stringResource(R.string.delete),
                     enabled && selectedChats.any { !it.locked }) { onAction(ChatBatchAction.DELETE) }

@@ -150,7 +150,12 @@ fun ScheduleConfigDialog(
                                 expanded = scheduleTypeExpanded
                             )
                         },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(
+                                type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                enabled = true
+                            ),
                     )
                     ExposedDropdownMenu(
                         expanded = scheduleTypeExpanded,
@@ -210,7 +215,12 @@ fun ScheduleConfigDialog(
                                             expanded = intervalUnitExpanded
                                         )
                                     },
-                                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(
+                                            type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                            enabled = true
+                                        ),
                                 )
                                 ExposedDropdownMenu(
                                     expanded = intervalUnitExpanded,
@@ -394,7 +404,12 @@ fun ScheduleConfigDialog(
                                         expanded = cronPresetExpanded
                                     )
                                 },
-                                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(
+                                        type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                        enabled = true
+                                    ),
                             )
                             ExposedDropdownMenu(
                                 expanded = cronPresetExpanded,

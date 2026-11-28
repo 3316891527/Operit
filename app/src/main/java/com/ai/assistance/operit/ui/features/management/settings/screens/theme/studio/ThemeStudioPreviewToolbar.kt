@@ -5,7 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Fullscreen
@@ -94,7 +94,7 @@ private fun StudioSceneSelector(state: ThemeStudioState, modifier: Modifier) {
             for (style in listOf("classic", "agent")) {
                 ActionSheetItem(
                     label = stringResource(if (style == "classic") R.string.studio_classic_preview else R.string.studio_agent_preview),
-                    icon = Icons.Default.Chat,
+                    icon = Icons.AutoMirrored.Filled.Chat,
                     selected = state.scene == StudioScene.Chat && state.previewInputStyle == style,
                     onClick = { expanded = false; state.previewInputStyle = style; state.selectScene(StudioScene.Chat) },
                 )

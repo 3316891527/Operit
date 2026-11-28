@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.features.conversation.memory.workbench
 
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
@@ -124,7 +128,7 @@ internal fun MemorySpaceOverview(onOpenSpace: (String) -> Unit, onOpenRecent: (S
                         Text(stringResource(R.string.memory_management_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
                         Text(stringResource(R.string.memory_workbench_subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    IconButton(onClick = { help = true }) { Icon(Icons.Default.HelpOutline, stringResource(R.string.memory_workbench_help)) }
+                    IconButton(onClick = { help = true }) { Icon(Icons.AutoMirrored.Filled.HelpOutline, stringResource(R.string.memory_workbench_help)) }
                 }
             }
             if (error != null) item {
@@ -158,7 +162,7 @@ internal fun MemorySpaceOverview(onOpenSpace: (String) -> Unit, onOpenRecent: (S
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
                             Row(Modifier.fillMaxWidth().clickable(enabled = !busy) { onOpenSpace(selected.id) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text(stringResource(R.string.memory_workbench_open), Modifier.weight(1f), color = MaterialTheme.colorScheme.primary)
-                                Icon(Icons.Default.ArrowForward, null, tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }

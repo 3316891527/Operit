@@ -1478,7 +1478,7 @@ open class StandardSystemOperationTools(private val context: Context) {
                                     }
 
                             if (provider == null) {
-                                continuation.resume(null) { AppLogger.e(TAG, "位置请求取消", it) }
+                                continuation.resume(null) { cause, _, _ -> AppLogger.e(TAG, "位置请求取消", cause) }
                                 return@suspendCancellableCoroutine
                             }
 
@@ -1512,7 +1512,7 @@ open class StandardSystemOperationTools(private val context: Context) {
                                             System.currentTimeMillis() - lastKnownLocation.time <
                                                     10 * 60 * 1000
                             ) {
-                                continuation.resume(lastKnownLocation) { AppLogger.e(TAG, "位置请求取消", it) }
+                                continuation.resume(lastKnownLocation) { cause, _, _ -> AppLogger.e(TAG, "位置请求取消", cause) }
                                 return@suspendCancellableCoroutine
                             }
 
@@ -1521,8 +1521,8 @@ open class StandardSystemOperationTools(private val context: Context) {
                                     object : android.location.LocationListener {
                                         override fun onLocationChanged(location: Location) {
                                             locationManager.removeUpdates(this)
-                                            continuation.resume(location) {
-                                                AppLogger.e(TAG, "位置请求取消", it)
+                                            continuation.resume(location) { cause, _, _ ->
+                                                AppLogger.e(TAG, "位置请求取消", cause)
                                             }
                                         }
 
@@ -1530,12 +1530,12 @@ open class StandardSystemOperationTools(private val context: Context) {
                                             // 如果提供者被禁用，尝试使用最后已知位置
                                             if (!continuation.isCompleted) {
                                                 if (lastKnownLocation != null) {
-                                                    continuation.resume(lastKnownLocation) {
-                                                        AppLogger.e(TAG, "位置请求取消", it)
+                                                    continuation.resume(lastKnownLocation) { cause, _, _ ->
+                                                        AppLogger.e(TAG, "位置请求取消", cause)
                                                     }
                                                 } else {
-                                                    continuation.resume(null) {
-                                                        AppLogger.e(TAG, "位置请求取消", it)
+                                                    continuation.resume(null) { cause, _, _ ->
+                                                        AppLogger.e(TAG, "位置请求取消", cause)
                                                     }
                                                 }
                                             }
@@ -1574,8 +1574,8 @@ open class StandardSystemOperationTools(private val context: Context) {
                                         if (!continuation.isCompleted) {
                                             locationManager.removeUpdates(locationListener)
                                             // 如果超时，尝试使用最后已知位置
-                                            continuation.resume(lastKnownLocation) {
-                                                AppLogger.e(TAG, "位置请求取消", it)
+                                            continuation.resume(lastKnownLocation) { cause, _, _ ->
+                                                AppLogger.e(TAG, "位置请求取消", cause)
                                             }
                                         }
                                     }
@@ -1593,7 +1593,7 @@ open class StandardSystemOperationTools(private val context: Context) {
                                     }
                                 }
                             } catch (e: SecurityException) {
-                                continuation.resume(lastKnownLocation) { AppLogger.e(TAG, "位置请求取消", it) }
+                                continuation.resume(lastKnownLocation) { cause, _, _ -> AppLogger.e(TAG, "位置请求取消", cause) }
                                 AppLogger.e(TAG, "请求位置更新失败", e)
                             }
                         }

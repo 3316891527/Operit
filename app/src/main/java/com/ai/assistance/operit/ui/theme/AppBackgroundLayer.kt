@@ -24,6 +24,7 @@ import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
+import com.ai.assistance.operit.ui.common.image.currentAppImageLoader
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.google.android.exoplayer2.DefaultLoadControl
 import com.google.android.exoplayer2.ExoPlayer
@@ -117,7 +118,10 @@ fun AppBackgroundLayer(
             val uri = Uri.parse(backgroundImageUri)
 
             if (backgroundMediaType == UserPreferencesManager.MEDIA_TYPE_IMAGE) {
-                val painter = rememberAsyncImagePainter(model = uri)
+                val painter = rememberAsyncImagePainter(
+                    model = uri,
+                    imageLoader = currentAppImageLoader(),
+                )
 
                 LaunchedEffect(painter.state) {
                     if (painter.state is AsyncImagePainter.State.Error) {

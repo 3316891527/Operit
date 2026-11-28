@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.management.settings.screens
 
+import androidx.compose.material.icons.automirrored.filled.Message
+
 import com.ai.assistance.operit.ui.theme.script.text.themeTextStroke
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.themeScriptBorder
@@ -124,7 +126,7 @@ fun SettingsScreen(
                 // ======= 提示词配置 =======
                 SettingsSection(
                         title = stringResource(R.string.settings_prompt_section),
-                        icon = Icons.Default.Message,
+                        icon = Icons.AutoMirrored.Filled.Message,
                         containerColor = cardContainerColor
                 ) {
                         CompactSettingsItem(

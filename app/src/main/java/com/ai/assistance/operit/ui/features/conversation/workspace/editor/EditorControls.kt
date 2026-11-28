@@ -1,5 +1,17 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.editor
 
+import androidx.compose.material.icons.automirrored.filled.WrapText
+
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+
+import androidx.compose.material.icons.automirrored.filled.FormatIndentDecrease
+
+import androidx.compose.material.icons.automirrored.filled.FormatIndentIncrease
+
+import androidx.compose.material.icons.automirrored.filled.Redo
+
+import androidx.compose.material.icons.automirrored.filled.Undo
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -41,8 +53,8 @@ internal fun EditorToolbar(session: EditorSession, editor: NativeCodeEditor?, se
         if (menu != null || lineOpen || statistics || blameRequest != null) editor?.dismissSelectionMenu()
     }
     Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
-        EditorToolButton(Icons.Default.Undo, R.string.workspace_editor_undo, writable && session.status.canUndo) { editor?.undo() }
-        EditorToolButton(Icons.Default.Redo, R.string.workspace_editor_redo, writable && session.status.canRedo) { editor?.redo() }
+        EditorToolButton(Icons.AutoMirrored.Filled.Undo, R.string.workspace_editor_undo, writable && session.status.canUndo) { editor?.undo() }
+        EditorToolButton(Icons.AutoMirrored.Filled.Redo, R.string.workspace_editor_redo, writable && session.status.canRedo) { editor?.redo() }
         EditorToolButton(Icons.Default.Save, R.string.save, canSave && !saving && !session.readOnly) { editor?.dismissSelectionMenu(); onSave() }
         Box {
             EditorToolButton(Icons.Default.Edit, R.string.workspace_editor_edit, ready) { menu = "edit" }
@@ -67,8 +79,8 @@ internal fun EditorToolbar(session: EditorSession, editor: NativeCodeEditor?, se
                             EditorAction.CUT_LINE -> Icons.Default.ContentCut
                             EditorAction.DELETE_LINE, EditorAction.CLEAR_LINE -> Icons.Default.Delete
                             EditorAction.DUPLICATE_LINE -> Icons.Default.Add
-                            EditorAction.INDENT -> Icons.Default.FormatIndentIncrease
-                            EditorAction.UNINDENT -> Icons.Default.FormatIndentDecrease
+                            EditorAction.INDENT -> Icons.AutoMirrored.Filled.FormatIndentIncrease
+                            EditorAction.UNINDENT -> Icons.AutoMirrored.Filled.FormatIndentDecrease
                             else -> Icons.Default.TextFields
                         }, null, Modifier.size(18.dp)) },
                         enabled = ready && (!changes || writable) && (!needsSelection || session.status.hasSelection),
@@ -80,7 +92,7 @@ internal fun EditorToolbar(session: EditorSession, editor: NativeCodeEditor?, se
             EditorToolButton(Icons.Default.MoreVert, R.string.more, ready) { menu = "more" }
             WorkbenchDropdownMenu(menu == "more" || menu == "file", { menu = null }, modifier = Modifier.widthIn(min = 210.dp, max = 280.dp)) {
                 if (menu == "file") {
-                    EditorMenuItem(R.string.workspace_editor_file, Icons.Default.ArrowBack) { menu = "more" }
+                    EditorMenuItem(R.string.workspace_editor_file, Icons.AutoMirrored.Filled.ArrowBack) { menu = "more" }
                     EditorMenuItem(R.string.workspace_editor_save_as, Icons.Default.Save, enabled = !saving) { menu = null; onSaveAs() }
                     EditorMenuItem(R.string.workspace_editor_reload, Icons.Default.Refresh, enabled = !saving) { menu = null; onReload() }
                     EditorMenuItem(R.string.workspace_editor_statistics, Icons.Default.Info) { menu = null; statistics = true }
@@ -97,7 +109,7 @@ internal fun EditorToolbar(session: EditorSession, editor: NativeCodeEditor?, se
                         val line = snapshot.lines.lineForOffset(session.document.selectionEnd.coerceIn(0, snapshot.length)) + 1
                         blameRequest = GitBlameRequest(snapshot, line)
                     }
-                    EditorMenuItem(R.string.workspace_browser_word_wrap, Icons.Default.WrapText, checked = settings.wordWrap) { menu = null; change { it.copy(wordWrap = !it.wordWrap) } }
+                    EditorMenuItem(R.string.workspace_browser_word_wrap, Icons.AutoMirrored.Filled.WrapText, checked = settings.wordWrap) { menu = null; change { it.copy(wordWrap = !it.wordWrap) } }
                     EditorMenuItem(R.string.workspace_editor_read_only, Icons.Default.Lock, checked = session.readOnly) { menu = null; session.readOnly = !session.readOnly }
                     EditorMenuItem(R.string.settings, Icons.Default.Settings) { menu = null; editor?.dismissSelectionMenu(); onSettings() }
                 }

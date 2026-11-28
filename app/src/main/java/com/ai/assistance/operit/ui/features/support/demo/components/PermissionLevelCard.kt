@@ -34,7 +34,6 @@ import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Web
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -415,28 +414,19 @@ private fun PermissionLevelSelector(
     val levels = AndroidPermissionLevel.values()
 
     // 使用固定等分的标签栏，让当前权限级别数量始终填满可用宽度。
-    TabRow(
+    SecondaryTabRow(
             modifier = Modifier.fillMaxWidth(),
             selectedTabIndex = currentLevel.ordinal,
             divider = {},
             contentColor = MaterialTheme.colorScheme.primary,
             containerColor = Color.Transparent,
-            indicator = { tabPositions ->
-                // Draw indicator under the selected tab
-                if (tabPositions.isNotEmpty() && currentLevel.ordinal < tabPositions.size) {
-                    Box(
-                            modifier =
-                                    Modifier.tabIndicatorOffset(tabPositions[currentLevel.ordinal])
-                                            .height(2.dp)
-                                            .background(MaterialTheme.colorScheme.primary)
-                                            .clip(
-                                                    RoundedCornerShape(
-                                                            topStart = 1.dp,
-                                                            topEnd = 1.dp
-                                                    )
-                                            )
-                    )
-                }
+            indicator = {
+                Box(
+                        modifier = Modifier.tabIndicatorOffset(currentLevel.ordinal)
+                                .height(2.dp)
+                                .background(MaterialTheme.colorScheme.primary)
+                                .clip(RoundedCornerShape(topStart = 1.dp, topEnd = 1.dp))
+                )
             }
     ) {
         levels.forEach { level ->

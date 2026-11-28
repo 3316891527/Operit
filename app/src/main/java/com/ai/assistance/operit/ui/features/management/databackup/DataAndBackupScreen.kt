@@ -48,7 +48,8 @@ fun DataAndBackupScreen(onNavigateToTokenStatistics: () -> Unit, initialTab: Int
         )
     val header: @Composable () -> Unit = {
         DataOverviewCard(overview, onNavigateToTokenStatistics)
-        TabRow(
+        SecondaryTabRow(
+            contentColor = TabRowDefaults.primaryContentColor,
             selectedTabIndex = pager.currentPage,
             containerColor = MaterialTheme.colorScheme.background,
         ) {

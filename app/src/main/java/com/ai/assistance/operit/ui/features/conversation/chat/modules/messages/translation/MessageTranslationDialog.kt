@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.translation
 
+import android.content.ClipData
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import androidx.compose.foundation.background
@@ -40,10 +41,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.TranslationUiState
 import com.ai.assistance.operit.util.android.LocaleUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 private data class TranslationLanguage(
     val code: String,
@@ -83,11 +86,12 @@ fun MessageTranslationDialog(
     translationState: TranslationUiState,
     onTargetLanguageChanged: (String) -> Unit,
     onTranslate: (String, String) -> Unit,
+    clipboardScope: CoroutineScope,
     onDismiss: () -> Unit,
 ) {
     var languageMenuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val currentLanguageCode = remember { LocaleUtils.getCurrentLanguage(context) }
     var selectedLanguage by remember(originalText) {
         mutableStateOf(
@@ -101,8 +105,10 @@ fun MessageTranslationDialog(
     }
 
     val copyText: (String, Int) -> Unit = { text, messageResId ->
-        clipboardManager.setText(AnnotatedString(text))
-        OKToast.success(context, context.getString(messageResId), OKToast.LENGTH_SHORT).show()
+        clipboardScope.launch {
+            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", text)))
+            OKToast.success(context, context.getString(messageResId), OKToast.LENGTH_SHORT).show()
+        }
     }
     val translatedText = translationState.translatedText
     val hasTranslation = !translatedText.isNullOrBlank()

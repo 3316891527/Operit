@@ -58,6 +58,7 @@ import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.ToolCollapseMode
+import com.ai.assistance.operit.ui.common.image.currentAppImageLoader
 import androidx.compose.foundation.Image
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
@@ -332,7 +333,10 @@ fun BubbleAiMessageComposable(
                     if (bubbleShowAvatar) {
                         if (!aiAvatarUri.isNullOrEmpty()) {
                             Image(
-                                painter = rememberAsyncImagePainter(model = Uri.parse(aiAvatarUri)),
+                                painter = rememberAsyncImagePainter(
+                                    model = Uri.parse(aiAvatarUri),
+                                    imageLoader = currentAppImageLoader(),
+                                ),
                                 contentDescription = "AI Avatar",
                                 modifier = avatarModifier,
                                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
@@ -382,6 +386,7 @@ fun BubbleAiMessageComposable(
                     AsyncImage(
                         model = Uri.parse(imageUrl),
                         contentDescription = "Image from AI",
+                        imageLoader = currentAppImageLoader(),
                         modifier = Modifier
                             .widthIn(max = maxBubbleWidth)
                             .heightIn(max = 80.dp)
@@ -534,7 +539,10 @@ fun BubbleAiMessageComposable(
             // Avatar
             if (!aiAvatarUri.isNullOrEmpty()) {
                 Image(
-                    painter = rememberAsyncImagePainter(model = Uri.parse(aiAvatarUri)),
+                    painter = rememberAsyncImagePainter(
+                        model = Uri.parse(aiAvatarUri),
+                        imageLoader = currentAppImageLoader(),
+                    ),
                     contentDescription = "AI Avatar",
                     modifier = avatarModifier,
                     contentScale = androidx.compose.ui.layout.ContentScale.Crop
@@ -602,6 +610,7 @@ fun BubbleAiMessageComposable(
                     AsyncImage(
                         model = Uri.parse(imageUrl),
                         contentDescription = "Image from AI",
+                        imageLoader = currentAppImageLoader(),
                         modifier = Modifier
                             .widthIn(max = maxBubbleWidth)
                             .heightIn(max = 80.dp)

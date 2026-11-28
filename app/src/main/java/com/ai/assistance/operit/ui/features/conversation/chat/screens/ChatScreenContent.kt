@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.screens
 
+import android.content.ClipData
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
@@ -32,9 +33,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -177,7 +178,7 @@ fun ChatScreenContent(
     // Export state
     val context = LocalContext.current
     val messageImageTheme = rememberMessageImageTheme()
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val selectedMessagesCopyScope = rememberCoroutineScope()
     var showExportPlatformDialog by remember { mutableStateOf(false) }
     var showAndroidExportDialog by remember { mutableStateOf(false) }
@@ -534,7 +535,7 @@ fun ChatScreenContent(
                                                     }
                                                 }
                                                 if (copiedText.isNotEmpty()) {
-                                                    clipboardManager.setText(AnnotatedString(copiedText))
+                                                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", copiedText)))
                                                     OKToast.success(context, context.getString(R.string.message_copied_to_clipboard), OKToast.LENGTH_SHORT).show()
                                                     isMultiSelectMode = false
                                                     selectedMessageIndices = emptySet()
@@ -1024,6 +1025,7 @@ fun ChatScreenContent(
         translationTarget?.let { target ->
             MessageTranslationDialog(
                 originalText = target.text,
+                clipboardScope = selectedMessagesCopyScope,
                 translationState = translationState,
                 onTargetLanguageChanged = { targetLanguageCode ->
                     actualViewModel.loadCachedTranslation(

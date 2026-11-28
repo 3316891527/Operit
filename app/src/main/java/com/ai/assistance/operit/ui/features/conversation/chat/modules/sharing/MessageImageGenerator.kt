@@ -31,10 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.CompositionLocalProvider
-import coil.ImageLoader
-import coil.compose.LocalImageLoader
-import coil.request.CachePolicy
+import coil.imageLoader
 import com.ai.assistance.operit.data.model.ChatMessage
+import com.ai.assistance.operit.ui.common.image.LocalAppImageLoaderFactory
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.ChatStyle
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.style.bubble.BubbleStyleChatMessage
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.style.cursor.CursorStyleChatMessage
@@ -119,21 +118,19 @@ object MessageImageGenerator {
             // 在主线程上创建、附加和捕获 Composable 内容
             val bitmap = withContext(Dispatchers.Main) {
                 val isDarkTheme = theme.darkTheme
-                
+
+                // 每次截图只创建一个加载器，复用 Coil 单例的资源；软件画布不能绘制硬件位图。
+                val softwareImageLoader = context.imageLoader.newBuilder()
+                    .allowHardware(false)
+                    .crossfade(false)
+                    .build()
+
                 // 创建 ComposeView，包含所有消息内容
                 val composeView = ComposeView(context).apply {
                     setBackgroundColor(AndroidColor.TRANSPARENT)
                     setContent {
-                        // 为截图渲染提供只使用软件 Bitmap 的 ImageLoader，避免
-                        // "Software rendering doesn't support hardware bitmaps" 崩溃
-                        val softwareImageLoader = ImageLoader.Builder(context)
-                            .allowHardware(false)
-                            .diskCachePolicy(CachePolicy.ENABLED)
-                            .memoryCachePolicy(CachePolicy.ENABLED)
-                            .build()
-
                         CompositionLocalProvider(
-                            LocalImageLoader provides softwareImageLoader,
+                            LocalAppImageLoaderFactory provides { softwareImageLoader },
                             LocalThemePreferenceSnapshot provides themeSnapshot,
                         ) {
                             MaterialTheme(

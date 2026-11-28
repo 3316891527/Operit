@@ -49,7 +49,7 @@ internal fun ThemeSettingsTabbedContent(
 ) {
     LaunchedEffect(selectedTab) { scrollState.scrollTo(0) }
     Column(modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)) {
-        TabRow(selectedTabIndex = selectedTab.ordinal, containerColor = Color.Transparent) {
+        SecondaryTabRow(selectedTabIndex = selectedTab.ordinal, containerColor = Color.Transparent, contentColor = TabRowDefaults.primaryContentColor) {
             ThemeSettingsTab.values().forEach { tab ->
                 Tab(
                     selected = selectedTab == tab,

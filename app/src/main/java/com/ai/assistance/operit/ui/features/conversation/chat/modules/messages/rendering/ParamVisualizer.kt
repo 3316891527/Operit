@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering
 
+import android.content.ClipData
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,13 +14,15 @@ import androidx.compose.material3.MaterialTheme
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 data class ParamItem(val name: String, val value: String)
 
@@ -47,6 +50,8 @@ private fun unescapeXml(input: String): String {
 
 @Composable
 fun ParamVisualizer(xmlContent: String) {
+    val clipboard = LocalClipboard.current
+    val clipboardScope = rememberCoroutineScope()
     val params = remember(xmlContent) {
         val paramRegex = """<param\s+name="([^"]+)">(.*?)</param>""".toRegex(RegexOption.DOT_MATCHES_ALL)
         paramRegex.findAll(xmlContent).map {
@@ -67,7 +72,6 @@ fun ParamVisualizer(xmlContent: String) {
                         .background(MaterialTheme.colorScheme.surface)
                         .padding(12.dp)
                 ) {
-                    val clipboardManager = LocalClipboardManager.current
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -82,7 +86,9 @@ fun ParamVisualizer(xmlContent: String) {
                         IconButton(
                             modifier = Modifier.size(24.dp), // 限制IconButton的大小
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(param.value))
+                                clipboardScope.launch {
+                                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", param.value)))
+                                }
                             }
                         ) {
                             Icon(

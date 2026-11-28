@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.history.folders
 
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
 import com.ai.assistance.operit.data.preferences.glass.GlassRegion
@@ -239,8 +241,8 @@ internal fun FolderTreeList(
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     val icon = when (row) {
-                                        is ChatFolderRow.Folder -> if (row.expanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight
-                                        is ChatFolderRow.Binding -> if (row.key in collapsedBindings) Icons.Default.KeyboardArrowRight else Icons.Default.KeyboardArrowDown
+                                        is ChatFolderRow.Folder -> if (row.expanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight
+                                        is ChatFolderRow.Binding -> if (row.key in collapsedBindings) Icons.AutoMirrored.Filled.KeyboardArrowRight else Icons.Default.KeyboardArrowDown
                                         is ChatFolderRow.Chat -> Icons.Default.ChatBubbleOutline
                                     }
                                     if (selectionMode && row is ChatFolderRow.Chat) {

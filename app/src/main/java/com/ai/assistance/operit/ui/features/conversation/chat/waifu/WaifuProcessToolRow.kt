@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.waifu
 
+import android.content.ClipData
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,19 +26,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.markdown.lazy.rememberMarkdownCardValue
 import com.ai.assistance.operit.ui.common.markdown.lazy.splitPlainMarkdownNode
@@ -58,6 +61,8 @@ internal fun WaifuProcessToolRow(
     body: (@Composable () -> Unit)? = null,
 ) {
     var expanded by rememberMarkdownCardValue("waifu-tool-expanded", false)
+    val clipboard = LocalClipboard.current
+    val clipboardScope = rememberCoroutineScope()
     val expansionDescription = stringResource(if (expanded) R.string.common_collapse else R.string.common_expand)
     val statusColor = if (isError) MaterialTheme.colorScheme.error else textColor.copy(alpha = 0.6f)
     val shape = RoundedCornerShape(10.dp)
@@ -108,7 +113,6 @@ internal fun WaifuProcessToolRow(
             Column(Modifier.fillMaxWidth().padding(top = 6.dp)) { body() }
         }
         if (expanded && body == null) {
-            val clipboard = LocalClipboardManager.current
             Column(Modifier.fillMaxWidth().padding(start = 22.dp, top = 2.dp, bottom = 6.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     SelectionContainer(Modifier.weight(1f)) {
@@ -118,7 +122,11 @@ internal fun WaifuProcessToolRow(
                         Icons.Default.ContentCopy,
                         contentDescription = stringResource(R.string.copy),
                         tint = textColor.copy(alpha = 0.6f),
-                        modifier = Modifier.clickable(role = Role.Button) { clipboard.setText(AnnotatedString(details)) }
+                        modifier = Modifier.clickable(role = Role.Button) {
+                            clipboardScope.launch {
+                                clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", details)))
+                            }
+                        }
                             .padding(8.dp).size(16.dp),
                     )
                 }

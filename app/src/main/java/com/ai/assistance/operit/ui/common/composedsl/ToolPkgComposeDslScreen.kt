@@ -2864,7 +2864,7 @@ private fun renderCanvasNode(
                             val y1 = resolve(op["y1"], unit, "y")
                             val x2 = resolve(op["x2"], unit, "x")
                             val y2 = resolve(op["y2"], unit, "y")
-                            path.quadraticBezierTo(x1, y1, x2, y2)
+                            path.quadraticTo(x1, y1, x2, y2)
                         }
                         "close" -> path.close()
                     }

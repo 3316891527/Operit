@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.archive
 
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
@@ -170,7 +172,7 @@ private fun WorkspaceArchiveContents(
             contentColor = MaterialTheme.colorScheme.onSurface) {
             Column {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = ::back) { Icon(Icons.Default.ArrowBack, stringResource(R.string.file_manager_return)) }
+                    IconButton(onClick = ::back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.file_manager_return)) }
                     Text(if (directory.isEmpty()) source.path.substringAfterLast('/') else directory.substringAfterLast('/'), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium,
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (canEdit) IconButton(onClick = { picker = "add" }, enabled = !busy && !loading) {

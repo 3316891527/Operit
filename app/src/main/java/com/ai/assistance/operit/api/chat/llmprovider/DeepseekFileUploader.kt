@@ -13,7 +13,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
 import com.ai.assistance.operit.core.chat.media.ImageLink
@@ -197,7 +197,7 @@ internal class DeepseekFileUploader(
                     .addFormDataPart(
                         "file",
                         contentName,
-                        RequestBody.create(mimeType.toMediaType(), bytes)
+                        bytes.toRequestBody(mimeType.toMediaType())
                     )
                     .build()
             val builder = Request.Builder().url(filesEndpoint).post(body)

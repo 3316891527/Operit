@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.core.tools.packTool.uidsl.ToolPkgComposeDslNode
 import com.ai.assistance.operit.core.tools.packTool.uidsl.ToolPkgComposeDslParser
+import com.ai.assistance.operit.ui.common.image.currentAppImageLoader
 
 /**
  * AUTO-GENERATED from Compose Material3/Foundation component bindings.
@@ -1177,9 +1178,15 @@ internal fun renderDividerNode(
     modifierResolver: ComposeDslModifierResolver
 ) {
     val props = node.props
-    androidx.compose.material3.Divider(
+    val thickness = props.dp("thickness")
+    val lineThickness = if (thickness == 0.dp) {
+        (1f / androidx.compose.ui.platform.LocalDensity.current.density).dp
+    } else {
+        thickness
+    }
+    androidx.compose.material3.HorizontalDivider(
         modifier = applyScopedCommonModifier(Modifier, props, modifierResolver),
-        thickness = props.dp("thickness"),
+        thickness = lineThickness,
         color = props.colorOrNull("color") ?: Color.Unspecified
     )
 }
@@ -3349,7 +3356,10 @@ internal fun renderImageNode(
     val modifier = applyScopedCommonModifier(Modifier, props, modifierResolver)
     if (imageModel != null) {
         androidx.compose.foundation.Image(
-            painter = rememberAsyncImagePainter(model = imageModel),
+            painter = rememberAsyncImagePainter(
+                model = imageModel,
+                imageLoader = currentAppImageLoader()
+            ),
             contentDescription = props.stringOrNull("contentDescription"),
             modifier = modifier,
             alignment = alignment,

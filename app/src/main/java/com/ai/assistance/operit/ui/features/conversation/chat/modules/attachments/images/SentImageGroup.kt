@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.image.currentAppImageLoader
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.MediaFileUnavailableTag
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.mediaPreviewUri
@@ -109,6 +110,7 @@ internal fun SentImageGroup(sources: List<SentMessageImage>, enabled: Boolean, m
                             AsyncImage(
                                 model = image.uri,
                                 contentDescription = image.source.title,
+                                imageLoader = currentAppImageLoader(),
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize(),
                                 onLoading = { loading = true },

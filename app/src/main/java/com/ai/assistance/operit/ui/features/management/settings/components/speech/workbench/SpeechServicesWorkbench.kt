@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.management.settings.components.speech.workbench
 
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptButton as Button
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptFilledTonalButton as FilledTonalButton
@@ -116,11 +118,11 @@ fun SpeechServicesWorkbench(initialTabIndex: Int) {
     LaunchedEffect(tab) { listState.scrollToItem(0) }
     CustomScaffold { padding ->
         Column(Modifier.fillMaxSize().padding(padding).imePadding()) {
-            TabRow(selectedTabIndex = tab, modifier = Modifier.fillMaxWidth(), containerColor = MaterialTheme.colorScheme.surface) {
+            SecondaryTabRow(selectedTabIndex = tab, modifier = Modifier.fillMaxWidth(), containerColor = MaterialTheme.colorScheme.surface, contentColor = TabRowDefaults.primaryContentColor) {
                 listOf(R.string.speech_workbench_tab_tts, R.string.speech_workbench_tab_stt, R.string.voice_wakeup_section_title).forEachIndexed { index, title ->
                     Tab(selected = tab == index, enabled = !actionBusy, onClick = { tab = index }, text = {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                            Icon(when (index) { 0 -> Icons.Default.VolumeUp; 1 -> Icons.Default.Mic; else -> Icons.Default.RecordVoiceOver }, null, Modifier.size(16.dp))
+                            Icon(when (index) { 0 -> Icons.AutoMirrored.Filled.VolumeUp; 1 -> Icons.Default.Mic; else -> Icons.Default.RecordVoiceOver }, null, Modifier.size(16.dp))
                             Text(stringResource(title), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelLarge)
                         }
                     })
@@ -143,7 +145,7 @@ fun SpeechServicesWorkbench(initialTabIndex: Int) {
                                         title = currentName,
                                         value = stringResource(R.string.speech_workbench_switch),
                                         description = if (isTts) stringResource(ttsState.draft.profile.serviceType.titleRes()) else stringResource(sttState.draft.serviceType.titleRes()),
-                                        icon = if (isTts) Icons.Default.VolumeUp else Icons.Default.Mic,
+                                        icon = if (isTts) Icons.AutoMirrored.Filled.VolumeUp else Icons.Default.Mic,
                                         enabled = !actionBusy,
                                         onClick = { panel = "profiles" },
                                         modifier = Modifier.weight(1f),

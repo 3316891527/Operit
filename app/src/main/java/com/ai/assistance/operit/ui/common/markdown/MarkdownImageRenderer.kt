@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.CircularProgressIndicator
@@ -59,6 +59,7 @@ import coil.compose.SubcomposeAsyncImage
 import coil.request.ErrorResult
 import coil.request.ImageRequest
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.image.currentAppImageLoader
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -175,6 +176,7 @@ fun MarkdownImageRenderer(
             SubcomposeAsyncImage(
                     model = request,
                     contentDescription = null,
+                    imageLoader = currentAppImageLoader(),
                     modifier = Modifier.clip(RoundedCornerShape(12.dp))
                         .align(imageAlignment)
                         .heightIn(max = maxImageHeight.dp),
@@ -289,6 +291,7 @@ private fun FullScreenImageDialog(imageUrl: String, imageAlt: String, onDismiss:
                                         .crossfade(true)
                                         .build(),
                         contentDescription = imageAlt,
+                        imageLoader = currentAppImageLoader(),
                         modifier =
                                 Modifier.fillMaxSize()
                                         .graphicsLayer(
@@ -442,7 +445,7 @@ private fun FullScreenImageDialog(imageUrl: String, imageAlt: String, onDismiss:
                             modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp)
                     ) {
                         Icon(
-                                imageVector = Icons.Default.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.common_reset_zoom),
                                 tint = Color.White
                         )

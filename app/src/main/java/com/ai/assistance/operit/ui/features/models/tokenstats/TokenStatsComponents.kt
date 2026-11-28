@@ -29,8 +29,8 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.PieChart
-import androidx.compose.material.icons.outlined.ShowChart
-import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material.icons.automirrored.outlined.ShowChart
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -447,7 +447,7 @@ internal fun TokenStatsMetricGrid(
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(TokenStatsSpacing.section)) {
         Row(horizontalArrangement = Arrangement.spacedBy(TokenStatsSpacing.section)) {
             TokenStatsMetricCard(
-                icon = Icons.Outlined.TrendingUp,
+                icon = Icons.AutoMirrored.Outlined.TrendingUp,
                 label = stringResource(R.string.token_activity_peak_tokens),
                 value = peakTokens,
                 modifier = Modifier.weight(1f),
@@ -455,7 +455,7 @@ internal fun TokenStatsMetricGrid(
                 valueClickDescription = tokenUnitToggleDescription,
             )
             TokenStatsMetricCard(
-                icon = Icons.Outlined.ShowChart,
+                icon = Icons.AutoMirrored.Outlined.ShowChart,
                 label = stringResource(R.string.settings_total_requests),
                 value = requests,
                 modifier = Modifier.weight(1f),
