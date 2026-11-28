@@ -8,6 +8,8 @@
 
 ## 计划索引
 
+- [按官方迁移指引修复构建警告](documented-build-warnings/index.md)
+
 - [1.12.2+31 正式发行](release-plus31/index.md)
 
 - [1.12.2+27 正式发行](release-plus27/index.md)

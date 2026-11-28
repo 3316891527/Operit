@@ -49,7 +49,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
-import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -354,16 +354,13 @@ fun SkillConfigScreen(
                         .padding(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ScrollableTabRow(
+                    SecondaryScrollableTabRow(
                         selectedTabIndex = importTabIndex,
                         edgePadding = 8.dp,
+                        contentColor = TabRowDefaults.primaryContentColor,
                         divider = {},
-                        indicator = { tabPositions ->
-                            if (importTabIndex < tabPositions.size) {
-                                TabRowDefaults.SecondaryIndicator(
-                                    with(TabRowDefaults) { Modifier.tabIndicatorOffset(tabPositions[importTabIndex]) }
-                                )
-                            }
+                        indicator = {
+                            TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(importTabIndex))
                         }
                     ) {
                         Tab(

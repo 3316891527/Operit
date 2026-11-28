@@ -14,38 +14,45 @@
  * limitations under the License.
  */
 
-package androidx.compose.material.icons.outlined
+package androidx.compose.material.icons.automirrored.filled
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.ui.graphics.vector.ImageVector
 
-public val Icons.Outlined.CheckBoxOutlineBlank: ImageVector
+public val Icons.AutoMirrored.Filled.Logout: ImageVector
     get() {
-        if (_checkBoxOutlineBlank != null) {
-            return _checkBoxOutlineBlank!!
+        if (_logout != null) {
+            return _logout!!
         }
-        _checkBoxOutlineBlank = materialIcon(name = "Outlined.CheckBoxOutlineBlank") {
+        _logout = materialIcon(name = "AutoMirrored.Filled.Logout", autoMirror = true) {
             materialPath {
-                moveTo(19.0f, 5.0f)
-                verticalLineToRelative(14.0f)
-                horizontalLineTo(5.0f)
-                verticalLineTo(5.0f)
-                horizontalLineToRelative(14.0f)
-                moveToRelative(0.0f, -2.0f)
-                horizontalLineTo(5.0f)
+                moveTo(17.0f, 7.0f)
+                lineToRelative(-1.41f, 1.41f)
+                lineTo(18.17f, 11.0f)
+                horizontalLineTo(8.0f)
+                verticalLineToRelative(2.0f)
+                horizontalLineToRelative(10.17f)
+                lineToRelative(-2.58f, 2.58f)
+                lineTo(17.0f, 17.0f)
+                lineToRelative(5.0f, -5.0f)
+                close()
+                moveTo(4.0f, 5.0f)
+                horizontalLineToRelative(8.0f)
+                verticalLineTo(3.0f)
+                horizontalLineTo(4.0f)
                 curveToRelative(-1.1f, 0.0f, -2.0f, 0.9f, -2.0f, 2.0f)
                 verticalLineToRelative(14.0f)
                 curveToRelative(0.0f, 1.1f, 0.9f, 2.0f, 2.0f, 2.0f)
-                horizontalLineToRelative(14.0f)
-                curveToRelative(1.1f, 0.0f, 2.0f, -0.9f, 2.0f, -2.0f)
+                horizontalLineToRelative(8.0f)
+                verticalLineToRelative(-2.0f)
+                horizontalLineTo(4.0f)
                 verticalLineTo(5.0f)
-                curveToRelative(0.0f, -1.1f, -0.9f, -2.0f, -2.0f, -2.0f)
                 close()
             }
         }
-        return _checkBoxOutlineBlank!!
+        return _logout!!
     }
 
-private var _checkBoxOutlineBlank: ImageVector? = null
+private var _logout: ImageVector? = null

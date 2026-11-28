@@ -41,7 +41,7 @@ fun ModelWorkspaceTabs(selected: ModelWorkspaceTab, onSelect: (ModelWorkspaceTab
         R.string.subagent_configuration_title,
         R.string.model_workspace_functions,
     )
-    ScrollableTabRow(
+    SecondaryScrollableTabRow(
         edgePadding = 0.dp,
         selectedTabIndex = selected.ordinal,
         containerColor = MaterialTheme.colorScheme.background,

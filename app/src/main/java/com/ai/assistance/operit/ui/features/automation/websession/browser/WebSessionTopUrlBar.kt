@@ -18,7 +18,7 @@ import com.ai.assistance.operit.ui.theme.script.text.ThemeBasicTextField as Basi
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
@@ -164,7 +164,7 @@ internal fun WebSessionTopUrlBar(
                                 onClick = onSubmitUrl
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.ArrowForward,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                     contentDescription = stringResource(R.string.web_session_open_address)
                                 )
                             }

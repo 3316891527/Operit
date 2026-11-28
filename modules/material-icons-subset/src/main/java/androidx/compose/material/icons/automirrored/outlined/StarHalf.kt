@@ -14,25 +14,19 @@
  * limitations under the License.
  */
 
-package androidx.compose.material.icons.outlined
+package androidx.compose.material.icons.automirrored.outlined
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.ui.graphics.vector.ImageVector
-import kotlin.Deprecated
 
-@Deprecated(
-    "Use the AutoMirrored version at Icons.AutoMirrored.Outlined.StarHalf",
-    ReplaceWith( "Icons.AutoMirrored.Outlined.StarHalf",
-            "androidx.compose.material.icons.automirrored.outlined.StarHalf"),
-)
-public val Icons.Outlined.StarHalf: ImageVector
+public val Icons.AutoMirrored.Outlined.StarHalf: ImageVector
     get() {
         if (_starHalf != null) {
             return _starHalf!!
         }
-        _starHalf = materialIcon(name = "Outlined.StarHalf") {
+        _starHalf = materialIcon(name = "AutoMirrored.Outlined.StarHalf", autoMirror = true) {
             materialPath {
                 moveTo(22.0f, 9.24f)
                 lineToRelative(-7.19f, -0.62f)

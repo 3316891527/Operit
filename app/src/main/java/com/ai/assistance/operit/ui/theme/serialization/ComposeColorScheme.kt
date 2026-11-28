@@ -68,6 +68,26 @@ fun SerializableColorScheme.toComposeColorScheme(): ColorScheme {
         onErrorContainer = Color(this.onErrorContainer.toULong()),
         outline = Color(this.outline.toULong()),
         outlineVariant = Color(this.outlineVariant.toULong()),
-        scrim = Color(this.scrim.toULong())
+        scrim = Color(this.scrim.toULong()),
+        // 旧构造将未保存的新增角色设为 Unspecified，迁移时保留相同配色语义。
+        surfaceBright = Color.Unspecified,
+        surfaceDim = Color.Unspecified,
+        surfaceContainer = Color.Unspecified,
+        surfaceContainerHigh = Color.Unspecified,
+        surfaceContainerHighest = Color.Unspecified,
+        surfaceContainerLow = Color.Unspecified,
+        surfaceContainerLowest = Color.Unspecified,
+        primaryFixed = Color.Unspecified,
+        primaryFixedDim = Color.Unspecified,
+        onPrimaryFixed = Color.Unspecified,
+        onPrimaryFixedVariant = Color.Unspecified,
+        secondaryFixed = Color.Unspecified,
+        secondaryFixedDim = Color.Unspecified,
+        onSecondaryFixed = Color.Unspecified,
+        onSecondaryFixedVariant = Color.Unspecified,
+        tertiaryFixed = Color.Unspecified,
+        tertiaryFixedDim = Color.Unspecified,
+        onTertiaryFixed = Color.Unspecified,
+        onTertiaryFixedVariant = Color.Unspecified,
     )
 }

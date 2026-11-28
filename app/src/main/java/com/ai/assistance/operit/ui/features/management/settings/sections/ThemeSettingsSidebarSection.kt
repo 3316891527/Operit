@@ -2,7 +2,7 @@ package com.ai.assistance.operit.ui.features.management.settings.sections
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BlurOn
-import androidx.compose.material.icons.filled.ViewSidebar
+import androidx.compose.material.icons.automirrored.filled.ViewSidebar
 import androidx.compose.material3.CardColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
@@ -26,7 +26,7 @@ internal fun ThemeSettingsSidebarSection(
 ) {
     ThemeWorkbenchCard(
         stringResource(R.string.theme_navigation_drawer_title),
-        icon = Icons.Default.ViewSidebar,
+        icon = Icons.AutoMirrored.Filled.ViewSidebar,
     ) {
         ThemeWorkbenchSwitchRow(
             stringResource(R.string.theme_navigation_drawer_water_glass),

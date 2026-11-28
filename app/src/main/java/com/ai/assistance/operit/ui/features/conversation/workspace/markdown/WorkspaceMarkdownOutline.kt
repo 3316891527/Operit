@@ -15,7 +15,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,7 +71,7 @@ internal fun BoxScope.WorkspaceMarkdownOutline(
                             if (heading.nodeIndex in parents) {
                                 val folded = heading.nodeIndex in collapsed
                                 IconButton(onClick = { collapsed = if (folded) collapsed - heading.nodeIndex else collapsed + heading.nodeIndex }, modifier = Modifier.size(32.dp)) {
-                                    Icon(if (folded) Icons.Default.KeyboardArrowRight else Icons.Default.KeyboardArrowDown,
+                                    Icon(if (folded) Icons.AutoMirrored.Filled.KeyboardArrowRight else Icons.Default.KeyboardArrowDown,
                                         stringResource(if (folded) R.string.workspace_markdown_outline_expand else R.string.workspace_markdown_outline_collapse), Modifier.size(18.dp))
                                 }
                             } else Spacer(Modifier.width(32.dp))

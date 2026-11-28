@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.ai.assistance.operit.ui.features.conversation.workspace.changes
 
+import androidx.compose.material.icons.automirrored.filled.ViewSidebar
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -28,7 +30,7 @@ internal fun ChangeFileNavigation(
 ) {
     var openerMenuOpen by remember { mutableStateOf(false) }
     var opener by rememberSaveable { mutableStateOf(ChangeOpenAction.EDITOR) }
-    ChangeIconButton(Icons.Default.ViewSidebar, stringResource(R.string.workspace_changes_toggle_files), onToggleFiles)
+    ChangeIconButton(Icons.AutoMirrored.Filled.ViewSidebar, stringResource(R.string.workspace_changes_toggle_files), onToggleFiles)
     VerticalDivider(Modifier.height(14.dp).padding(horizontal = 3.dp))
     ChangeIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.workspace_changes_previous_file), onPrevious, enabled = hasPrevious)
     ChangeIconButton(Icons.AutoMirrored.Filled.ArrowForward, stringResource(R.string.workspace_changes_next_file), onNext, enabled = hasNext)

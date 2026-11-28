@@ -4,7 +4,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Forum
-import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.Person
@@ -159,5 +159,5 @@ private val BackupExportKind.icon: ImageVector
         BackupExportKind.MEMORY -> Icons.Default.Psychology
         BackupExportKind.MODEL_CONFIG -> Icons.Default.Tune
         BackupExportKind.EXPORT_FILE -> Icons.Default.IosShare
-        BackupExportKind.UNKNOWN -> Icons.Default.InsertDriveFile
+        BackupExportKind.UNKNOWN -> Icons.AutoMirrored.Filled.InsertDriveFile
     }

@@ -23,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -32,6 +32,7 @@ import com.ai.assistance.operit.ui.theme.getTextColorForBackground
 import com.ai.assistance.operit.ui.theme.isHighContrast
 import com.github.skydoves.colorpicker.compose.*
 import kotlin.math.*
+import kotlinx.coroutines.launch
 
 /**
  * Material colors for the color picker
@@ -166,7 +167,8 @@ fun ColorPickerDialog(
     var hsvS by remember { mutableStateOf("") }
     var hsvV by remember { mutableStateOf("") }
     
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val clipboardScope = rememberCoroutineScope()
 
     // Update input fields when picked color changes
     LaunchedEffect(pickedColor) {
@@ -358,9 +360,15 @@ fun ColorPickerDialog(
                                         trailingIcon = {
                                             IconButton(
                                                 onClick = {
-                                                    clipboardManager.getText()?.text?.let { text ->
-                                                        hexInput = text.trim()
-                                                        applyManualColor()
+                                                    clipboardScope.launch {
+                                                        val clipData = clipboard.getClipEntry()?.clipData ?: return@launch
+                                                        // 保留旧 getText 语义：只读首项的直接文本，不转换 URI 或 Intent。
+                                                        if (clipData.itemCount > 0) {
+                                                            clipData.getItemAt(0)?.text?.let { text ->
+                                                                hexInput = text.toString().trim()
+                                                                applyManualColor()
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             ) {

@@ -14,25 +14,19 @@
  * limitations under the License.
  */
 
-package androidx.compose.material.icons.filled
+package androidx.compose.material.icons.automirrored.filled
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.ui.graphics.vector.ImageVector
-import kotlin.Deprecated
 
-@Deprecated(
-    "Use the AutoMirrored version at Icons.AutoMirrored.Filled.HelpOutline",
-    ReplaceWith( "Icons.AutoMirrored.Filled.HelpOutline",
-            "androidx.compose.material.icons.automirrored.filled.HelpOutline"),
-)
-public val Icons.Filled.HelpOutline: ImageVector
+public val Icons.AutoMirrored.Filled.HelpOutline: ImageVector
     get() {
         if (_helpOutline != null) {
             return _helpOutline!!
         }
-        _helpOutline = materialIcon(name = "Filled.HelpOutline") {
+        _helpOutline = materialIcon(name = "AutoMirrored.Filled.HelpOutline", autoMirror = true) {
             materialPath {
                 moveTo(11.0f, 18.0f)
                 horizontalLineToRelative(2.0f)

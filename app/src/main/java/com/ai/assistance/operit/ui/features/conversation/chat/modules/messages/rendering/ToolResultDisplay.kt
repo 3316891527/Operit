@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering
 
+import android.content.ClipData
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptButton as Button
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
@@ -20,9 +21,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -31,6 +32,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.layout.compactDialogHeightWhenShort
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.layout.rememberCompactDialogMetrics
+import kotlinx.coroutines.launch
 
 /** 工具执行结果显示组件 简洁风格，显示工具执行结果，无边框，与CompactToolDisplay风格一致 通过缩进和特殊图标区分工具调用和执行结果 支持点击查看详细内容 */
 @Composable
@@ -38,12 +40,19 @@ fun ToolResultDisplay(
         toolName: String,
         result: String,
         isSuccess: Boolean = true,
-        onCopyResult: () -> Unit = {},
+        onCopyResult: suspend () -> Unit = {},
         modifier: Modifier = Modifier,
         enableDialog: Boolean = true  // 新增参数：是否启用弹窗功能，默认启用
 ) {
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val clipboardScope = rememberCoroutineScope()
+    val copyResult: () -> Unit = {
+        clipboardScope.launch {
+            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", result)))
+            onCopyResult()
+        }
+    }
     val hasContent = result.isNotBlank()
 
     // 弹窗状态
@@ -56,10 +65,7 @@ fun ToolResultDisplay(
                 result = result,
                 isSuccess = isSuccess,
                 onDismiss = { showDetailDialog = false },
-                onCopy = {
-                    clipboardManager.setText(AnnotatedString(result))
-                    onCopyResult()
-                }
+                onCopy = copyResult
         )
     }
 
@@ -107,15 +113,7 @@ fun ToolResultDisplay(
             } else {
                 null
             },
-        onCopyClick =
-            if (hasContent) {
-                {
-                    clipboardManager.setText(AnnotatedString(result))
-                    onCopyResult()
-                }
-            } else {
-                null
-            },
+        onCopyClick = if (hasContent) copyResult else null,
     )
 }
 

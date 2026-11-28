@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages
 
+import android.content.ClipData
 import com.ai.assistance.operit.ui.common.markdown.responseProcessKey
 import com.ai.assistance.operit.ui.common.markdown.ResponseProcessExpansionState
 import com.ai.assistance.operit.ui.theme.script.text.themeTextStroke
@@ -101,12 +102,12 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
@@ -135,7 +136,7 @@ import androidx.compose.material.icons.filled.AutoFixHigh
 
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.Reply
+import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Summarize
@@ -160,6 +161,7 @@ import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.C
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details.MessageInfoDialog
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.navigation.ChatScrollNavigator
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
@@ -1130,7 +1132,7 @@ private fun MessageItem(
                     },
                     leadingIcon = {
                         Icon(
-                            imageVector = Icons.Default.Reply,
+                            imageVector = Icons.AutoMirrored.Filled.Reply,
                             contentDescription = stringResource(R.string.reply_message),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
@@ -1316,6 +1318,7 @@ private fun MessageItem(
         copyPreviewContent?.let { previewContent ->
             MessageCopyPreviewBottomSheet(
                 content = previewContent,
+                clipboardScope = coroutineScope,
                 surfaceId = if (message.sender == "user") "userMessage" else "assistantMessage",
                 onDismiss = { copyPreviewContent = null }
             )
@@ -1342,11 +1345,12 @@ private const val COPY_PREVIEW_SHEET_HEIGHT_FRACTION = 0.7f
 @Composable
 private fun MessageCopyPreviewBottomSheet(
     content: MessageCopyContent,
+    clipboardScope: CoroutineScope,
     surfaceId: String,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val messageTextStroke = themeTextStroke(surfaceId)
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
@@ -1445,12 +1449,14 @@ private fun MessageCopyPreviewBottomSheet(
                 TextButton(
                     enabled = copyMode != MessageCopyMode.PLAIN_TEXT || plainText != null,
                     onClick = {
-                        clipboardManager.setText(AnnotatedString(displayedText))
-                        OKToast.success(
-                            context,
-                            context.getString(R.string.message_copied_to_clipboard),
-                            OKToast.LENGTH_SHORT
-                        ).show()
+                        clipboardScope.launch {
+                            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", displayedText)))
+                            OKToast.success(
+                                context,
+                                context.getString(R.string.message_copied_to_clipboard),
+                                OKToast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 ) {
                     Text(text = copyButtonText)

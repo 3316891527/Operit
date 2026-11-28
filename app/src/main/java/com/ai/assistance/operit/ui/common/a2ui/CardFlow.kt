@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.common.a2ui
 
+import androidx.compose.material.icons.automirrored.outlined.StarHalf
+
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.a2ui.compose.runtime.*
 import androidx.a2ui.compose.ui.A2uiComponent
@@ -47,7 +51,7 @@ internal val cardFlowIcons: Map<String, ImageVector> = mapOf(
     "terminal" to Icons.Outlined.Terminal, "server" to Icons.Outlined.Dns,
     "storage" to Icons.Outlined.Storage, "cloud" to Icons.Outlined.Cloud,
     "extension" to Icons.Outlined.Extension, "shield" to Icons.Outlined.Shield,
-    "mic" to Icons.Outlined.MicNone, "audio" to Icons.Outlined.VolumeUp,
+    "mic" to Icons.Outlined.MicNone, "audio" to Icons.AutoMirrored.Outlined.VolumeUp,
     "image" to Icons.Outlined.Image, "video" to Icons.Outlined.Videocam,
     "document" to Icons.Outlined.Description, "link" to Icons.Outlined.Link,
     "chart" to Icons.Outlined.BarChart, "science" to Icons.Outlined.Science,
@@ -60,7 +64,7 @@ internal val cardFlowIcons: Map<String, ImageVector> = mapOf(
     "camera" to Icons.Outlined.CameraAlt, "close" to Icons.Outlined.Close,
     "error" to Icons.Outlined.ErrorOutline, "event" to Icons.Outlined.Event,
     "fastForward" to Icons.Outlined.FastForward, "favorite" to Icons.Outlined.FavoriteBorder,
-    "favoriteOff" to Icons.Outlined.FavoriteBorder, "help" to Icons.Outlined.HelpOutline,
+    "favoriteOff" to Icons.Outlined.FavoriteBorder, "help" to Icons.AutoMirrored.Outlined.HelpOutline,
     "locationOn" to Icons.Outlined.LocationOn, "lockOpen" to Icons.Outlined.LockOpen,
     "mail" to Icons.Outlined.MailOutline, "menu" to Icons.Outlined.Menu,
     "moreHoriz" to Icons.Outlined.MoreHoriz, "moreVert" to Icons.Outlined.MoreVert,
@@ -70,7 +74,7 @@ internal val cardFlowIcons: Map<String, ImageVector> = mapOf(
     "refresh" to Icons.Outlined.Refresh, "rewind" to Icons.Outlined.FastRewind,
     "send" to Icons.AutoMirrored.Outlined.Send, "share" to Icons.Outlined.Share,
     "shoppingCart" to Icons.Outlined.ShoppingCart, "skipNext" to Icons.Outlined.SkipNext,
-    "skipPrevious" to Icons.Outlined.SkipPrevious, "starHalf" to Icons.Outlined.StarHalf,
+    "skipPrevious" to Icons.Outlined.SkipPrevious, "starHalf" to Icons.AutoMirrored.Outlined.StarHalf,
     "starOff" to Icons.Outlined.StarOutline, "stop" to Icons.Outlined.StopCircle,
     "visibility" to Icons.Outlined.Visibility, "visibilityOff" to Icons.Outlined.VisibilityOff,
     "volumeDown" to Icons.AutoMirrored.Outlined.VolumeDown, "volumeMute" to Icons.AutoMirrored.Outlined.VolumeMute,

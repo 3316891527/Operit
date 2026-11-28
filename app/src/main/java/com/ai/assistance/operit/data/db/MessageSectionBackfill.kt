@@ -69,7 +69,7 @@ internal object MessageSectionBackfill {
                     db.execSQL(
                         "UPDATE `$table` SET sections = ?, searchText = ?" +
                             " WHERE `$key` = ? AND sections = ''",
-                        arrayOf(sections, searchText, id),
+                        arrayOf<Any>(sections, searchText, id),
                     )
                 }
                 db.setTransactionSuccessful()

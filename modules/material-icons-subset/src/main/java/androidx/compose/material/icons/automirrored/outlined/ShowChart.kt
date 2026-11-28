@@ -14,34 +14,33 @@
  * limitations under the License.
  */
 
-package androidx.compose.material.icons.filled
+package androidx.compose.material.icons.automirrored.outlined
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.ui.graphics.vector.ImageVector
 
-public val Icons.Filled.ArrowUpward: ImageVector
+public val Icons.AutoMirrored.Outlined.ShowChart: ImageVector
     get() {
-        if (_arrowUpward != null) {
-            return _arrowUpward!!
+        if (_showChart != null) {
+            return _showChart!!
         }
-        _arrowUpward = materialIcon(name = "Filled.ArrowUpward") {
+        _showChart = materialIcon(name = "AutoMirrored.Outlined.ShowChart", autoMirror = true) {
             materialPath {
-                moveTo(4.0f, 12.0f)
-                lineToRelative(1.41f, 1.41f)
-                lineTo(11.0f, 7.83f)
-                verticalLineTo(20.0f)
-                horizontalLineToRelative(2.0f)
-                verticalLineTo(7.83f)
-                lineToRelative(5.58f, 5.59f)
-                lineTo(20.0f, 12.0f)
-                lineToRelative(-8.0f, -8.0f)
-                lineToRelative(-8.0f, 8.0f)
+                moveTo(3.5f, 18.49f)
+                lineToRelative(6.0f, -6.01f)
+                lineToRelative(4.0f, 4.0f)
+                lineTo(22.0f, 6.92f)
+                lineToRelative(-1.41f, -1.41f)
+                lineToRelative(-7.09f, 7.97f)
+                lineToRelative(-4.0f, -4.0f)
+                lineTo(2.0f, 16.99f)
+                lineToRelative(1.5f, 1.5f)
                 close()
             }
         }
-        return _arrowUpward!!
+        return _showChart!!
     }
 
-private var _arrowUpward: ImageVector? = null
+private var _showChart: ImageVector? = null

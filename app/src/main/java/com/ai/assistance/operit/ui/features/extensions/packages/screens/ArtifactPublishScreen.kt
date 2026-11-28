@@ -30,6 +30,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
@@ -640,7 +641,10 @@ fun ArtifactPublishScreen(
                     label = { Text(stringResource(R.string.local_artifact_entry)) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor(),
+                        .menuAnchor(
+                            type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                            enabled = filteredArtifacts.isNotEmpty()
+                        ),
                     readOnly = true,
                     enabled = filteredArtifacts.isNotEmpty(),
                     trailingIcon = {
@@ -810,7 +814,12 @@ fun ArtifactPublishScreen(
                                 value = selectedGitHubRelease?.name.orEmpty().ifBlank { selectedReleaseTag },
                                 onValueChange = {},
                                 label = { Text(stringResource(R.string.artifact_publish_github_release)) },
-                                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(
+                                        type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                        enabled = true
+                                    ),
                                 readOnly = true,
                                 trailingIcon = {
                                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = releaseSelectorExpanded)
@@ -851,7 +860,12 @@ fun ArtifactPublishScreen(
                                     value = selectedGitHubReleaseAsset?.name.orEmpty(),
                                     onValueChange = {},
                                     label = { Text(stringResource(R.string.artifact_publish_github_release_asset)) },
-                                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(
+                                            type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                            enabled = true
+                                        ),
                                     readOnly = true,
                                     trailingIcon = {
                                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = releaseAssetSelectorExpanded)

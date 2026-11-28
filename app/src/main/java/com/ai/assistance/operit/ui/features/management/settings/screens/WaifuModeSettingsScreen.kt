@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.management.settings.screens
 
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.foundation.layout.*
@@ -535,7 +537,7 @@ fun WaifuModeSettingsScreen(
                         }
                         
                         Icon(
-                            Icons.Default.ArrowForward,
+                            Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = stringResource(R.string.manage_custom_emoji),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )

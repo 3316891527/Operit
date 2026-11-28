@@ -21,8 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Redo
-import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -135,7 +135,7 @@ internal fun ImageEditorDialog(
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.image_editor_title), color = Color.White, modifier = Modifier.weight(1f).padding(8.dp))
                 IconButton(onClick = { history = history.redo() }, enabled = !saving && history.following.isNotEmpty()) {
-                    Icon(Icons.Default.Redo, stringResource(R.string.image_editor_redo), tint = if (history.following.isEmpty()) Color.Gray else Color.White)
+                    Icon(Icons.AutoMirrored.Filled.Redo, stringResource(R.string.image_editor_redo), tint = if (history.following.isEmpty()) Color.Gray else Color.White)
                 }
                 IconButton(onClick = requestClose, enabled = !saving) {
                     Icon(Icons.Default.Close, stringResource(R.string.close), tint = Color.White)
@@ -241,7 +241,7 @@ internal fun ImageEditorDialog(
                 }
                 Column(Modifier.align(Alignment.BottomEnd), horizontalAlignment = Alignment.CenterHorizontally) {
                     IconButton(onClick = { history = history.undo() }, enabled = !saving && history.previous.isNotEmpty()) {
-                        Icon(Icons.Default.Undo, stringResource(R.string.image_editor_undo), tint = if (history.previous.isEmpty()) Color.Gray else Color.White)
+                        Icon(Icons.AutoMirrored.Filled.Undo, stringResource(R.string.image_editor_undo), tint = if (history.previous.isEmpty()) Color.Gray else Color.White)
                     }
                     Button(onClick = save, enabled = bitmap != null && !saving) { Text(stringResource(R.string.image_editor_done)) }
                 }

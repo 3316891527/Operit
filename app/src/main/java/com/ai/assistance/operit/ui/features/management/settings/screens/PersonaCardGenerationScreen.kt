@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.management.settings.screens
 
+import androidx.compose.material.icons.automirrored.filled.Send
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
@@ -580,7 +582,10 @@ fun PersonaCardGenerationScreen(
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .menuAnchor()
+                                .menuAnchor(
+                                    type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                    enabled = true
+                                )
                         )
                         DropdownMenu(
                             expanded = expanded,
@@ -995,7 +1000,7 @@ fun PersonaCardGenerationScreen(
                         enabled = !isGenerating && chatMessages.size < MESSAGE_LIMIT
                     ) {
                         Icon(
-                            imageVector = if (isGenerating) Icons.Filled.HourglassBottom else Icons.Filled.Send,
+                            imageVector = if (isGenerating) Icons.Filled.HourglassBottom else Icons.AutoMirrored.Filled.Send,
                             contentDescription = if (isGenerating) context.getString(R.string.generating) else context.getString(R.string.send)
                         )
                     }

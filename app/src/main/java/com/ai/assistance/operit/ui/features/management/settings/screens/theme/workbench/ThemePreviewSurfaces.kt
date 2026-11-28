@@ -23,7 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -420,7 +420,7 @@ internal fun ThemePreviewInput(values: ThemePreferenceValues) {
                 ) {
                     ThemeScriptIcon(
                         id = "composer.send",
-                        imageVector = Icons.Default.Send,
+                        imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = stringResource(R.string.theme_workbench_play_example),
                         modifier = Modifier.size(20.dp),
                     )
