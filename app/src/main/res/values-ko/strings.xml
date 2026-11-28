@@ -7714,11 +7714,11 @@
     <string name="display_behavior_su_row_desc">KernelSU 실행 모드에서 사용합니다.</string>
     <string name="display_behavior_collapse_editor_desc">읽기 습관에 맞게 선택하세요. 도구는 정상적으로 실행됩니다.</string>
     <string name="display_behavior_collapse_read">여러 읽기 전용 도구 접기</string>
-    <string name="display_behavior_collapse_read_desc">연속된 읽기 전용 도구를 하나로 묶습니다.</string>
+    <string name="display_behavior_collapse_read_desc">여러 호출이나 검색이 포함된 읽기 전용 과정은 기본으로 접고, 나머지는 펼칩니다.</string>
     <string name="display_behavior_collapse_all">여러 도구 접기</string>
-    <string name="display_behavior_collapse_all_desc">연속된 도구를 묶고 단일 호출은 펼쳐 둡니다.</string>
+    <string name="display_behavior_collapse_all_desc">여러 호출이나 검색이 포함된 과정은 기본으로 접고, 단일 도구 호출은 펼칩니다.</string>
     <string name="display_behavior_collapse_full">모든 도구 접기</string>
-    <string name="display_behavior_collapse_full_desc">단일 호출도 기본으로 접고 필요할 때 펼칩니다.</string>
+    <string name="display_behavior_collapse_full_desc">모든 도구 과정을 기본으로 접습니다. 펼치면 호출과 결과를 볼 수 있습니다.</string>
     <string name="display_behavior_reading_preview">읽기 미리보기</string>
     <string name="display_behavior_orientation_editor_desc">화면 방향을 바꾼 후 페이지의 동작입니다.</string>
     <string name="display_behavior_orientation_always">자동으로 새로고침</string>

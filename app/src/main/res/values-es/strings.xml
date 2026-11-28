@@ -7935,11 +7935,11 @@
     <string name="display_behavior_su_row_desc">Se usa en el modo de ejecución KernelSU.</string>
     <string name="display_behavior_collapse_editor_desc">Elige según tus hábitos de lectura; las herramientas seguirán ejecutándose normalmente.</string>
     <string name="display_behavior_collapse_read">Plegar varias herramientas de solo lectura</string>
-    <string name="display_behavior_collapse_read_desc">Agrupa herramientas consecutivas de solo lectura.</string>
+    <string name="display_behavior_collapse_read_desc">Contraer por defecto los procesos de solo lectura con varias llamadas o una búsqueda. Expandir los demás.</string>
     <string name="display_behavior_collapse_all">Plegar varias herramientas</string>
-    <string name="display_behavior_collapse_all_desc">Agrupa herramientas consecutivas y deja expandidas las llamadas individuales.</string>
+    <string name="display_behavior_collapse_all_desc">Contraer por defecto los procesos con varias llamadas o una búsqueda. Expandir una sola llamada de herramienta.</string>
     <string name="display_behavior_collapse_full">Plegar todas las herramientas</string>
-    <string name="display_behavior_collapse_full_desc">Las llamadas individuales también empiezan plegadas; expándelas cuando sea necesario.</string>
+    <string name="display_behavior_collapse_full_desc">Contraer todos los procesos de herramientas por defecto. Expandir para ver llamadas y resultados.</string>
     <string name="display_behavior_reading_preview">Vista previa de lectura</string>
     <string name="display_behavior_orientation_editor_desc">Comportamiento de la página tras cambiar la orientación.</string>
     <string name="display_behavior_orientation_always">Recargar automáticamente</string>

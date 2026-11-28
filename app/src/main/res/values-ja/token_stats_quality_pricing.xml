@@ -7,4 +7,6 @@
     <string name="token_stats_design_quality_samples">%1$s サンプル</string>
     <string name="token_stats_design_quality_note">各指標は有効なサンプルを個別に集計し、最低件数は設けません。P95 は昇順の ⌈0.95 × 件数⌉ 番目。TPS は成功リクエストの出力トークン ÷（全体時間 − 最初のトークンまでの時間）の平均です。未記録の履歴項目は対象の指標から除外します。</string>
     <string name="token_stats_design_formula_currency">料金の通貨：%1$s</string>
+    <string name="token_stats_design_cache_coverage">成功時の使用量：内訳あり %1$s 件 · 有効な内訳なし %2$s 件</string>
+    <string name="token_stats_design_success_coverage">有効サンプル %1$s 件 · 状態不明 %2$s 件</string>
 </resources>

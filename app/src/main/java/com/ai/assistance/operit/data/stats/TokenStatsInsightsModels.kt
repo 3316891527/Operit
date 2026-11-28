@@ -67,6 +67,15 @@ data class TokenStatsInsightsTotals(
     val cost: TokenStatsCostSummary,
     val statusCounts: Map<String, Long>,
     val unknownStatusRequests: Long,
+    val cacheReadCoverage: TokenStatsCacheReadCoverage? = null,
+)
+
+/** 只用三类输入均已知且非负的成功用量事实累计 Token，历史批次按所含请求数统计覆盖。 */
+data class TokenStatsCacheReadCoverage(
+    val completeRequests: Long,
+    val missingRequests: Long,
+    val cachedInputTokens: Double,
+    val totalInputTokens: Double,
 )
 
 /** 无法根据已知总输入拆开的费用单列，避免伪造四类分摊。 */

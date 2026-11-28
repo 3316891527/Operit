@@ -1053,11 +1053,11 @@
     <string name="display_behavior_su_row_desc">KernelSU 実行モードで使用します。</string>
     <string name="display_behavior_collapse_editor_desc">読みやすさに合わせて選んでください。ツールの実行には影響しません。</string>
     <string name="display_behavior_collapse_read">複数の読み取り専用ツールを折りたたむ</string>
-    <string name="display_behavior_collapse_read_desc">連続する読み取り専用ツールをひとつにまとめます。</string>
+    <string name="display_behavior_collapse_read_desc">複数の呼び出しまたは検索を含む読み取り専用の処理は初期状態で折りたたみ、それ以外は展開します。</string>
     <string name="display_behavior_collapse_all">複数のツールを折りたたむ</string>
-    <string name="display_behavior_collapse_all_desc">連続するツールをまとめ、単独の呼び出しは展開したままにします。</string>
+    <string name="display_behavior_collapse_all_desc">複数の呼び出しまたは検索を含む処理は初期状態で折りたたみ、単一のツール呼び出しは展開します。</string>
     <string name="display_behavior_collapse_full">すべてのツールを折りたたむ</string>
-    <string name="display_behavior_collapse_full_desc">単独の呼び出しも最初から折りたたみ、必要なときに展開します。</string>
+    <string name="display_behavior_collapse_full_desc">すべてのツール処理を初期状態で折りたたみます。展開すると呼び出しと結果を表示します。</string>
     <string name="display_behavior_reading_preview">読み取り表示の例</string>
     <string name="display_behavior_orientation_editor_desc">画面の向きを切り替えた後の動作です。</string>
     <string name="display_behavior_orientation_always">自動で再読み込み</string>

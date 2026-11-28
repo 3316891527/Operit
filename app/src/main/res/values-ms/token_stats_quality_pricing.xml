@@ -7,4 +7,6 @@
     <string name="token_stats_design_quality_samples">%1$s sampel</string>
     <string name="token_stats_design_quality_note">Setiap metrik menggunakan sampel sah sendiri tanpa bilangan minimum. P95 ialah item ⌈0.95 × bilangan sampel⌉ selepas diisih. TPS ialah purata token output ÷ (tempoh penuh − kependaman token pertama) bagi permintaan berjaya. Medan sejarah yang tiada tidak disertakan.</string>
     <string name="token_stats_design_formula_currency">Mata wang harga: %1$s</string>
+    <string name="token_stats_design_cache_coverage">Penggunaan berjaya: %1$s dengan pecahan lengkap · %2$s tanpa pecahan sah</string>
+    <string name="token_stats_design_success_coverage">%1$s sampel sah · %2$s dengan status tidak diketahui</string>
 </resources>

@@ -7707,11 +7707,11 @@
     <string name="display_behavior_su_row_desc">Usado no modo de execução KernelSU.</string>
     <string name="display_behavior_collapse_editor_desc">Escolha conforme sua leitura; as ferramentas continuam funcionando normalmente.</string>
     <string name="display_behavior_collapse_read">Recolher várias ferramentas de somente leitura</string>
-    <string name="display_behavior_collapse_read_desc">Agrupe ferramentas consecutivas de somente leitura.</string>
+    <string name="display_behavior_collapse_read_desc">Recolher por padrão processos somente de leitura com várias chamadas ou uma pesquisa. Expandir os demais.</string>
     <string name="display_behavior_collapse_all">Recolher várias ferramentas</string>
-    <string name="display_behavior_collapse_all_desc">Agrupe ferramentas consecutivas e mantenha chamadas individuais expandidas.</string>
+    <string name="display_behavior_collapse_all_desc">Recolher por padrão processos com várias chamadas ou uma pesquisa. Expandir uma única chamada de ferramenta.</string>
     <string name="display_behavior_collapse_full">Recolher todas as ferramentas</string>
-    <string name="display_behavior_collapse_full_desc">Chamadas individuais também começam recolhidas; expanda quando precisar.</string>
+    <string name="display_behavior_collapse_full_desc">Recolher todos os processos de ferramentas por padrão. Expandir para ver chamadas e resultados.</string>
     <string name="display_behavior_reading_preview">Prévia de leitura</string>
     <string name="display_behavior_orientation_editor_desc">Comportamento da página após mudar a orientação.</string>
     <string name="display_behavior_orientation_always">Recarregar automaticamente</string>

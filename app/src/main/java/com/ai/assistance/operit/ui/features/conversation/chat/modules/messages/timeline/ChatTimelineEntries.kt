@@ -3,7 +3,6 @@ package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.
 import com.ai.assistance.operit.ui.common.markdown.ResponseProcessExpansionState
 import com.ai.assistance.operit.ui.common.markdown.ResponseActivityHeader
 import com.ai.assistance.operit.ui.common.markdown.responseProcessKey
-import com.ai.assistance.operit.ui.common.markdown.responseProcessItemVisible
 import com.ai.assistance.operit.ui.common.markdown.completedProcessEnd
 import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
@@ -68,6 +67,7 @@ import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeInd
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalToolTimingIndex
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.isVisibleChatMarkdownNode
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.thinkToolsGroupTitle
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.visibleResponseProcessRows
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.stream.rememberRevisableTextStream
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
@@ -182,12 +182,14 @@ internal fun rememberChatTimelineEntries(
                     }
                     val nodes = state.renderNodes.toList()
                     // Waifu 使用专用过程入口，不叠加普通消息的整段回复折叠标题。
-                    val boundary = completedProcessEnd(nodes, collapseCompletedProcess && !waifuEnabled, stream != null)
-                    val processEnd = if (boundary >= 0 && nodes.take(boundary + 1).any {
-                        isVisibleChatMarkdownNode(it, showThinkingProcess, showStatusTags)
-                    }) boundary else -1
+                    val processEnd = completedProcessEnd(
+                        nodes,
+                        collapseEnabled = collapseCompletedProcess && !waifuEnabled,
+                        streaming = stream != null,
+                        showThinkingProcess = showThinkingProcess,
+                    )
                     val processId = responseProcessKey(message.timestamp, message.selectedVariantIndex)
-                    val processExpanded = ResponseProcessExpansionState.isExpanded(chatId, processId)
+                    val processExpanded = processEnd >= 0 && ResponseProcessExpansionState.isExpanded(chatId, processId)
                     // 隐藏协议不触发拆块；原始节点仍用于分组键和 XML 子流索引。
                     val visibleNodes = remember(nodes, showThinkingProcess, showStatusTags) {
                         nodes.filter { isVisibleChatMarkdownNode(it, showThinkingProcess, showStatusTags) }
@@ -243,16 +245,7 @@ internal fun rememberChatTimelineEntries(
                         state, nodes, visibleNodes, grouper, mode, rows, cardStore,
                         processEnd, processId, processExpanded, message.waitDurationMs, message.outputDurationMs,
                     ) {
-                        // Preserve original node indices, card ownership and small lazy rows.
-                        val shownRows = rows.filter { row ->
-                            val end = when (row) {
-                                is ThinkToolsRow.Header -> row.info.group.endIndexInclusive
-                                is ThinkToolsRow.Content -> row.index
-                                is ThinkToolsRow.WaifuHeader -> nodes.lastIndex
-                                is ThinkToolsRow.WaifuTool -> row.call.resultIndex ?: row.call.index
-                            }
-                            responseProcessItemVisible(end, processEnd, processExpanded)
-                        }
+                        val shownRows = visibleResponseProcessRows(rows, processEnd, processExpanded, nodes.lastIndex)
                         when {
                             visibleNodes.isEmpty() -> emptyList()
                             processEnd >= 0 -> listOf(

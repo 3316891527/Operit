@@ -70,6 +70,57 @@ class TokenStatsInsightsQualitySqlTest {
     }
 
     @Test
+    fun ratioCoverageUsesFullFilteredOverviewAndOnlyCompleteSuccessfulUsageSplits() = withDatabase { db ->
+        log(db, "complete-a", duration = 1, status = "SUCCESS")
+        fact(db, "complete-a", output = 1L, input = 30L, cached = 60L, write = 10L, totalInput = 100L)
+        log(db, "complete-b", duration = 2, status = "SUCCESS")
+        fact(db, "complete-b", output = 1L, input = 15L, cached = 0L, write = 5L, totalInput = 20L)
+        // 两条缺失字段不同，即使两条都记录了总输入，也不能拼出一组完整拆分。
+        log(db, "missing-cached", duration = 3, status = "SUCCESS")
+        fact(db, "missing-cached", output = 1L, input = 500L, cached = null, write = 60L, totalInput = 700L)
+        log(db, "missing-uncached", duration = 4, status = "SUCCESS")
+        fact(db, "missing-uncached", output = 1L, input = null, cached = 500L, write = 0L, totalInput = 600L)
+        log(db, "negative-write", duration = 5, status = "SUCCESS")
+        fact(db, "negative-write", output = 1L, input = 20L, cached = 500L, write = -1L, totalInput = 520L)
+        log(db, "success-without-fact", duration = 6, status = "SUCCESS")
+        log(db, "failed", duration = 7)
+        log(db, "cancelled", duration = 8, status = "CANCELLED")
+        log(db, "completed", duration = 9, status = "COMPLETED")
+        log(db, "unrecognized", duration = 10, status = "FUTURE_STATUS")
+        // 完整的诊断用量也不能代替账本事实。
+        db.execSQL("UPDATE token_request_logs SET uncachedInputTokens = 10, cachedInputTokens = 1000, cacheWriteTokens = 0")
+        fact(db, null, output = 1L, count = 3L, input = 80L, cached = 40L, write = 10L, totalInput = 130L)
+        fact(db, null, output = 1L, count = 4L, input = 1_000L, write = null)
+        log(db, "outside", duration = 11, status = "SUCCESS", time = peak + 1L)
+        fact(db, "outside", output = 1L, cached = 20_000L, totalInput = 20_000L, time = peak + 1L)
+
+        val filter = TokenStatsInsightsFilter(range = TokenStatsTimeRange(peak, peak + 1L))
+        val page = TokenStatsInsightsService.derivedPage(
+            db, TokenStatsInsightsService.filtered(filter, params), prices, filter, params,
+            TokenStatsRequestSort.DURATION_DESC, 0, 1, {},
+        )
+        assertEquals("unrecognized", page.rows.single().id)
+        assertEquals(10L, page.totalRows)
+        assertEquals(7L, page.historicalAggregateRequests)
+
+        val totals = TokenStatsInsightsService.aggregate(
+            db, prices, filter, params, ZoneId.of("UTC"), TokenStatsInsightsGranularity.DAILY, {},
+        ).totals
+        assertEquals(17L, totals.requests)
+        val statuses = tokenStatsSuccessCoverage(totals)
+        assertEquals(6L, statuses.successfulRequests)
+        assertEquals(9L, statuses.knownStatusRequests)
+        assertEquals(8L, statuses.unknownStatusRequests)
+        assertEquals(6.0 / 9.0, requireNotNull(statuses.ratio), 1e-9)
+        val cache = requireNotNull(totals.cacheReadCoverage)
+        assertEquals(5L, cache.completeRequests)
+        assertEquals(7L, cache.missingRequests)
+        assertEquals(100.0, cache.cachedInputTokens, 0.0)
+        assertEquals(250.0, cache.totalInputTokens, 0.0)
+        assertEquals(0.40, requireNotNull(cache.ratio), 1e-9)
+    }
+
+    @Test
     fun historicalCostIsWeightedByRequestsAndDetachedZeroIsExcluded() = withDatabase { db ->
         log(db, "individual", status = "SUCCESS", duration = null)
         fact(db, "individual", output = 8)
@@ -138,10 +189,11 @@ class TokenStatsInsightsQualitySqlTest {
     )
 
     private fun fact(
-        db: SupportSQLiteDatabase, id: String?, output: Long?, input: Long = 0L,
-        count: Long = 1L, config: String = "rated",
+        db: SupportSQLiteDatabase, id: String?, output: Long?, input: Long? = 0L,
+        count: Long = 1L, config: String = "rated", cached: Long? = 0L, write: Long? = 0L,
+        totalInput: Long? = input, time: Long = peak,
     ) = db.execSQL(
-        "INSERT INTO token_usage_records VALUES (NULL, ?, NULL, ?, ?, 'OPENAI', 'quality-synthetic', ?, ?, 0, 0, ?, ?)",
-        arrayOf(id, peak, config, count, input, input, output),
+        "INSERT INTO token_usage_records VALUES (NULL, ?, NULL, ?, ?, 'OPENAI', 'quality-synthetic', ?, ?, ?, ?, ?, ?)",
+        arrayOf(id, time, config, count, input, cached, write, totalInput, output),
     )
 }

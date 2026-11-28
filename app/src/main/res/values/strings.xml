@@ -8827,11 +8827,11 @@
     <string name="display_behavior_su_row_desc">用于 KernelSU 执行模式。</string>
     <string name="display_behavior_collapse_editor_desc">按消息阅读习惯选择，工具仍会正常执行。</string>
     <string name="display_behavior_collapse_read">折叠多个只读工具</string>
-    <string name="display_behavior_collapse_read_desc">多个连续只读工具收为一组。</string>
+    <string name="display_behavior_collapse_read_desc">全部为只读且包含多个调用或搜索的过程默认收起，其他过程默认展开。</string>
     <string name="display_behavior_collapse_all">折叠多个任意工具</string>
-    <string name="display_behavior_collapse_all_desc">多个连续工具合并，单次调用保留展开。</string>
+    <string name="display_behavior_collapse_all_desc">含多个调用或搜索的过程默认收起，单次工具调用默认展开。</string>
     <string name="display_behavior_collapse_full">折叠全部工具</string>
-    <string name="display_behavior_collapse_full_desc">单次调用也默认收起，需要时再展开。</string>
+    <string name="display_behavior_collapse_full_desc">所有工具过程默认收起，展开后查看调用与结果。</string>
     <string name="display_behavior_reading_preview">阅读效果示意</string>
     <string name="display_behavior_orientation_editor_desc">横竖屏切换后的页面处理方式。</string>
     <string name="display_behavior_orientation_always">自动重新加载</string>

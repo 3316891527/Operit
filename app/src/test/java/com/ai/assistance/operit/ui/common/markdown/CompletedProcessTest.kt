@@ -3,54 +3,54 @@ package com.ai.assistance.operit.ui.common.markdown
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
-import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class CompletedProcessTest {
     private fun text(value: String) = MarkdownNodeStable(MarkdownProcessorType.PLAIN_TEXT, value, emptyList())
     private fun xml(value: String) = MarkdownNodeStable(MarkdownProcessorType.XML_BLOCK, value, emptyList())
 
-    @Test fun keepsAllFinalParagraphsAfterMultipleToolRounds() {
-        val nodes = listOf(text("Checking"), xml("<tool_a name=\"read\"></tool_a>"),
-            text("Investigating"), xml("<tool_result_a><content>result</content></tool_result_a>"),
-            text("Final heading"), text("First paragraph"), text("Second paragraph"))
-        assertEquals(3, completedProcessEnd(nodes))
-    }
-
-    @Test fun ordinaryRepliesAndToolOnlyResponsesStayVisible() {
-        assertEquals(-1, completedProcessEnd(listOf(text("One"), text("Two"))))
-        assertEquals(-1, completedProcessEnd(listOf(text("Working"), xml("<tool_a name=\"read\"></tool_a>"), text("\n"))))
+    @Test fun toolProcessNeverGetsASecondHeader() {
+        for (process in listOf(
+            "<tool_a name=\"read\"></tool_a>",
+            "<tool_result_a><content>result</content></tool_result_a>",
+            "\u003Csearch>query</search>",
+        )) {
+            assertEquals(-1, completedProcessEnd(listOf(xml("<think>reasoning</think>"), xml(process), text("Answer"))))
+            assertEquals(-1, completedProcessEnd(listOf(xml(process))))
+        }
     }
 
     @Test fun reasoningIsFoldedOnlyWhenAnAnswerFollows() {
+        assertEquals(-1, completedProcessEnd(listOf(text("One"), text("Two"))))
         assertEquals(0, completedProcessEnd(listOf(xml("<think>reasoning</think>"), text("Answer"))))
         assertEquals(-1, completedProcessEnd(listOf(xml("<think>reasoning</think>"))))
     }
 
-    @Test fun includesTrailingWhitespaceAndMetadataInTheFoldedGroup() {
-        val nodes = listOf(xml("<tool_a name=\"read\"></tool_a>"),
-            xml("<tool_result_a>done</tool_result_a>"), text("\n"),
+    @Test fun includesWhitespaceAndMetadataAfterPureReasoning() {
+        val nodes = listOf(xml("<think>work</think>"), text("\n"),
             xml("<meta>hidden</meta>"), text("\n"), text("Final answer"))
-        assertEquals(4, completedProcessEnd(nodes))
+        assertEquals(3, completedProcessEnd(nodes))
     }
 
     @Test fun visibleXmlIsPartOfTheFinalAnswer() {
         for (tag in listOf("html", "font", "details")) {
             assertEquals(1, completedProcessEnd(listOf(
-                xml("<tool_a name=\"read\"></tool_a>"), text("\n"),
+                xml("<think>work</think>"), text("\n"),
                 xml("<$tag>Final content</$tag>"), text("More explanation"))))
         }
     }
 
-    @Test fun disabledOrStreamingReplyKeepsEveryNodeVisible() {
-        val nodes = listOf(MarkdownNodeStable(MarkdownProcessorType.XML_BLOCK, "<think>work</think>", emptyList()), MarkdownNodeStable(MarkdownProcessorType.PLAIN_TEXT, "answer", emptyList()))
+    @Test fun disabledStreamingOrHiddenThinkingDoesNotCreateTheHeader() {
+        val nodes = listOf(xml("<think>work</think>"), text("answer"))
         assertEquals(-1, completedProcessEnd(nodes, collapseEnabled = false))
         assertEquals(-1, completedProcessEnd(nodes, streaming = true))
+        assertEquals(-1, completedProcessEnd(listOf(text("Preface")) + nodes, showThinkingProcess = false))
     }
 
-    @Test fun collapsedProjectionRetainsTheWholeAnswerAndAnyCrossingGroup() {
+    @Test fun collapsedProjectionRetainsTheWholeAnswer() {
         assertFalse(responseProcessItemVisible(2, 2, false))
         assertTrue(responseProcessItemVisible(3, 2, false))
         assertTrue(responseProcessItemVisible(20, 2, false))

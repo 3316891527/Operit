@@ -7866,11 +7866,11 @@
     <string name="display_behavior_su_row_desc">Digunakan dalam mod pelaksanaan KernelSU.</string>
     <string name="display_behavior_collapse_editor_desc">Pilih mengikut tabiat membaca; alat masih berjalan seperti biasa.</string>
     <string name="display_behavior_collapse_read">Lipat beberapa alat baca sahaja</string>
-    <string name="display_behavior_collapse_read_desc">Kumpulkan alat baca sahaja yang berturutan.</string>
+    <string name="display_behavior_collapse_read_desc">Runtuhkan proses baca sahaja dengan beberapa panggilan atau carian secara lalai. Kembangkan proses lain.</string>
     <string name="display_behavior_collapse_all">Lipat beberapa alat</string>
-    <string name="display_behavior_collapse_all_desc">Kumpulkan alat berturutan dan biarkan panggilan tunggal terbuka.</string>
+    <string name="display_behavior_collapse_all_desc">Runtuhkan proses dengan beberapa panggilan atau carian secara lalai. Kembangkan satu panggilan alat.</string>
     <string name="display_behavior_collapse_full">Lipat semua alat</string>
-    <string name="display_behavior_collapse_full_desc">Panggilan tunggal juga dilipat; buka apabila perlu.</string>
+    <string name="display_behavior_collapse_full_desc">Runtuhkan semua proses alat secara lalai. Kembangkan untuk melihat panggilan dan hasil.</string>
     <string name="display_behavior_reading_preview">Pratonton bacaan</string>
     <string name="display_behavior_orientation_editor_desc">Tingkah laku halaman selepas orientasi berubah.</string>
     <string name="display_behavior_orientation_always">Muat semula secara automatik</string>

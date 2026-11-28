@@ -3,11 +3,10 @@ package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.
 import androidx.compose.runtime.Composable
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.ToolTimingSummary
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.toolTimingTitle
-import androidx.compose.ui.res.stringResource
-import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.markdown.MarkdownGroupedItem
 import com.ai.assistance.operit.ui.common.markdown.lazy.markdownNodeIdentityKeys
 import com.ai.assistance.operit.ui.common.markdown.lazy.splitPlainMarkdownNode
+import com.ai.assistance.operit.ui.common.markdown.responseProcessItemVisible
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
 import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuProcessItem
 import com.ai.assistance.operit.ui.features.conversation.chat.waifu.waifuProcessItems
@@ -20,6 +19,7 @@ internal data class ThinkToolsGroupInfo(
     val autoExpand: Boolean,
     val thoughtCount: Int = 0,
     val timing: ToolTimingSummary = ToolTimingSummary(emptyList()),
+    val isMessageStreaming: Boolean = false,
 )
 
 internal sealed interface ThinkToolsRow {
@@ -35,7 +35,14 @@ internal sealed interface ThinkToolsRow {
 
     data class WaifuTool(val call: WaifuProcessItem.Tool, override val key: String) : ThinkToolsRow
 
-    data class Content(val index: Int, val inGroup: Boolean, override val key: String, val node: MarkdownNodeStable? = null, val waifuProcess: Boolean = false) : ThinkToolsRow
+    data class Content(
+        val index: Int,
+        val inGroup: Boolean,
+        override val key: String,
+        val node: MarkdownNodeStable? = null,
+        val waifuProcess: Boolean = false,
+        val groupEnd: Int? = null,
+    ) : ThinkToolsRow
 }
 
 /** 过程标题和配对工具仍展开为独立懒加载行，长过程不会集中测量全部内容。 */
@@ -73,48 +80,60 @@ internal fun buildThinkToolsRows(
     describeGroup: (MarkdownGroupedItem.Group) -> ThinkToolsGroupInfo,
 ): List<ThinkToolsRow> = buildList {
     val nodeKeys = markdownNodeIdentityKeys(nodes)
-    for (item in groups) {
-        when (item) {
-            is MarkdownGroupedItem.Single -> {
-                if (item.index in nodes.indices) {
-                    val node = nodes[item.index]
-                    if (!isVisibleChatMarkdownNode(node, showThinkingProcess, showStatusTags)) continue
-                    if (node.type == MarkdownProcessorType.PLAIN_TEXT) {
-                        splitPlainMarkdownNode(node).forEachIndexed { piece, chunk ->
-                            if (isVisibleChatMarkdownNode(chunk, showThinkingProcess, showStatusTags)) {
-                                add(ThinkToolsRow.Content(item.index, false, "${nodeKeys[item.index]}/part-$piece", chunk))
-                            }
-                        }
-                    } else {
-                        add(ThinkToolsRow.Content(item.index, false, nodeKeys[item.index]))
-                    }
+    fun addContent(index: Int, groupEnd: Int? = null) {
+        val node = nodes[index]
+        if (!isVisibleChatMarkdownNode(node, showThinkingProcess, showStatusTags)) return
+        val inGroup = groupEnd != null
+        // 批次间的长说明也拆为独立可复用行，纳入分组不会改变原节点索引或片段键。
+        if (node.type == MarkdownProcessorType.PLAIN_TEXT) {
+            splitPlainMarkdownNode(node).forEachIndexed { piece, chunk ->
+                if (isVisibleChatMarkdownNode(chunk, showThinkingProcess, showStatusTags)) {
+                    add(ThinkToolsRow.Content(index, inGroup, "${nodeKeys[index]}/part-$piece", chunk, groupEnd = groupEnd))
                 }
             }
+        } else {
+            add(ThinkToolsRow.Content(index, inGroup, nodeKeys[index], groupEnd = groupEnd))
+        }
+    }
+    for (item in groups) {
+        when (item) {
+            is MarkdownGroupedItem.Single -> addContent(item.index)
             is MarkdownGroupedItem.Group -> {
                 val info = describeGroup(item)
                 val expanded = overrides[item.stableKey] ?: info.autoExpand
                 add(ThinkToolsRow.Header(info, expanded))
                 if (expanded) {
-                    for (index in item.startIndex..item.endIndexInclusive.coerceAtMost(nodes.lastIndex)) {
-                        if (index in nodes.indices &&
-                            nodes[index].type == MarkdownProcessorType.XML_BLOCK &&
-                            isVisibleChatMarkdownNode(nodes[index], showThinkingProcess, showStatusTags)
-                        ) {
-                            add(ThinkToolsRow.Content(index, true, nodeKeys[index]))
-                        }
-                    }
+                    for (index in item.startIndex..item.endIndexInclusive) addContent(index, item.endIndexInclusive)
                 }
             }
         }
     }
 }
 
-@Composable
-internal fun thinkToolsGroupTitle(info: ThinkToolsGroupInfo): String = when {
-    info.toolCount > 0 -> toolTimingTitle(info.timing, info.thoughtCount, info.searchCount)
-    info.group.stableKey.startsWith("tools-only-") -> stringResource(R.string.tools_group_title_with_count, info.toolCount)
-    info.group.stableKey.startsWith("search-only-") -> stringResource(R.string.search_group_title)
-    info.searchCount > 0 && info.toolCount > 0 -> stringResource(R.string.thinking_search_tools_group_title_with_count, info.toolCount)
-    info.searchCount > 0 -> stringResource(R.string.thinking_search_group_title)
-    else -> stringResource(R.string.thinking_tools_group_title_with_count, info.toolCount)
+/** 总用时收起时隐藏过程前缀；跨边界的组仍保有自己的入口。 */
+internal fun visibleResponseProcessRows(
+    rows: List<ThinkToolsRow>,
+    processEnd: Int,
+    expanded: Boolean,
+    lastNodeIndex: Int,
+): List<ThinkToolsRow> {
+    if (processEnd < 0 || expanded) return rows
+    return rows.filter { row ->
+        val end = when (row) {
+            is ThinkToolsRow.Header -> row.info.group.endIndexInclusive
+            is ThinkToolsRow.Content -> row.groupEnd ?: row.index
+            is ThinkToolsRow.WaifuHeader -> lastNodeIndex
+            is ThinkToolsRow.WaifuTool -> row.call.resultIndex ?: row.call.index
+        }
+        responseProcessItemVisible(end, processEnd, expanded)
+    }
 }
+
+@Composable
+internal fun thinkToolsGroupTitle(info: ThinkToolsGroupInfo): String = toolTimingTitle(
+    summary = info.timing,
+    thoughtCount = info.thoughtCount,
+    searchCount = info.searchCount,
+    isMessageStreaming = info.isMessageStreaming,
+    toolCount = info.toolCount,
+)

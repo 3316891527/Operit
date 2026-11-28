@@ -7,4 +7,6 @@
     <string name="token_stats_design_quality_samples">%1$s sampel</string>
     <string name="token_stats_design_quality_note">Setiap metrik memakai sampel validnya sendiri tanpa jumlah minimum. P95 adalah item ⌈0.95 × jumlah sampel⌉ setelah diurutkan. TPS merata-ratakan token keluaran ÷ (durasi total − latensi token pertama) pada permintaan berhasil. Kolom riwayat yang kosong tidak disertakan.</string>
     <string name="token_stats_design_formula_currency">Mata uang harga: %1$s</string>
+    <string name="token_stats_design_cache_coverage">Penggunaan berhasil: %1$s dengan perincian lengkap · %2$s tanpa perincian valid</string>
+    <string name="token_stats_design_success_coverage">%1$s sampel valid · %2$s dengan status tidak diketahui</string>
 </resources>

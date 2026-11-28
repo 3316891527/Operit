@@ -7,4 +7,6 @@
     <string name="token_stats_design_quality_samples">%1$s eșantioane</string>
     <string name="token_stats_design_quality_note">Fiecare indicator folosește propriile eșantioane valide, fără un minim. P95 este elementul ⌈0.95 × număr⌉ după sortare. TPS este media tokenurilor de ieșire ÷ (durata totală − latența primului token) pentru cererile reușite. Câmpurile istorice lipsă sunt excluse.</string>
     <string name="token_stats_design_formula_currency">Moneda prețurilor: %1$s</string>
+    <string name="token_stats_design_cache_coverage">Utilizare reușită: %1$s cu defalcare completă · %2$s fără defalcare validă</string>
+    <string name="token_stats_design_success_coverage">%1$s eșantioane valide · %2$s cu stare necunoscută</string>
 </resources>

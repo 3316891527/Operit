@@ -8834,11 +8834,11 @@
     <string name="display_behavior_su_row_desc">Used in KernelSU execution mode.</string>
     <string name="display_behavior_collapse_editor_desc">Choose for your reading habits; tools continue to execute normally.</string>
     <string name="display_behavior_collapse_read">Collapse multiple read-only tools</string>
-    <string name="display_behavior_collapse_read_desc">Group consecutive read-only tools together.</string>
+    <string name="display_behavior_collapse_read_desc">Collapse read-only processes with multiple calls or a search by default. Expand other processes.</string>
     <string name="display_behavior_collapse_all">Collapse multiple tools</string>
-    <string name="display_behavior_collapse_all_desc">Group consecutive tools and leave individual calls expanded.</string>
+    <string name="display_behavior_collapse_all_desc">Collapse processes with multiple calls or a search by default. Expand a single tool call.</string>
     <string name="display_behavior_collapse_full">Collapse all tools</string>
-    <string name="display_behavior_collapse_full_desc">Start individual calls collapsed too; expand them when needed.</string>
+    <string name="display_behavior_collapse_full_desc">Collapse every tool process by default. Expand it to view calls and results.</string>
     <string name="display_behavior_reading_preview">Reading preview</string>
     <string name="display_behavior_orientation_editor_desc">How the page behaves after an orientation change.</string>
     <string name="display_behavior_orientation_always">Reload automatically</string>

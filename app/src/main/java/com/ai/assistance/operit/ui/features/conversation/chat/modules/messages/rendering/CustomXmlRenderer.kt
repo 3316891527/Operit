@@ -6,9 +6,6 @@ import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextBut
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
 
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
-import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeIndex
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalToolTimingIndex
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.toolTimingTitle
 import com.ai.assistance.operit.ui.common.markdown.lazy.rememberMarkdownCardValue
 import android.webkit.WebView
 import android.webkit.WebSettings
@@ -1142,29 +1139,17 @@ class CustomXmlRenderer(
                 )
             }
 
-        // 独立渲染可能没有节点索引，此时不关联其他工具的耗时。
-        val nodeIndex = LocalMarkdownCardNodeIndex.current
-        val timing = if (nodeIndex != null) LocalToolTimingIndex.current.tool(nodeIndex) else null
         if (waifuProcessMode) {
             WaifuProcessToolRow(
                 name = renderState.rawToolName,
-                status = if (timing != null) toolTimingTitle(timing) else stringResource(R.string.tool_call_block),
+                status = stringResource(R.string.tool_call_block),
                 details = renderState.paramText,
                 textColor = textColor,
                 modifier = modifier,
             )
             return
         }
-        Column(modifier = modifier.fillMaxWidth()) {
-            // 分组汇总不代替单项计时，展开工具组时也要看见仍在执行的耗时。
-            if (timing != null) {
-                Text(
-                    toolTimingTitle(timing),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = textColor.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(bottom = 2.dp),
-                )
-            }
+        // 状态与累计耗时由过程标题统一绘制，工具行只保留名称和参数。
         // 特殊处理文件编辑类工具
         if (renderState.displayToolName == "apply_file" ||
             renderState.displayToolName == "create_file" ||
@@ -1206,7 +1191,6 @@ class CustomXmlRenderer(
                         enableDialog = enableDialogs  // 传递弹窗启用状态
                 )
             }
-        }
         }
     }
 

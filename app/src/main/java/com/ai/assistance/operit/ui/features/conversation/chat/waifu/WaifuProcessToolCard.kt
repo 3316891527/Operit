@@ -36,7 +36,6 @@ import com.ai.assistance.operit.ui.common.markdown.lazy.rememberMarkdownCardValu
 import com.ai.assistance.operit.ui.common.markdown.lazy.splitPlainMarkdownNode
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.FileDiff
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.FileDiffDisplay
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalToolTimingIndex
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
@@ -59,8 +58,6 @@ internal fun WaifuProcessToolCard(
         name = if (request != null) requestContent.name else resultContent.name,
         parameters = requestContent.parameters,
     )
-    val timing = call.requestIndex?.let { LocalToolTimingIndex.current.tool(it) }
-    val elapsed = if (timing != null) waifuElapsedLabel(timing) else ""
     val normalizedStatus = content.status?.lowercase()
     val state = when {
         normalizedStatus == "success" -> stringResource(R.string.success)
@@ -71,7 +68,7 @@ internal fun WaifuProcessToolCard(
     }
     WaifuProcessToolRow(
         name = content.name.ifBlank { stringResource(R.string.unknown_tool) },
-        status = listOf(state, elapsed).filter(String::isNotEmpty).joinToString(" · "),
+        status = state,
         details = "",
         textColor = textColor,
         isError = normalizedStatus == "error",

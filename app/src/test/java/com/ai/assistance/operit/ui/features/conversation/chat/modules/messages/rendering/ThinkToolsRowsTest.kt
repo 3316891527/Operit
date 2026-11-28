@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering
 
 import com.ai.assistance.operit.ui.common.markdown.MarkdownGroupedItem
+import com.ai.assistance.operit.ui.common.markdown.completedProcessEnd
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 import org.junit.Assert.assertEquals
@@ -44,7 +45,39 @@ class ThinkToolsRowsTest {
     }
 
     @Test
-    fun manyExpandedGroups_keepLateResultsReachableWithoutCollapsingEarlierGroups() {
+    fun singleHeaderBetweenPrefaceAndAnswerKeepsInterleavedExplanationAndCard() {
+        val explanation = "中途说明。".repeat(1000)
+        val nodes = listOf(node("前言", xml = false), node("<think>开始思考</think>")) + tools(1) +
+            listOf(node(explanation, xml = false), node("<html>原生卡片</html>"), node("<thinking>再次思考</thinking>")) +
+            tools(1) + listOf(node("最终标题", xml = false), node("最终正文", xml = false))
+        val grouper = grouper()
+        val groups = grouper.group(nodes, "test")
+        val group = groups.filterIsInstance<MarkdownGroupedItem.Group>().single()
+        assertEquals(1, group.startIndex)
+        assertEquals(8, group.endIndexInclusive)
+        assertEquals(-1, completedProcessEnd(nodes))
+        fun rows(expanded: Boolean) = buildThinkToolsRows(groups, nodes, mapOf(group.stableKey to expanded)) {
+            grouper.describeGroup(it, nodes, isMessageStreaming = false)
+        }
+        val expanded = rows(true)
+        val header = expanded[1] as ThinkToolsRow.Header
+        assertEquals(2, header.info.toolCount)
+        assertEquals(2, header.info.thoughtCount)
+        val content = expanded.filterIsInstance<ThinkToolsRow.Content>()
+        assertEquals(nodes.indices.toList(), content.map { it.index }.distinct())
+        assertEquals((1..8).toList(), content.filter { it.inGroup }.map { it.index }.distinct())
+        val pieces = content.filter { it.index == 4 }
+        assertTrue(pieces.size > 1)
+        assertEquals(explanation, pieces.joinToString("") { it.node!!.content })
+        assertEquals(markdownNodeIdentityKeys(nodes)[5], content.single { it.index == 5 }.key)
+
+        val collapsed = rows(false)
+        assertEquals(listOf(0, 9, 10), collapsed.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
+        assertEquals(1, collapsed.filterIsInstance<ThinkToolsRow.Header>().size)
+    }
+
+    @Test
+    fun manyBatches_keepLateResultsReachableUnderOneExpandedHeader() {
         val nodes = buildList {
             repeat(50) { index ->
                 add(node("<think>思考 $index</think>"))
@@ -59,23 +92,29 @@ class ThinkToolsRowsTest {
         val rows = buildThinkToolsRows(groups, nodes, overrides) {
             grouper.describeGroup(it, nodes, isMessageStreaming = false)
         }
-        assertEquals(50, rows.filterIsInstance<ThinkToolsRow.Header>().size)
-        assertEquals(nodes.indices.toList(), rows.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
+        val header = rows.filterIsInstance<ThinkToolsRow.Header>().single()
+        assertEquals(50, header.info.thoughtCount)
+        assertEquals(100, header.info.toolCount)
+        val content = rows.filterIsInstance<ThinkToolsRow.Content>()
+        assertEquals(nodes.indices.toList(), content.map { it.index })
+        assertFalse(content.last().inGroup)
         assertEquals(rows.size, rows.map { it.key }.toSet().size)
     }
 
     @Test
-    fun manualCollapse_overridesStreamingAutoExpansionWithoutHidingOtherGroups() {
-        val nodes = tools(4)
-        val groups = listOf(
-            MarkdownGroupedItem.Group(0, 3, "first"),
-            MarkdownGroupedItem.Group(4, 7, "second"),
-        )
-        val rows = buildThinkToolsRows(groups, nodes, mapOf("first" to false, "second" to true)) {
-            ThinkToolsGroupInfo(it, 2, 0, autoExpand = true)
+    fun manualCollapseAppliesToLaterBatchesButNotToOutsideText() {
+        val grouper = grouper()
+        val prefix = listOf(node("前言", xml = false)) + tools(1)
+        val first = grouper.group(prefix, "test").filterIsInstance<MarkdownGroupedItem.Group>().single()
+        val nodes = prefix + node("中途说明", xml = false) + tools(1) + node("最终正文", xml = false)
+        val groups = grouper.group(nodes, "test")
+        val rows = buildThinkToolsRows(groups, nodes, mapOf(first.stableKey to false)) {
+            grouper.describeGroup(it, nodes, isMessageStreaming = true)
         }
-        assertEquals(listOf(false, true), rows.filterIsInstance<ThinkToolsRow.Header>().map { it.expanded })
-        assertEquals(listOf(4, 5, 6, 7), rows.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
+        val header = rows.filterIsInstance<ThinkToolsRow.Header>().single()
+        assertEquals(first.stableKey, header.info.group.stableKey)
+        assertFalse(header.expanded)
+        assertEquals(listOf(0, nodes.lastIndex), rows.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
     }
 
     @Test
