@@ -14,7 +14,7 @@ import java.time.temporal.TemporalAdjusters
 import java.time.DayOfWeek
 import kotlin.coroutines.coroutineContext
 
-/** 读取时只保留当前行、分组累计与趋势桶；明细始终由数据库 LIMIT 返回。 */
+/** 读取时只保留当前行、分组累计与趋势桶；明细分页和耗时排序交给数据库。 */
 object TokenStatsInsightsService {
     suspend fun overview(
         context: Context,
@@ -31,7 +31,7 @@ object TokenStatsInsightsService {
                 val comparisonBounds = comparisonBucketBounds(
                     requireNotNull(filter.range), range, current.buckets.map { it.startMs to it.endMs },
                 )
-                aggregate(db, prices, filter.copy(range = range), params, zone, current.granularity, check, comparisonBounds)
+                aggregate(db, prices, filter.copy(range = range), params, zone, current.granularity, check, comparisonBounds, collectQuality = false)
             } else null
             TokenStatsInsightsComparison(validity, range, other?.totals, other?.buckets.orEmpty())
         }
@@ -123,7 +123,9 @@ object TokenStatsInsightsService {
             // 在同一连接上完成读快照与临时排序表，退出必释放，不形成常驻历史缓存。
             db.beginTransactionNonExclusive()
             try {
+                jobContext.ensureActive()
                 val result = block(db, prices) { jobContext.ensureActive() }
+                jobContext.ensureActive()
                 db.setTransactionSuccessful()
                 result
             } finally { db.endTransaction() }
@@ -200,7 +202,63 @@ object TokenStatsInsightsService {
         } finally { db.execSQL("DROP TABLE token_insights_sort") }
     }
 
-    internal fun aggregate(db: SupportSQLiteDatabase, prices: TokenPriceSettingsSnapshot, filter: TokenStatsInsightsFilter, params: TokenStatsQueryParams, zone: ZoneId, requested: TokenStatsInsightsGranularity, check: () -> Unit, alignedBounds: List<Pair<Long, Long>>? = null): TokenStatsInsightsOverview {
+    internal fun aggregate(
+        db: SupportSQLiteDatabase,
+        prices: TokenPriceSettingsSnapshot,
+        filter: TokenStatsInsightsFilter,
+        params: TokenStatsQueryParams,
+        zone: ZoneId,
+        requested: TokenStatsInsightsGranularity,
+        check: () -> Unit,
+        alignedBounds: List<Pair<Long, Long>>? = null,
+        collectQuality: Boolean = true,
+    ): TokenStatsInsightsOverview {
+        if (!collectQuality) return aggregateRows(db, prices, filter, params, zone, requested, check, alignedBounds, null)
+        check()
+        // 主键按真实毫秒排序；临时表仅存每个时长的频数，不保留明细或完整历史对象。
+        db.execSQL("CREATE TEMP TABLE token_insights_quality_duration (durationMs INTEGER PRIMARY KEY, samples INTEGER NOT NULL)")
+        try {
+            val quality = db.compileStatement(
+                "INSERT OR REPLACE INTO temp.token_insights_quality_duration VALUES (?1, " +
+                    "COALESCE((SELECT samples FROM temp.token_insights_quality_duration WHERE durationMs = ?1), 0) + 1)",
+            ).use { statement ->
+                val accumulator = InsightsQualityAccumulator { duration ->
+                    statement.bindLong(1, duration)
+                    statement.executeInsert()
+                }
+                val overview = aggregateRows(db, prices, filter, params, zone, requested, check, alignedBounds, accumulator)
+                overview to accumulator
+            }
+            return quality.first.copy(quality = quality.second.result { rank -> qualityDurationAtRank(db, rank, check) })
+        } finally {
+            db.execSQL("DROP TABLE temp.token_insights_quality_duration")
+        }
+    }
+
+    private fun qualityDurationAtRank(db: SupportSQLiteDatabase, rank: Long, check: () -> Unit): Long {
+        check()
+        var remaining = rank
+        db.query("SELECT durationMs, samples FROM temp.token_insights_quality_duration ORDER BY durationMs").use { cursor ->
+            while (cursor.moveToNext()) {
+                check()
+                remaining -= cursor.getLong(1)
+                if (remaining <= 0L) return cursor.getLong(0)
+            }
+        }
+        error("耗时样本计数与临时排序表不一致")
+    }
+
+    private fun aggregateRows(
+        db: SupportSQLiteDatabase,
+        prices: TokenPriceSettingsSnapshot,
+        filter: TokenStatsInsightsFilter,
+        params: TokenStatsQueryParams,
+        zone: ZoneId,
+        requested: TokenStatsInsightsGranularity,
+        check: () -> Unit,
+        alignedBounds: List<Pair<Long, Long>>?,
+        quality: InsightsQualityAccumulator?,
+    ): TokenStatsInsightsOverview {
         val query = filtered(filter, params)
         // 已选日期就是趋势边界，无需再扫描同一范围求最早、最晚时间。
         val range = filter.range ?: db.query(SimpleSQLiteQuery("SELECT MIN(occurredAtMs), MAX(occurredAtMs) FROM (" + query.sql + ")", query.args.toTypedArray())).use { cursor ->
@@ -231,6 +289,7 @@ object TokenStatsInsightsService {
                 val pricing = pricingLookup.resolve(usage)
                 val row = read(cursor, prices, params, usage, pricing)
                 if (filter.peakPeriods != null && row.peakPeriod !in filter.peakPeriods) continue
+                quality?.add(row)
                 totals.add(row)
                 models.getOrPut(row.model) { InsightsAccumulator(params) }.add(row)
                 configs.getOrPut(Triple(row.configId, row.provider, row.model)) { InsightsAccumulator(params) }.add(row)

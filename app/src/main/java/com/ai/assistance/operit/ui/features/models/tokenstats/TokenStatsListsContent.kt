@@ -39,6 +39,7 @@ internal fun TokenStatsModelsContent(state: TokenStatsUiState, onRequests: (Stri
     var sort by rememberSaveable { mutableIntStateOf(0) }
     val palette = LocalTokenStatsPalette.current
     val all = state.overview?.models.orEmpty().filter { it.key != null }
+    val configurationsByModel = state.visibleConfigurations.groupBy { it.model }
     val models = all.filter { it.key.orEmpty().contains(query, ignoreCase = true) }
         .sortedByDescending { statsListMetric(it.totals, sort) }
     Column(verticalArrangement = Arrangement.spacedBy(15.dp)) {
@@ -51,7 +52,7 @@ internal fun TokenStatsModelsContent(state: TokenStatsUiState, onRequests: (Stri
                     if (index > 0) StatsDivider()
                     val name = requireNotNull(model.key)
                     var expanded by rememberSaveable(name) { mutableStateOf(false) }
-                    val configs = state.overview?.configurations.orEmpty().filter { it.model == name && statsVisibleConfiguration(it, state) }
+                    val configs = configurationsByModel[name].orEmpty()
                     Column(Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(vertical = 17.dp)) {
                         BoxWithConstraints(Modifier.fillMaxWidth()) {
                             val rightColumnWidth = maxWidth * .44f
@@ -108,7 +109,7 @@ internal fun TokenStatsConfigurationsContent(
     var query by rememberSaveable { mutableStateOf("") }
     var sort by rememberSaveable { mutableIntStateOf(0) }
     var kind by rememberSaveable { mutableIntStateOf(0) }
-    val all = state.overview?.configurations.orEmpty().filter { statsVisibleConfiguration(it, state) }
+    val all = state.visibleConfigurations
     val configurations = all.filter { config ->
         listOf(state.configurationNames[config.configId].orEmpty(), config.model, config.provider).any { it.contains(query, ignoreCase = true) }
     }.filter { config ->
@@ -195,6 +196,9 @@ private fun StatsConfigurationRow(
                             val rateLabels = labels.map { stringResource(it) }
                             StatsText(rates.indices.joinToString(" / ") { index -> rateLabels[index] + " " + statsRate(rates[index]) }, size = 10, color = palette.muted)
                         }
+                    }
+                    if (draft.billingMultiplier != 1.0) {
+                        StatsText(stringResource(R.string.token_stats_billing_multiplier) + " × " + formatTokenStatsPrice(draft.billingMultiplier), size = 10, color = palette.muted)
                     }
                 }
                 StatsDivider()
@@ -284,6 +288,9 @@ private fun StatsRequestRow(row: TokenStatsRequestRow, state: TokenStatsUiState,
                 StatsText(insightsCost(row.cost), size = 13, weight = FontWeight.SemiBold, maxLines = 1)
                 val duration = row.durationMs?.let { String.format(Locale.getDefault(), "%.1fs", it / 1000.0) } ?: "—"
                 StatsText(duration + if (row.longContext == true) " · " + stringResource(R.string.token_insights_long_context) else "", size = 9, color = palette.muted, maxLines = 1)
+                tokenStatsOutputTokensPerSecond(row)?.let { speed ->
+                    StatsText(String.format(Locale.getDefault(), "%.2f tok/s", speed), size = 9, color = palette.muted, maxLines = 1)
+                }
             }
         }
     }
@@ -372,9 +379,8 @@ private fun StatsListEmpty() {
 private fun statsListSortLabels(): List<String> = listOf(stringResource(R.string.token_insights_sort_cost), stringResource(R.string.token_insights_sort_tokens), stringResource(R.string.token_stats_design_sort_requests))
 
 private fun statsListMetric(totals: TokenStatsInsightsTotals, sort: Int): Double = when (sort) { 1 -> totals.totalTokens.knownSum.toDouble(); 2 -> totals.requests.toDouble(); else -> totals.cost.knownAmount }
-private fun statsVisibleConfiguration(config: TokenStatsInsightsConfiguration, state: TokenStatsUiState): Boolean = config.configId.isBlank() || config.configId in state.configurationNames
 private fun statsHasPrice(draft: TokenStatsPriceDraft): Boolean = if (draft.billingMode == BillingMode.COUNT) (draft.pricePerRequest ?: 0.0) > 0.0 else listOf(draft.inputPricePerMillion, draft.cachedInputPricePerMillion, draft.cacheWritePricePerMillion, draft.outputPricePerMillion).any { (it ?: 0.0) > 0.0 }
-private fun statsRate(value: Double?): String = value?.let { String.format(Locale.ROOT, "%.4f", it).trimEnd('0').trimEnd('.') } ?: "—"
+private fun statsRate(value: Double?): String = value?.let { formatTokenStatsPrice(it) } ?: "—"
 private fun statsPercent(value: Double, total: Double): String = if (total > 0.0) String.format(Locale.getDefault(), "%.1f%%", value / total * 100) else "—"
 @Composable
 private fun statsCacheRate(totals: TokenStatsInsightsTotals): String {

@@ -156,6 +156,7 @@ internal fun TokenStatsRequestDialog(
         StatsDetailLine(stringResource(R.string.token_stats_design_total_tokens), row.totalTokens?.let { String.format(Locale.getDefault(), "%,d", it) } ?: unknown)
         StatsDetailLine(stringResource(R.string.token_stats_design_first_token), row.firstTokenLatencyMs?.let { String.format(Locale.getDefault(), "%.2fs", it / 1000.0) } ?: unknown)
         StatsDetailLine(stringResource(R.string.token_insights_duration), row.durationMs?.let { String.format(Locale.getDefault(), "%.2fs", it / 1000.0) } ?: unknown)
+        StatsDetailLine(stringResource(R.string.token_stats_request_tps), tokenStatsOutputTokensPerSecond(row)?.let { String.format(Locale.getDefault(), "%.2f tok/s", it) } ?: unknown)
         Spacer(Modifier.height(22.dp))
         StatsText(stringResource(R.string.token_stats_design_formula_title), size = 12, weight = FontWeight.SemiBold)
         Spacer(Modifier.height(14.dp))
@@ -197,7 +198,7 @@ private fun StatsRequestFormula(row: TokenStatsRequestRow, draft: TokenStatsPric
     val p = LocalTokenStatsPalette.current
     val unknown = stringResource(R.string.token_insights_not_recorded)
     val pricing = TokenPriceResolver.resolve("${draft.provider}:${draft.model}", draft.statsModelSettings())
-    // 金额始终由原计价器提供；这里只把它已采用的真实数量、单价与规则展开为文字。
+    // 复用原计价器确认总额；公式只展开它采用的真实数量、单价和生效因子。
     val record = com.ai.assistance.operit.data.model.TokenUsageRecordEntity(
         occurredAtMs = row.occurredAtMs, configId = row.configId, provider = row.provider, model = row.model,
         requestCount = row.requestCount, uncachedInputTokens = row.uncachedInputTokens,
@@ -205,7 +206,7 @@ private fun StatsRequestFormula(row: TokenStatsRequestRow, draft: TokenStatsPric
         totalInputTokens = row.totalInputTokens, outputTokens = row.outputTokens)
     val confirmedCost = TokenCostCalculator.currentCost(listOf(record), pricing, state.targetCurrency, state.manualRate)
     if (pricing.billingMode == BillingMode.COUNT) {
-        StatsText("${row.requestCount} × ${pricing.pricePerRequest} ${pricing.currency.name}", size = 10, color = p.muted, mono = true)
+        StatsText("${row.requestCount} × ${formatTokenStatsPrice(pricing.pricePerRequest)} ${pricing.currency.name}", size = 10, color = p.muted, mono = true)
     } else {
         val eligible = row.occurredAtMs != null && row.requestCount == 1L
         val peak = eligible && pricing.peakPricingEnabled && row.peakPeriod == TokenStatsPeakPeriod.PEAK
@@ -213,32 +214,33 @@ private fun StatsRequestFormula(row: TokenStatsRequestRow, draft: TokenStatsPric
         val prices = listOf(pricing.inputPricePerMillion, pricing.cachedInputPricePerMillion, pricing.cacheWritePricePerMillion, pricing.outputPricePerMillion)
         val peakFactors = if (peak) listOf(pricing.peakInputMultiplier, pricing.peakCachedInputMultiplier, pricing.peakCacheWriteMultiplier, pricing.peakOutputMultiplier) else List(4) { 1.0 }
         val longFactors = if (long) listOf(pricing.longContextInputMultiplier, pricing.longContextCachedInputMultiplier, pricing.longContextCacheWriteMultiplier, pricing.longContextOutputMultiplier) else List(4) { 1.0 }
+        val peakLabel = stringResource(R.string.token_stats_peak_pricing)
+        val longLabel = stringResource(R.string.token_stats_long_context_pricing)
         val effectiveInput = (0..2).map { prices[it] * peakFactors[it] * longFactors[it] }
         val sameInputRate = effectiveInput.distinct().size == 1
         val completeInput = listOf(row.uncachedInputTokens, row.cachedInputTokens, row.cacheWriteTokens).all { it != null }
         if (sameInputRate && (!completeInput || row.totalInputTokens != null && row.totalInputTokens != insightsKnownSum(row.uncachedInputTokens, row.cachedInputTokens, row.cacheWriteTokens))) {
             val totalInput = row.totalInputTokens ?: insightsKnownSum(row.uncachedInputTokens, row.cachedInputTokens, row.cacheWriteTokens)
-            StatsText("${stringResource(R.string.token_stats_design_input)}: ${totalInput?.let { String.format(Locale.getDefault(), "%,d", it) } ?: unknown} ÷ 1M × ${effectiveInput[0]}", size = 10, color = p.muted, mono = true)
+            StatsText("${stringResource(R.string.token_stats_design_input)}: ${totalInput?.let { String.format(Locale.getDefault(), "%,d", it) } ?: unknown} ÷ 1M × ${formatTokenStatsPrice(effectiveInput[0])}", size = 10, color = p.muted, mono = true)
         } else {
             listOf(R.string.token_insights_uncached to row.uncachedInputTokens, R.string.token_insights_cached to row.cachedInputTokens, R.string.token_insights_cache_write to row.cacheWriteTokens).forEachIndexed { index, (label, count) ->
-                StatsText("${stringResource(label)}: ${count?.let { String.format(Locale.getDefault(), "%,d", it) } ?: unknown} ÷ 1M × ${prices[index]} × ${peakFactors[index]} × ${longFactors[index]}", size = 10, color = p.muted, mono = true)
+                val factors = tokenStatsFormulaMultiplierSuffix(listOf(peakLabel to peakFactors[index], longLabel to longFactors[index]))
+                StatsText("${stringResource(label)}: ${count?.let { String.format(Locale.getDefault(), "%,d", it) } ?: unknown} ÷ 1M × ${formatTokenStatsPrice(prices[index])}$factors", size = 10, color = p.muted, mono = true)
             }
         }
-        StatsText("${stringResource(R.string.token_insights_output)}: ${row.outputTokens?.let { String.format(Locale.getDefault(), "%,d", it) } ?: unknown} ÷ 1M × ${prices[3]} × ${peakFactors[3]} × ${longFactors[3]}", size = 10, color = p.muted, mono = true)
-        StatsText(stringResource(R.string.token_stats_design_formula_currency, pricing.currency.name), size = 10, color = p.muted, mono = true)
+        val outputFactors = tokenStatsFormulaMultiplierSuffix(listOf(peakLabel to peakFactors[3], longLabel to longFactors[3]))
+        StatsText("${stringResource(R.string.token_insights_output)}: ${row.outputTokens?.let { String.format(Locale.getDefault(), "%,d", it) } ?: unknown} ÷ 1M × ${formatTokenStatsPrice(prices[3])}$outputFactors", size = 10, color = p.muted, mono = true)
     }
-    val exchange = TokenCostCurrency.convertTo(1.0, pricing.currency, state.targetCurrency, state.manualRate)
-    StatsText(stringResource(R.string.token_stats_design_formula_exchange, String.format(Locale.getDefault(), "%.4f", exchange), state.targetCurrency.name, pricing.currency.name), size = 10, color = p.muted, mono = true)
+    StatsText(stringResource(R.string.token_stats_design_formula_currency, pricing.currency.name), size = 10, color = p.muted, mono = true)
+    if (pricing.billingMultiplier != 1.0) {
+        StatsText(stringResource(R.string.token_stats_formula_billing_multiplier, formatTokenStatsPrice(pricing.billingMultiplier)), size = 10, color = p.muted, mono = true)
+    }
+    if (pricing.currency != state.targetCurrency) {
+        val exchange = TokenCostCurrency.convertTo(1.0, pricing.currency, state.targetCurrency, state.manualRate)
+        StatsText(stringResource(R.string.token_stats_design_formula_exchange, formatTokenStatsPrice(exchange), state.targetCurrency.name, pricing.currency.name), size = 10, color = p.muted, mono = true)
+    }
     StatsText(stringResource(R.string.token_stats_design_formula_total, insightsCost(confirmedCost)), size = 10, mono = true)
 }
-
-private fun TokenStatsPriceDraft.statsModelSettings() = ModelPriceSettings(
-    billingMode, currency, inputPricePerMillion, cachedInputPricePerMillion, cacheWritePricePerMillion,
-    outputPricePerMillion, pricePerRequest, peakPricingEnabled, weekendOffPeakPricingEnabled,
-    holidayOffPeakPricingEnabled, peakSchedule, peakInputMultiplier, peakCachedInputMultiplier,
-    peakCacheWriteMultiplier, peakOutputMultiplier, longContextPricingEnabled, longContextThreshold,
-    longContextInputMultiplier, longContextCachedInputMultiplier, longContextCacheWriteMultiplier,
-    longContextOutputMultiplier)
 
 @Composable
 internal fun TokenStatsSettingsDialog(
@@ -345,9 +347,7 @@ internal fun TokenStatsFilterDialog(state: TokenStatsUiState, onApply: (TokenSta
     var category by remember { mutableStateOf(0) }
     var search by remember { mutableStateOf("") }
     val models = state.catalog?.models.orEmpty().mapNotNull { it.key }.distinct().sorted().map { it to it }
-    val configs = state.catalog?.configurations.orEmpty().map { it.configId }.distinct()
-        .filter { it.isBlank() || it in state.configurationNames }
-        .map { it to insightsConfigurationName(it, state) }
+    val configs = state.visibleConfigurationFilterIds.map { it to insightsConfigurationName(it, state) }
     val functions = FunctionType.values().map { it.name to insightsFunction(it.name) }
     val executions = state.catalog?.executionModels.orEmpty().mapNotNull { it.key }.distinct().sorted().map { it to it }
     val statuses = listOf("SUCCESS", "FAILED", "CANCELLED", "COMPLETED").map { it to insightsStatus(it) }
@@ -389,7 +389,8 @@ internal fun TokenStatsFilterDialog(state: TokenStatsUiState, onApply: (TokenSta
         StatsDialogField(search, { search = it }, Modifier.fillMaxWidth(), label = stringResource(R.string.token_stats_design_filter_search), keyboardType = KeyboardType.Text)
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatsText("${selected?.size ?: optionGroups[category].size} / ${optionGroups[category].size}", Modifier.weight(1f), size = 10, color = p.muted)
+            val visibleSelectedCount = optionGroups[category].count { (id, _) -> selected == null || id in selected }
+            StatsText("$visibleSelectedCount / ${optionGroups[category].size}", Modifier.weight(1f), size = 10, color = p.muted)
             StatsAction(stringResource(R.string.token_insights_select_all), { change(optionGroups[category].map { it.first }.toSet()) })
             StatsAction(stringResource(R.string.token_insights_select_none), { change(emptySet()) })
         }

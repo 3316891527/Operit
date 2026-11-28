@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
@@ -55,27 +56,31 @@ internal fun TokenStatsOverviewContent(
 ) {
     val data = state.overview ?: return
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        StatsOverviewHero(data) { onRequests(null, null, null, null) }
-        StatsOverviewMetrics(data.totals)
+        StatsOverviewHero(data, state.visibleConfigurations) { onRequests(null, null, null, null) }
+        StatsOverviewMetrics(data.totals, state.tokenDisplayUnit)
         StatsOverviewTrend(state, zone, data, onGranularity) { onRequests(null, null, null, it) }
         StatsOverviewExpenses(state, data)
         StatsOverviewAttention(data, { onRequests(null, null, null, null) }, onRequestSort)
-        StatsOverviewTokens(data.totals)
-        StatsOverviewQuality { onRequestSort(TokenStatsRequestSort.DURATION_DESC) }
-        StatsOverviewRanking(data, onModels) { onRequests(it, null, null, null) }
+        StatsOverviewTokens(data.totals, state.tokenDisplayUnit)
+        StatsOverviewQuality(data.quality, data.totals.cost.currency) { onRequestSort(TokenStatsRequestSort.DURATION_DESC) }
+        StatsOverviewRanking(data, state.visibleConfigurations, state.tokenDisplayUnit, onModels) { onRequests(it, null, null, null) }
         StatsOverviewSources(data, onRequests)
         StatsOverviewBudget(state, onSettings)
     }
 }
 
 @Composable
-private fun StatsOverviewHero(data: TokenStatsInsightsOverview, onRequests: () -> Unit) {
+private fun StatsOverviewHero(
+    data: TokenStatsInsightsOverview,
+    visibleConfigurations: List<TokenStatsInsightsConfiguration>,
+    onRequests: () -> Unit,
+) {
     val compact = LocalConfiguration.current.screenWidthDp < 370
     val ink = Color(0xFFF2F5FF)
     val muted = Color(0xFFAEBBD8)
     val cost = data.totals.cost
     val unknown = cost.unknownContributionCount
-    val amount = String.format(Locale.US, "%,.4f", cost.knownAmount).split('.')
+    val amount = String.format(Locale.US, "%,.8f", cost.knownAmount).split('.')
     Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF263554))
         .border(1.dp, Color(0xFF4C5E8B), RoundedCornerShape(20.dp))) {
         Canvas(Modifier.matchParentSize()) {
@@ -106,7 +111,7 @@ private fun StatsOverviewHero(data: TokenStatsInsightsOverview, onRequests: () -
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     StatsText((if (delta < 0) "↘ " else "↗ ") + String.format(Locale.getDefault(), "%.1f%%", abs(delta)),
                         size = 11, color = if (delta < 0) Color(0xFF9BD9CA) else Color(0xFFEDB6A3), weight = FontWeight.SemiBold)
-                    StatsText(stringResource(R.string.token_insights_previous_period) + " " + overviewMoney(other.knownAmount, other.currency, 2), size = 11, color = muted)
+                    StatsText(stringResource(R.string.token_insights_previous_period) + " " + insightsMoney(other.knownAmount, other.currency), size = 11, color = muted)
                 }
             } else {
                 StatsText(stringResource(if (comparison == null) R.string.token_insights_comparison_off else R.string.token_stats_design_comparison_missing), size = 11, color = muted)
@@ -116,7 +121,7 @@ private fun StatsOverviewHero(data: TokenStatsInsightsOverview, onRequests: () -
             Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 val coverage = if (unknown > 0L) stringResource(R.string.token_stats_design_unpriced_count, overviewCount(unknown)) else stringResource(R.string.token_stats_design_coverage_complete)
                 Column(Modifier.weight(1f).clickable(onClick = onRequests).padding(vertical = 3.dp)) {
-                    StatsText(coverage + " · " + stringResource(R.string.token_stats_design_model_config_count, data.models.size, data.configurations.size) + "  ›",
+                    StatsText(coverage + " · " + stringResource(R.string.token_stats_design_model_config_count, data.models.size, visibleConfigurations.size) + "  ›",
                         color = Color(0xFFCAD5EE), size = 10)
                 }
             }
@@ -125,35 +130,44 @@ private fun StatsOverviewHero(data: TokenStatsInsightsOverview, onRequests: () -
 }
 
 @Composable
-private fun StatsOverviewMetrics(totals: TokenStatsInsightsTotals) {
+private fun StatsOverviewMetrics(totals: TokenStatsInsightsTotals, unit: TokenStatsDisplayUnit) {
     val inputParts = listOf(totals.uncachedInput, totals.cachedInput, totals.cacheWrite)
-    val input = inputParts.sumOf { it.knownSum.toDouble() }
-    val inputText = if (inputParts.all { it.isFullyKnown }) overviewCompact(input) else "—"
-    val cacheRate = if (inputParts.all { it.isFullyKnown } && input > 0.0) overviewPercent(totals.cachedInput.knownSum.toDouble(), input) else "—"
+    val input = inputParts.fold(0L) { sum, part -> TokenCostCalculator.saturatedAdd(sum, part.knownSum) }
+    val inputText = if (inputParts.all { it.isFullyKnown }) formatTokenCount(input, unit) else "—"
+    val cacheRate = tokenStatsCacheReadRatio(totals)
     val success = totals.statusCounts["SUCCESS"] ?: 0L
     val failed = totals.statusCounts["FAILED"] ?: 0L
     val cancelled = totals.statusCounts["CANCELLED"] ?: 0L
-    val successRate = if (totals.unknownStatusRequests == 0L) overviewPercent(success.toDouble(), totals.requests.toDouble()) else "—"
+    val successRate = tokenStatsSuccessRatio(totals)
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatsOverviewMetric("cube", stringResource(R.string.token_stats_design_total_tokens), overviewTokens(totals.totalTokens),
-                stringResource(R.string.token_stats_design_input_output, inputText, overviewTokens(totals.output)), Modifier.weight(1f))
+            StatsOverviewMetric("cube", stringResource(R.string.token_stats_design_total_tokens), overviewTokens(totals.totalTokens, unit),
+                stringResource(R.string.token_stats_design_input_output, inputText, overviewTokens(totals.output, unit)), Modifier.weight(1f))
             StatsOverviewMetric("list", stringResource(R.string.token_stats_design_model_requests), overviewCount(totals.requests),
                 if (totals.unknownStatusRequests > 0L) stringResource(R.string.token_insights_unknown_status) + " " + overviewCount(totals.unknownStatusRequests)
                 else stringResource(R.string.token_stats_design_success_failed, overviewCount(success), overviewCount(failed)), Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatsOverviewMetric("spark", stringResource(R.string.token_stats_design_cache_rate), cacheRate,
-                stringResource(R.string.token_stats_design_cache_basis), Modifier.weight(1f))
-            StatsOverviewMetric("check", stringResource(R.string.token_stats_design_success_rate), successRate,
-                if (totals.unknownStatusRequests > 0L) stringResource(R.string.token_insights_not_recorded)
-                else stringResource(R.string.token_stats_design_cancelled_count, overviewCount(cancelled)), Modifier.weight(1f))
+            StatsOverviewMetric("spark", stringResource(R.string.token_stats_design_cache_rate), overviewRatioText(cacheRate),
+                stringResource(R.string.token_stats_design_cache_basis), Modifier.weight(1f),
+                tokenStatsRatioLevel(cacheRate, TokenStatsRatioKind.CACHE_READ))
+            StatsOverviewMetric("check", stringResource(R.string.token_stats_design_success_rate), overviewRatioText(successRate),
+                if (successRate == null) stringResource(R.string.token_insights_not_recorded)
+                else stringResource(R.string.token_stats_design_cancelled_count, overviewCount(cancelled)), Modifier.weight(1f),
+                tokenStatsRatioLevel(successRate, TokenStatsRatioKind.REQUEST_SUCCESS))
         }
     }
 }
 
 @Composable
-private fun StatsOverviewMetric(icon: String, label: String, value: String, note: String, modifier: Modifier) {
+private fun StatsOverviewMetric(
+    icon: String,
+    label: String,
+    value: String,
+    note: String,
+    modifier: Modifier,
+    level: TokenStatsRatioLevel? = null,
+) {
     val p = LocalTokenStatsPalette.current
     Column(modifier.clip(RoundedCornerShape(15.dp)).background(p.panel).border(1.dp, p.line, RoundedCornerShape(15.dp))
         .padding(horizontal = 16.dp, vertical = 14.dp)) {
@@ -161,7 +175,15 @@ private fun StatsOverviewMetric(icon: String, label: String, value: String, note
             StatsOverviewGlyph(icon, p.faint, Modifier.size(12.dp))
             StatsText(label, size = 10, color = p.muted, maxLines = 1)
         }
-        StatsText(value, Modifier.padding(top = 7.dp), size = 23, weight = FontWeight.Medium, maxLines = 1)
+        val dark = p.panel.luminance() < 0.5f
+        val valueColor = when (level) {
+            TokenStatsRatioLevel.GREEN -> if (dark) Color(0xFF85D8A4) else Color(0xFF176B39)
+            TokenStatsRatioLevel.YELLOW -> if (dark) p.amber else Color(0xFF795000)
+            TokenStatsRatioLevel.RED -> if (dark) p.red else Color(0xFFA33139)
+            TokenStatsRatioLevel.UNKNOWN -> p.muted
+            null -> p.ink
+        }
+        StatsText(value, Modifier.padding(top = 7.dp), size = 23, color = valueColor, weight = FontWeight.Medium, maxLines = 1)
         StatsText(note, Modifier.padding(top = 5.dp).heightIn(min = 27.dp), size = 9, color = p.muted, maxLines = 2)
     }
 }
@@ -208,7 +230,11 @@ private fun StatsOverviewTrend(
             val ceiling = max(power, ceil(maximum / power / .5) * power * .5)
             val ticks = listOf(0.0, .5, 1.0).map { f ->
                 val value = ceiling * f
-                if (metric == 0) state.targetCurrency.symbol + String.format(Locale.getDefault(), if (value >= 10) "%.0f" else "%.1f", value) else overviewCompact(value)
+                when (metric) {
+                    0 -> state.targetCurrency.symbol + String.format(Locale.getDefault(), if (value >= 10) "%.0f" else "%.1f", value)
+                    1 -> formatTokenCount(value.toLong(), state.tokenDisplayUnit)
+                    else -> overviewCompact(value)
+                }
             }
             val chartDescription = stringResource(R.string.token_insights_chart_accessibility)
             Canvas(Modifier.fillMaxWidth().height(211.dp).semantics { contentDescription = chartDescription }
@@ -260,8 +286,8 @@ private fun StatsOverviewTrend(
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     StatsText(insightsDate(point.startMs, zone) + " — " + insightsDate(point.endMs - 1, zone), size = 10, color = p.muted)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        StatsText(overviewMetricLabel(point.totals, metric), size = 14, weight = FontWeight.Medium)
-                        StatsText(if (metric == 2) overviewTokens(point.totals.totalTokens) + " Token" else stringResource(R.string.token_stats_design_request_times, overviewCount(point.totals.requests)), size = 10, color = p.muted)
+                        StatsText(overviewMetricLabel(point.totals, metric, state.tokenDisplayUnit), size = 14, weight = FontWeight.Medium)
+                        StatsText(if (metric == 2) overviewTokens(point.totals.totalTokens, state.tokenDisplayUnit) + " Token" else stringResource(R.string.token_stats_design_request_times, overviewCount(point.totals.requests)), size = 10, color = p.muted)
                     }
                     StatsAction(stringResource(R.string.token_stats_design_point_requests, overviewCount(point.totals.requests)), {
                         val range = state.filter.range
@@ -314,7 +340,7 @@ private fun StatsOverviewExpenses(state: TokenStatsUiState, data: TokenStatsInsi
                     if (index < 5 || value > 0) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         Box(Modifier.size(6.dp).clip(RoundedCornerShape(2.dp)).background(colors[index]))
                         StatsText(stringResource(labels[index]), Modifier.weight(1f), size = 10, color = p.muted, maxLines = 1)
-                        StatsText(overviewMoney(value, state.targetCurrency, 2), size = 11, weight = FontWeight.Medium, maxLines = 1)
+                        StatsText(insightsMoney(value, state.targetCurrency), size = 11, weight = FontWeight.Medium, maxLines = 1)
                     }
                 }
             }
@@ -355,7 +381,7 @@ private fun StatsOverviewAttentionRow(icon: String, title: String, note: String,
 }
 
 @Composable
-private fun StatsOverviewTokens(totals: TokenStatsInsightsTotals) {
+private fun StatsOverviewTokens(totals: TokenStatsInsightsTotals, unit: TokenStatsDisplayUnit) {
     val p = LocalTokenStatsPalette.current
     val parts = listOf(totals.uncachedInput, totals.cachedInput, totals.cacheWrite, totals.output)
     val colors = listOf(p.accent, p.teal, p.violet, p.amber)
@@ -364,7 +390,7 @@ private fun StatsOverviewTokens(totals: TokenStatsInsightsTotals) {
     StatsPanel {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             StatsText(stringResource(R.string.token_insights_token_composition), size = 15, weight = FontWeight.SemiBold)
-            StatsText(overviewTokens(totals.totalTokens), size = 11, color = p.muted)
+            StatsText(overviewTokens(totals.totalTokens, unit), size = 11, color = p.muted)
         }
         Canvas(Modifier.fillMaxWidth().height(11.dp).clip(RoundedCornerShape(4.dp)).background(p.panelAlt)) {
             if (total > 0) {
@@ -380,7 +406,7 @@ private fun StatsOverviewTokens(totals: TokenStatsInsightsTotals) {
             parts.forEachIndexed { index, part ->
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     StatsOverviewLegend(stringResource(labels[index]), colors[index], size = 9)
-                    StatsText(overviewTokens(part), size = 16, weight = FontWeight.Medium, maxLines = 1)
+                    StatsText(overviewTokens(part, unit), size = 16, weight = FontWeight.Medium, maxLines = 1)
                     StatsText(if (part.isFullyKnown && totals.totalTokens.isFullyKnown) overviewPercent(part.knownSum.toDouble(), total) else "—", size = 10, color = p.muted)
                 }
             }
@@ -390,17 +416,22 @@ private fun StatsOverviewTokens(totals: TokenStatsInsightsTotals) {
 }
 
 @Composable
-private fun StatsOverviewQuality(onSlow: () -> Unit) {
+private fun StatsOverviewQuality(quality: TokenStatsInsightsQuality, currency: PricingCurrency, onSlow: () -> Unit) {
     StatsPanel {
         StatsOverviewHeading(stringResource(R.string.token_stats_design_quality), stringResource(R.string.token_stats_design_slow), onSlow)
         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                StatsOverviewQualityMetric(stringResource(R.string.token_stats_design_average_first_token), "s", Modifier.weight(1f))
-                StatsOverviewQualityMetric(stringResource(R.string.token_stats_design_p95_duration), "s", Modifier.weight(1f))
+                StatsOverviewQualityMetric(stringResource(R.string.token_stats_design_average_first_token),
+                    quality.averageFirstTokenLatencyMs?.let(::overviewSeconds), quality.firstTokenLatencySamples, Modifier.weight(1f))
+                StatsOverviewQualityMetric(stringResource(R.string.token_stats_design_p95_duration),
+                    quality.p95DurationMs?.let { overviewSeconds(it.toDouble()) }, quality.durationSamples, Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                StatsOverviewQualityMetric(stringResource(R.string.token_stats_design_average_cost), "", Modifier.weight(1f))
-                StatsOverviewQualityMetric(stringResource(R.string.token_stats_design_output_speed), "tok/s", Modifier.weight(1f))
+                StatsOverviewQualityMetric(stringResource(R.string.token_stats_design_average_cost),
+                    quality.averagePricedRequestCost?.let { insightsMoney(it, currency) }, quality.pricedRequestSamples, Modifier.weight(1f))
+                StatsOverviewQualityMetric(stringResource(R.string.token_stats_design_output_speed),
+                    quality.averageSuccessfulTokensPerSecond?.let { String.format(Locale.getDefault(), "%,.2f tok/s", it) },
+                    quality.successfulTokensPerSecondSamples, Modifier.weight(1f))
             }
         }
         StatsOverviewNote(stringResource(R.string.token_stats_design_quality_note))
@@ -408,19 +439,23 @@ private fun StatsOverviewQuality(onSlow: () -> Unit) {
 }
 
 @Composable
-private fun StatsOverviewQualityMetric(label: String, unit: String, modifier: Modifier) {
+private fun StatsOverviewQualityMetric(label: String, value: String?, samples: Long, modifier: Modifier) {
     val p = LocalTokenStatsPalette.current
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(5.dp)) {
         StatsText(label, size = 10, color = p.muted)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            StatsText("—", size = 20, weight = FontWeight.Medium)
-            StatsText(unit, size = 10, color = p.muted)
-        }
+        StatsText(value ?: "—", size = 18, weight = FontWeight.Medium, color = if (value == null) p.muted else p.ink)
+        StatsText(stringResource(R.string.token_stats_design_quality_samples, overviewCount(samples)), size = 9, color = p.muted)
     }
 }
 
 @Composable
-private fun StatsOverviewRanking(data: TokenStatsInsightsOverview, onModels: () -> Unit, onModel: (String) -> Unit) {
+private fun StatsOverviewRanking(
+    data: TokenStatsInsightsOverview,
+    visibleConfigurations: List<TokenStatsInsightsConfiguration>,
+    unit: TokenStatsDisplayUnit,
+    onModels: () -> Unit,
+    onModel: (String) -> Unit,
+) {
     val p = LocalTokenStatsPalette.current
     StatsPanel {
         StatsOverviewHeading(stringResource(R.string.token_stats_design_model_ranking), stringResource(R.string.token_stats_design_all_models), onModels)
@@ -436,8 +471,8 @@ private fun StatsOverviewRanking(data: TokenStatsInsightsOverview, onModels: () 
                     StatsAvatar(statsModelProvider(name, data.configurations))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         StatsText(name ?: stringResource(R.string.token_insights_not_recorded), size = 12, weight = FontWeight.Medium, maxLines = 1)
-                        val configs = data.configurations.filter { it.model == name }.map { it.configId }.distinct().size
-                        StatsText(stringResource(R.string.token_stats_design_config_tokens, configs, overviewTokens(model.totals.totalTokens)), size = 9, color = p.muted)
+                        val configs = visibleConfigurations.count { it.model == name }
+                        StatsText(stringResource(R.string.token_stats_design_config_tokens, configs, overviewTokens(model.totals.totalTokens, unit)), size = 9, color = p.muted)
                     }
                     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         StatsText(insightsCost(model.totals.cost), size = 13, weight = FontWeight.Medium, maxLines = 1)
@@ -498,7 +533,7 @@ private fun StatsOverviewBudget(state: TokenStatsUiState, onSettings: () -> Unit
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(Modifier.weight(1.4f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             StatsText(stringResource(R.string.token_stats_design_budget), size = 11, weight = FontWeight.Medium)
-            StatsText(stringResource(R.string.token_stats_design_budget_scope, if (cost == null) "—" else insightsCost(cost), if (budget == null) "—" else overviewMoney(budget, state.targetCurrency, 0)), size = 9, color = p.muted)
+            StatsText(stringResource(R.string.token_stats_design_budget_scope, if (cost == null) "—" else insightsCost(cost), if (budget == null) "—" else insightsMoney(budget, state.targetCurrency)), size = 9, color = p.muted)
         }
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(4.dp)).background(p.panelAlt)) {
@@ -585,15 +620,15 @@ private fun overviewMetric(totals: TokenStatsInsightsTotals, metric: Int): Doubl
 }
 
 @Composable
-private fun overviewMetricLabel(totals: TokenStatsInsightsTotals, metric: Int): String = when (metric) {
+private fun overviewMetricLabel(totals: TokenStatsInsightsTotals, metric: Int, unit: TokenStatsDisplayUnit): String = when (metric) {
     0 -> insightsCost(totals.cost)
-    1 -> overviewTokens(totals.totalTokens)
+    1 -> overviewTokens(totals.totalTokens, unit)
     else -> overviewCount(totals.requests)
 }
 
-private fun overviewTokens(value: TokenStatsTokenAggregate): String =
+private fun overviewTokens(value: TokenStatsTokenAggregate, unit: TokenStatsDisplayUnit): String =
     if (value.knownEventCount == 0L && value.unknownEventCount > 0L) "—"
-    else overviewCompact(value.knownSum.toDouble())
+    else formatTokenCount(value.knownSum, unit)
 
 private fun overviewCompact(value: Double): String = when {
     abs(value) >= 1_000_000_000 -> String.format(Locale.getDefault(), "%.1fB", value / 1_000_000_000)
@@ -604,5 +639,7 @@ private fun overviewCompact(value: Double): String = when {
 private fun overviewCount(value: Long): String = String.format(Locale.getDefault(), "%,d", value)
 private fun overviewPercent(value: Double, total: Double): String =
     if (total <= 0.0) "—" else String.format(Locale.getDefault(), "%.1f%%", value / total * 100)
-private fun overviewMoney(value: Double, currency: PricingCurrency, decimals: Int): String =
-    String.format(Locale.getDefault(), "%s%,.${decimals}f", currency.symbol, value)
+private fun overviewRatioText(ratio: Double?): String =
+    if (ratio == null) "—" else String.format(Locale.getDefault(), "%.1f%%", floor(ratio * 1_000.0) / 10.0)
+private fun overviewSeconds(milliseconds: Double): String =
+    String.format(Locale.getDefault(), "%,.3f s", milliseconds / 1_000.0)

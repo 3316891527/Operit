@@ -26,7 +26,12 @@ data class ModelPriceSettings(
     val longContextCachedInputMultiplier: Double? = null,
     val longContextCacheWriteMultiplier: Double? = null,
     val longContextOutputMultiplier: Double? = null,
+    val billingMultiplier: Double = 1.0,
 ) {
+    init {
+        requireValidBillingMultiplier(billingMultiplier)
+    }
+
     fun hasAnyUserSetting(): Boolean =
         billingMode != null ||
             currency != null ||
@@ -48,7 +53,8 @@ data class ModelPriceSettings(
             longContextInputMultiplier != null ||
             longContextCachedInputMultiplier != null ||
             longContextCacheWriteMultiplier != null ||
-            longContextOutputMultiplier != null
+            longContextOutputMultiplier != null ||
+            billingMultiplier != 1.0
 }
 
 data class TokenPriceSettingsSnapshot(
@@ -92,6 +98,7 @@ data class TokenPriceSettingsSnapshot(
                 config.longContextCacheWriteMultiplier ?: model?.longContextCacheWriteMultiplier,
             longContextOutputMultiplier =
                 config.longContextOutputMultiplier ?: model?.longContextOutputMultiplier,
+            billingMultiplier = config.billingMultiplier,
         )
     }
 }
@@ -122,7 +129,18 @@ data class ResolvedTokenPricing(
     val longContextCacheWriteMultiplier: Double = 1.0,
     val longContextOutputMultiplier: Double = 1.0,
     val source: PricingSource,
-)
+    val billingMultiplier: Double = 1.0,
+) {
+    init {
+        requireValidBillingMultiplier(billingMultiplier)
+    }
+}
+
+internal fun requireValidBillingMultiplier(value: Double) {
+    require(value.isFinite() && value >= 0.0) {
+        "billingMultiplier must be non-negative and finite, got $value"
+    }
+}
 
 /** 先解析基础价格，随后由 TokenCostCalculator 应用上下文和时间规则。 */
 object TokenPriceResolver {
@@ -160,6 +178,7 @@ object TokenPriceResolver {
             longContextCacheWriteMultiplier = user?.longContextCacheWriteMultiplier ?: 1.0,
             longContextOutputMultiplier = user?.longContextOutputMultiplier ?: 1.0,
             source = if (user?.hasAnyUserSetting() == true) PricingSource.USER else PricingSource.BUILT_IN,
+            billingMultiplier = user?.billingMultiplier ?: 1.0,
         )
     }
 }
