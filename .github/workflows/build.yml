@@ -41,7 +41,7 @@ on:
         default: ''
         type: string
       release_notes:
-        description: 本次发布说明
+        description: '发布说明；2.0.0 留空并使用仓内正式更新日志，其他版本可填写'
         required: false
         default: ''
         type: string
@@ -397,13 +397,18 @@ jobs:
           print("本次发布仅写入发行仓库，不创建源码仓库版本标签")
           PY
 
-          python3 ci/distribution/updates/publish_release.py \
-            --apk app/build/outputs/apk/release/app-kong.apk \
-            --build-tools "$ANDROID_HOME/build-tools/35.0.0" \
-            --repository "$GITHUB_REPOSITORY" \
-            --commit "$GITHUB_SHA" \
-            --previous-tag "$PREVIOUS_TAG" \
-            --notes "$RELEASE_NOTES"
+          release_args=(
+            --apk app/build/outputs/apk/release/app-kong.apk
+            --build-tools "$ANDROID_HOME/build-tools/35.0.0"
+            --repository "$GITHUB_REPOSITORY"
+            --commit "$GITHUB_SHA"
+            --previous-tag "$PREVIOUS_TAG"
+          )
+          # 受管正式版由发布脚本读取仓内正文，避免工作流另填一份日志。
+          if [ -n "$RELEASE_NOTES" ]; then
+            release_args+=(--notes "$RELEASE_NOTES")
+          fi
+          python3 ci/distribution/updates/publish_release.py "${release_args[@]}"
 
       - name: Clean merged work branches after verified publication
         if: github.event_name == 'workflow_dispatch' && inputs.publish_release && inputs.cleanup_merged_branches

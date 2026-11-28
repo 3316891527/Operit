@@ -90,6 +90,54 @@ class DistributionPublishingTest(unittest.TestCase):
                     publisher.main()
                 inspect.assert_not_called()
 
+    def test_managed_notes_are_used_for_preparation_without_release_side_effects(self):
+        expected = (MODULE_PATH.with_name("releases") / "2.0.0.md").read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            apk = root / publisher.APK_NAME
+            apk.write_bytes(b"signed apk fixture")
+            output = root / "out"
+            arguments = ["publish_release.py", "--apk", str(apk), "--build-tools", "sdk",
+                         "--repository", publisher.REPOSITORY, "--commit", "a" * 40,
+                         "--output", str(output), "--prepare-only"]
+            info = {"versionName": "2.0.0", "versionCode": 88, "packageName": publisher.PACKAGE_NAME}
+            with patch("sys.argv", arguments), patch.object(publisher, "inspect_apk", return_value=info):
+                with patch.object(publisher, "run", return_value="[]") as execute:
+                    with patch.object(publisher, "ensure_source_tag") as source_tag:
+                        with patch.object(publisher, "release_prepared", return_value={"published": False}) as resources:
+                            publisher.main()
+            manifest = json.loads((output / "distribution-release.json").read_text(encoding="utf-8"))
+            self.assertEqual(expected, manifest["releaseNotes"])
+            self.assertTrue((output / "release-notes.md").read_text(encoding="utf-8").startswith(expected.rstrip()))
+            self.assertEqual("v2.0.0", json.loads((output / "release-plan.json").read_text())["tag"])
+            source_tag.assert_not_called()
+            self.assertFalse(resources.call_args.kwargs["publish_resources"])
+            self.assertTrue(all(call.args[:2] == ("gh", "api") for call in execute.call_args_list))
+
+    def test_managed_notes_reject_dispatch_overrides_and_prefixed_apk_version(self):
+        for notes in ["派发时替换正文", "", '{"releaseNotes":"替换"}']:
+            with self.subTest(notes=notes), self.assertRaisesRegex(ValueError, "请勿传入"):
+                publisher.select_release_notes("2.0.0", notes)
+        with self.assertRaisesRegex(ValueError, "APK 版本必须"):
+            publisher.select_release_notes("v2.0.0", None)
+
+    def test_managed_notes_require_readable_nonempty_repository_file(self):
+        for notes in ["", " \n", '{"releaseNotes":"元数据"}', '[{"version":"2.0.0"}]']:
+            with self.subTest(notes=notes), patch.object(publisher.Path, "read_text", return_value=notes):
+                with self.assertRaises(ValueError):
+                    publisher.select_release_notes("2.0.0", None)
+        with patch.object(publisher.Path, "read_text", side_effect=FileNotFoundError("缺少正式正文")):
+            with self.assertRaises(FileNotFoundError):
+                publisher.select_release_notes("2.0.0", None)
+
+    def test_other_versions_keep_explicit_readable_notes(self):
+        notes = "## 修复\n\n- 保留旧版本的更新说明参数\n"
+        for version in ["1.12.2+31", "1.12.3", "2.0.0+1", "2.0.1"]:
+            with self.subTest(version=version):
+                self.assertEqual(notes, publisher.select_release_notes(version, notes))
+                with self.assertRaises(ValueError):
+                    publisher.select_release_notes(version, None)
+
     def test_markdown_body_is_separate_from_uploaded_patch_metadata(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
