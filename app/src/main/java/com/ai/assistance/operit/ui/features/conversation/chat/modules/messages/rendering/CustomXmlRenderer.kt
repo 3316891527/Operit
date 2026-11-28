@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering
 
+import android.content.ClipData
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
@@ -7,7 +8,6 @@ import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertD
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeIndex
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalToolTimingIndex
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalInsideToolGroup
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.toolTimingTitle
 import com.ai.assistance.operit.ui.common.markdown.lazy.rememberMarkdownCardValue
 import android.webkit.WebView
@@ -42,12 +42,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -56,6 +56,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.SubcomposeAsyncImage
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.animations.SimpleAnimatedVisibility
+import com.ai.assistance.operit.ui.common.image.currentAppImageLoader
 import com.ai.assistance.operit.ui.common.markdown.DefaultXmlRenderer
 import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownRenderer
 import com.ai.assistance.operit.ui.common.markdown.XmlContentRenderer
@@ -453,6 +454,7 @@ class CustomXmlRenderer(
                     SubcomposeAsyncImage(
                         model = source.faviconUrl,
                         contentDescription = null,
+                        imageLoader = currentAppImageLoader(),
                         modifier = Modifier.size(18.dp).clip(RoundedCornerShape(4.dp)),
                         loading = {
                             Icon(
@@ -507,6 +509,7 @@ class CustomXmlRenderer(
                     SubcomposeAsyncImage(
                         model = source.faviconUrl,
                         contentDescription = null,
+                        imageLoader = currentAppImageLoader(),
                         modifier = Modifier.size(32.dp).clip(RoundedCornerShape(7.dp)),
                         loading = { Icon(Icons.Default.Web, contentDescription = null) },
                         error = { Icon(Icons.Default.Web, contentDescription = null) },
@@ -1153,7 +1156,8 @@ class CustomXmlRenderer(
             return
         }
         Column(modifier = modifier.fillMaxWidth()) {
-            if (!LocalInsideToolGroup.current && timing != null) {
+            // 分组汇总不代替单项计时，展开工具组时也要看见仍在执行的耗时。
+            if (timing != null) {
                 Text(
                     toolTimingTitle(timing),
                     style = MaterialTheme.typography.bodySmall,
@@ -1300,7 +1304,7 @@ class CustomXmlRenderer(
     /** 渲染工具结果标签 <tool_result name="..." status="..."><content>...</content></tool_result> */
     @Composable
     private fun renderToolResult(content: String, modifier: Modifier, _textColor: Color) {
-        val clipboardManager = LocalClipboardManager.current
+        val clipboard = LocalClipboard.current
 
         // 已完成卡片在其他块更新时复用解析结果，避免反复扫描长参数或结果。
         val renderState =
@@ -1378,7 +1382,7 @@ class CustomXmlRenderer(
                     isSuccess = renderState.isSuccess,
                     onCopyResult = {
                         if (errorContent.isNotBlank()) {
-                            clipboardManager.setText(AnnotatedString(errorContent))
+                            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", errorContent)))
                         }
                     },
                     modifier = modifier,

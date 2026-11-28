@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace
 
+import androidx.compose.material.icons.automirrored.filled.Toc
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptButton as Button
@@ -35,11 +37,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -120,7 +120,6 @@ fun WorkspaceManager(
 ) {
     val standalone = onReturnToBrowser != null
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
     val toolHandler = remember { AIToolHandler.getInstance(context) }
     val isSafEnv = remember(workspaceEnv) { workspaceEnv?.startsWith("repo:", ignoreCase = true) == true }
@@ -635,7 +634,7 @@ fun WorkspaceManager(
                     if (currentFile != null && (currentFile.isHtml || currentFile.isMarkdown)) {
                         val isPreview = filePreviewStates[currentFile.key] ?: false
                         if (isPreview && currentFile.isMarkdown) IconButton(onClick = { markdownOutlineVisible = !markdownOutlineVisible }, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.Default.Toc, stringResource(R.string.workspace_markdown_outline))
+                            Icon(Icons.AutoMirrored.Filled.Toc, stringResource(R.string.workspace_markdown_outline))
                         }
                         if (isPreview && currentFile.isHtml) IconButton(onClick = { htmlFindVisible = true }, modifier = Modifier.size(40.dp)) {
                             Icon(Icons.Default.Search, stringResource(R.string.workspace_search_content))

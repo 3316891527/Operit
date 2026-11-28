@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -116,7 +116,7 @@ internal fun BuiltInMarketDetailScreen(resourceId: String, onOpenInstalled: (Str
                 secondaryAction = if (canOpenInstalled) UnifiedMarketDetailAction(
                     stringResource(R.string.builtin_market_open_installed),
                     onClick = { onOpenInstalled(rootName, current.name) }, enabled = !busy,
-                    icon = Icons.Default.OpenInNew) else null,
+                    icon = Icons.AutoMirrored.Filled.OpenInNew) else null,
             )
         }
         progress?.let { item { MarketInstallProgressCard(it) } }

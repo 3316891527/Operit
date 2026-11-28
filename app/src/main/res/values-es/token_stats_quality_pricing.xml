@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="token_stats_billing_multiplier">Multiplicador de facturación</string>
+    <string name="token_stats_billing_multiplier_note">Valor predeterminado: 1. El valor 0.1 factura el 10% del costo base. Se aplica una vez al subtotal por tokens o solicitudes.</string>
+    <string name="token_stats_formula_billing_multiplier">Subtotal × %1$s (multiplicador)</string>
+    <string name="token_stats_request_tps">TPS (tokens de salida/s)</string>
+    <string name="token_stats_design_quality_samples">%1$s muestras</string>
+    <string name="token_stats_design_quality_note">Cada métrica usa sus propias muestras válidas, sin mínimo. P95 es el elemento ⌈0.95 × muestras⌉ de la lista ordenada. TPS promedia tokens de salida ÷ (duración total − latencia del primer token) en solicitudes exitosas. Los campos históricos ausentes se excluyen.</string>
+    <string name="token_stats_design_formula_currency">Moneda de precios: %1$s</string>
+</resources>

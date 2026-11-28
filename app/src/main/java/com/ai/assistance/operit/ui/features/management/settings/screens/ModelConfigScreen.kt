@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.features.management.settings.screens
 
+import androidx.compose.material.icons.automirrored.filled.List
+
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptButton as Button
@@ -37,7 +41,7 @@ import androidx.compose.ui.draw.shadow
 import com.ai.assistance.operit.ui.components.CustomScaffold
 import com.ai.assistance.operit.ui.components.ActionSheetItem
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -1287,7 +1291,12 @@ private fun ThinkingChoiceField(
         modifier = modifier
     ) {
         Surface(
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
+            modifier = Modifier
+                .menuAnchor(
+                    type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                    enabled = true
+                )
+                .fillMaxWidth(),
             shape = RoundedCornerShape(10.dp),
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
         ) {
@@ -1523,7 +1532,7 @@ private fun ConfigOrganizerDialog(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    if (row.groupId in collapsedGroupIds) Icons.Default.KeyboardArrowRight
+                                    if (row.groupId in collapsedGroupIds) Icons.AutoMirrored.Filled.KeyboardArrowRight
                                     else Icons.Default.KeyboardArrowDown,
                                     contentDescription = stringResource(R.string.model_config_toggle_group),
                                     modifier = Modifier
@@ -1957,7 +1966,7 @@ private fun CustomHeadersSettingsSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.List,
+                    imageVector = Icons.AutoMirrored.Filled.List,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -2008,7 +2017,7 @@ private fun CustomHeadersSettingsSection(
                         ) {
                             OutlinedButton(onClick = { showHeaderPresetsMenu = true }) {
                                 Icon(
-                                    imageVector = Icons.Default.List,
+                                    imageVector = Icons.AutoMirrored.Filled.List,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )

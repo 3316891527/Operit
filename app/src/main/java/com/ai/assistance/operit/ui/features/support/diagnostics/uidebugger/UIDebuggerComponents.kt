@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.support.diagnostics.uidebugger
 
+import android.content.ClipData
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -44,6 +45,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,10 +56,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,6 +67,8 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModelStoreOwner
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.features.support.diagnostics.uidebugger.components.ActivityMonitorPanel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -76,6 +80,8 @@ fun UIDebuggerOverlay(
     val viewModel: UIDebuggerViewModel = UIDebuggerViewModel.getInstance()
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    val clipboard = LocalClipboard.current
+    val clipboardScope = rememberCoroutineScope()
     
     // 简化状态管理 - 只管理UI分析和元素选择
     var isUIAnalysisActive by remember { mutableStateOf(false) }
@@ -128,6 +134,7 @@ fun UIDebuggerOverlay(
         if (selectedElement != null && isUIAnalysisActive) {
             ElementInfoPanel(
                 element = selectedElement!!,
+                clipboardScope = clipboardScope,
                 onDismiss = {
                     selectedElement = null
                     showAnalysisPanel = true
@@ -161,7 +168,6 @@ fun UIDebuggerOverlay(
 
         // 当前分析Activity信息面板
         if (isUIAnalysisActive && showAnalysisPanel && (uiState.currentAnalyzedActivityName != null || uiState.currentAnalyzedPackageName != null)) {
-            val clipboardManager = LocalClipboardManager.current
             val currentActivityName = uiState.currentAnalyzedActivityName
             val currentPackageName = uiState.currentAnalyzedPackageName
             
@@ -201,7 +207,9 @@ fun UIDebuggerOverlay(
                         if (currentActivityName != null) {
                             IconButton(
                                 onClick = {
-                                    clipboardManager.setText(AnnotatedString(currentActivityName))
+                                    clipboardScope.launch {
+                                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", currentActivityName)))
+                                    }
                                 },
                                 modifier = Modifier.size(28.dp)
                             ) {
@@ -498,11 +506,12 @@ private fun DrawScope.drawElementHighlight(
 @Composable
 fun ElementInfoPanel(
     element: UIElement,
+    clipboardScope: CoroutineScope,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     
     Surface(
         modifier = modifier
@@ -580,7 +589,9 @@ fun ElementInfoPanel(
                             )
                             IconButton(
                                 onClick = {
-                                    clipboardManager.setText(AnnotatedString(element.activityName))
+                                    clipboardScope.launch {
+                                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", element.activityName)))
+                                    }
                                 },
                                 modifier = Modifier.size(32.dp)
                             ) {

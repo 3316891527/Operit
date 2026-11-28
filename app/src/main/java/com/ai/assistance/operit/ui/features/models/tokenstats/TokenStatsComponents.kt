@@ -29,8 +29,8 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.PieChart
-import androidx.compose.material.icons.outlined.ShowChart
-import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material.icons.automirrored.outlined.ShowChart
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -108,13 +108,13 @@ internal object TokenStatsSpacing {
 
 // ==== 通用格式 ====
 
-/** 金额：符号 + 4 位小数（图表/明细统一）。 */
+/** 金额保留八位小数，只在展示时舍入，原始计价数据不截断。 */
 internal fun formatMoney(amount: Double, currency: PricingCurrency): String =
-    "${currency.symbol}${String.format(Locale.US, "%.4f", amount)}"
+    "${currency.symbol}${String.format(Locale.US, "%.8f", amount)}"
 
-/** 总览/排名卡费用使用紧凑的两位小数。 */
+/** 总览与排名同样保留八位小数，便于核对小额请求。 */
 internal fun formatLifetimeMoney(amount: Double, currency: PricingCurrency): String =
-    "${currency.symbol}${String.format(Locale.US, "%.2f", amount)}"
+    "${currency.symbol}${String.format(Locale.US, "%.8f", amount)}"
 
 internal fun formatCount(value: Long): String = String.format(Locale.US, "%,d", value)
 
@@ -447,7 +447,7 @@ internal fun TokenStatsMetricGrid(
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(TokenStatsSpacing.section)) {
         Row(horizontalArrangement = Arrangement.spacedBy(TokenStatsSpacing.section)) {
             TokenStatsMetricCard(
-                icon = Icons.Outlined.TrendingUp,
+                icon = Icons.AutoMirrored.Outlined.TrendingUp,
                 label = stringResource(R.string.token_activity_peak_tokens),
                 value = peakTokens,
                 modifier = Modifier.weight(1f),
@@ -455,7 +455,7 @@ internal fun TokenStatsMetricGrid(
                 valueClickDescription = tokenUnitToggleDescription,
             )
             TokenStatsMetricCard(
-                icon = Icons.Outlined.ShowChart,
+                icon = Icons.AutoMirrored.Outlined.ShowChart,
                 label = stringResource(R.string.settings_total_requests),
                 value = requests,
                 modifier = Modifier.weight(1f),
@@ -1551,6 +1551,7 @@ internal fun priceDraftForIdentity(
         longContextCachedInputMultiplier = resolved.longContextCachedInputMultiplier,
         longContextCacheWriteMultiplier = resolved.longContextCacheWriteMultiplier,
         longContextOutputMultiplier = resolved.longContextOutputMultiplier,
+        billingMultiplier = resolved.billingMultiplier,
     )
 }
 
@@ -1591,6 +1592,7 @@ private fun mergePriceSettings(
             configuration?.longContextCacheWriteMultiplier ?: provider?.longContextCacheWriteMultiplier,
         longContextOutputMultiplier =
             configuration?.longContextOutputMultiplier ?: provider?.longContextOutputMultiplier,
+        billingMultiplier = configuration?.billingMultiplier ?: provider?.billingMultiplier ?: 1.0,
     )
 
 private fun TokenStatsPriceSetting.toModelPriceSettings() =
@@ -1616,7 +1618,8 @@ private fun TokenStatsPriceSetting.toModelPriceSettings() =
         longContextCachedInputMultiplier = longContextCachedInputMultiplier,
         longContextCacheWriteMultiplier = longContextCacheWriteMultiplier,
         longContextOutputMultiplier = longContextOutputMultiplier,
+        billingMultiplier = billingMultiplier,
     )
 
 private fun formatRateInput(rate: Double): String =
-    String.format(Locale.US, "%.4f", rate).trimEnd('0').trimEnd('.')
+    formatTokenStatsPrice(rate)

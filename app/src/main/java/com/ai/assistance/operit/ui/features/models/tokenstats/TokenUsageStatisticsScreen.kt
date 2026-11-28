@@ -52,6 +52,7 @@ fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
     }
     TokenStatsTheme {
         val p = LocalTokenStatsPalette.current
+        val settingsAvailable = state.settingsLoaded && !state.settingsSaving && !state.clearing
         // 根背景必须实际绘制；自定义 Scaffold 会按主题壁纸把背景变透明，不能用于此稿。
         BoxWithConstraints(Modifier.fillMaxSize().background(p.background)) {
             val compact = maxWidth < 370.dp
@@ -74,7 +75,7 @@ fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
                 item("actions") {
                     Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                         StatsIconAction(Icons.Default.DeleteForever, stringResource(R.string.token_insights_clear_all), { reset = true }, enabled = !state.clearing)
-                        StatsIconAction(Icons.Default.Tune, stringResource(R.string.token_insights_settings), { settings = true }, enabled = !state.clearing)
+                        StatsIconAction(Icons.Default.Tune, stringResource(R.string.token_insights_settings), { if (settingsAvailable) settings = true }, enabled = settingsAvailable)
                     }
                 }
                 item("period") {
@@ -82,7 +83,7 @@ fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
                         onQuick = model::selectQuickRange, onRange = model::setCustomRange, onResetFilters = model::resetFilters)
                     Spacer(Modifier.height(13.dp))
                 }
-                stickyHeader("tabs") { StatsTabs(state.tab, model::selectTab, state.configurationNames.size, compact) }
+                stickyHeader("tabs") { StatsTabs(state.tab, model::selectTab, state.visibleConfigurations.size, compact) }
                 item("content") {
                     Column(Modifier.fillMaxWidth().padding(top = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         when {
@@ -100,7 +101,7 @@ fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
                                     TokenStatsTab.OVERVIEW -> TokenStatsOverviewContent(state, model.zone,
                                         onGranularity = model::setGranularity,
                                         onRequests = { name, function, executor, range -> model.showRequests(model = name, functionType = function, executionModel = executor, range = range) },
-                                        onModels = { model.selectTab(TokenStatsTab.MODELS) }, onSettings = { settings = true },
+                                        onModels = { model.selectTab(TokenStatsTab.MODELS) }, onSettings = { if (settingsAvailable) settings = true },
                                         onRequestSort = { sort -> model.selectTab(TokenStatsTab.REQUESTS); model.setRequestSort(sort) })
                                     TokenStatsTab.MODELS -> TokenStatsModelsContent(state) { model.showRequests(model = it) }
                                     TokenStatsTab.CONFIGURATIONS -> TokenStatsConfigurationsContent(state,
@@ -115,7 +116,7 @@ fun TokenUsageStatisticsScreen(onBackPressed: () -> Unit) {
                 }
             }
         }
-        if (settings) TokenStatsSettingsDialog(state, onSave = { currency, rate, unit, red, budget ->
+        if (settings && settingsAvailable) TokenStatsSettingsDialog(state, onSave = { currency, rate, unit, red, budget ->
             if (model.saveSettings(currency, rate, unit, red, budget)) settings = false
         }, onDismiss = { settings = false })
         if (filters) TokenStatsFilterDialog(state, onApply = { model.setFilter(it); filters = false }, onDismiss = { filters = false })

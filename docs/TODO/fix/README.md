@@ -1,5 +1,7 @@
 # 缺陷、崩溃与性能修复
 
+- [Token 统计运行质量、计价与配置显示修补](token-statistics-quality-pricing/index.md)
+
 - [硅基流动音频格式、请求重试与临时错误显示](voice-input-audio-retry/index.md)
 
 修复既有行为、兼容性、崩溃和资源开销问题。
@@ -170,3 +172,5 @@
 - [大任务操作历史的增量存储与有界提交](workspace-history-memory/index.md)
 
 - [解除文件监控对工具与目录浏览的阻塞](monitor-tool-blocking/index.md)
+
+- [工具执行中的实时耗时](live-tool-execution-timing/index.md)

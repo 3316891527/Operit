@@ -28,7 +28,9 @@ internal fun ChangeIconButton(
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(5.dp)
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+            positioning = TooltipAnchorPosition.Above
+        ),
         tooltip = { PlainTooltip { Text(label) } }, state = rememberTooltipState(),
     ) {
         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 28.dp) {

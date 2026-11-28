@@ -2,12 +2,12 @@ package com.ai.assistance.operit.ui.common.displays
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassBottom
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Psychology
@@ -46,8 +46,8 @@ enum class PhoneAgentUiStatus(@StringRes val labelResId: Int) {
             Tapping, Working -> Icons.Filled.TouchApp
             Typing -> Icons.Filled.Keyboard
             Swiping -> Icons.Filled.OpenInFull
-            EnteringApp -> Icons.Filled.OpenInNew
-            Back -> Icons.Filled.ArrowBack
+            EnteringApp -> Icons.AutoMirrored.Filled.OpenInNew
+            Back -> Icons.AutoMirrored.Filled.ArrowBack
             Home -> Icons.Filled.Home
             Waiting -> Icons.Filled.HourglassBottom
             Paused -> Icons.Filled.Pause

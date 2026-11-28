@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -112,7 +112,7 @@ fun WakeSettingsSection(modifier: Modifier = Modifier) {
                 }
             }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.default_assistant_guide_open_settings), Modifier.weight(1f))
-                Icon(Icons.Default.OpenInNew, null, Modifier.size(18.dp))
+                Icon(Icons.AutoMirrored.Filled.OpenInNew, null, Modifier.size(18.dp))
             }
         }
         SpeechSectionLabel(stringResource(R.string.speech_workbench_wake_method))

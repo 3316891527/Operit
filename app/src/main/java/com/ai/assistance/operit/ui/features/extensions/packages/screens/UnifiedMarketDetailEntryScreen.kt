@@ -14,7 +14,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.filled.Warning
@@ -262,7 +262,7 @@ fun UnifiedMarketDetailEntryScreen(
                 UnifiedMarketDetailAction(
                     label = stringResource(R.string.mcp_plugin_repository),
                     onClick = { openExternalUrl(context, repositoryUrl) },
-                    icon = Icons.Default.OpenInNew
+                    icon = Icons.AutoMirrored.Filled.OpenInNew
                 )
             },
         banner =

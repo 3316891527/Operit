@@ -197,7 +197,7 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
             }
         }
         val tabs = listOf(R.string.subagent_overview, R.string.subagent_process, R.string.subagent_conversation)
-        TabRow(selectedTabIndex = tab) { tabs.forEachIndexed { index, label -> Tab(tab == index, onClick = { tab = index }, text = { Text(stringResource(label)) }) } }
+        SecondaryTabRow(selectedTabIndex = tab, contentColor = TabRowDefaults.primaryContentColor) { tabs.forEachIndexed { index, label -> Tab(tab == index, onClick = { tab = index }, text = { Text(stringResource(label)) }) } }
         key(task.id, tab) {
             if (tab == 2) SubagentConversation(task, Modifier.weight(1f).fillMaxWidth())
             else Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {

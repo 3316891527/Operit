@@ -3,7 +3,6 @@ package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.
 import androidx.compose.runtime.CompositionLocalProvider
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.ToolTimingIndex
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalToolTimingIndex
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalInsideToolGroup
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeIndex
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -50,16 +49,19 @@ class ThinkToolsXmlNodeGrouper(
     internal var expansionOverrides = mutableStateMapOf<String, Boolean>()
 
     internal var executionTimings by mutableStateOf<List<ToolCallExecution>>(emptyList())
+    internal var toolTimingsLive by mutableStateOf(false)
     private var timingNodes: List<Pair<MarkdownProcessorType, String>>? = null
     private var timingRecords: List<ToolCallExecution>? = null
+    private var timingLive = false
     private var timingIndex = ToolTimingIndex.Empty
     private fun timingFor(nodes: List<MarkdownNodeStable>): ToolTimingIndex {
         val snapshot = nodes.map { it.type to it.content }
         val records = executionTimings
-        if (timingNodes != snapshot || timingRecords != records) {
-            timingIndex = ToolTimingIndex.parse(nodes, records)
+        if (timingNodes != snapshot || timingRecords != records || timingLive != toolTimingsLive) {
+            timingIndex = ToolTimingIndex.parse(nodes, records, live = toolTimingsLive)
             timingNodes = snapshot
             timingRecords = records
+            timingLive = toolTimingsLive
         }
         return timingIndex
     }
@@ -317,7 +319,6 @@ class ThinkToolsXmlNodeGrouper(
             }
         }
 
-        CompositionLocalProvider(LocalInsideToolGroup provides true) {
         Column(
             modifier =
                 modifier
@@ -408,7 +409,6 @@ class ThinkToolsXmlNodeGrouper(
                     }
                 }
             }
-        }
         }
     }
 }

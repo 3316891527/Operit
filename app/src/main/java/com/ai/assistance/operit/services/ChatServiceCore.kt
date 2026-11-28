@@ -271,6 +271,7 @@ class ChatServiceCore(
                 )
             }
         )
+        chatHistoryDelegate.setLiveWaifuTimingSnapshot(messageProcessingDelegate::liveWaifuTimingSnapshot)
         messageProcessingDelegate.setActiveDraftChat(chatHistoryDelegate.currentChatId.value)
 
         // 初始化消息协调委托

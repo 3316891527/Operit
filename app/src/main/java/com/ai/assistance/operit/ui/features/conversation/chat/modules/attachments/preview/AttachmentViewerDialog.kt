@@ -3,6 +3,7 @@ package com.ai.assistance.operit.ui.features.conversation.chat.modules.attachmen
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -28,7 +29,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptButton as Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -46,10 +47,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -70,7 +71,9 @@ import com.ai.assistance.operit.util.media.MediaPoolManager
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 data class ChatAttachment(
@@ -85,12 +88,13 @@ data class ChatAttachment(
 fun AttachmentViewerDialog(
     visible: Boolean,
     attachment: ChatAttachment?,
+    clipboardScope: CoroutineScope,
     onDismiss: () -> Unit
 ) {
     if (!visible || attachment == null) return
 
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val dialogMetrics = rememberCompactDialogMetrics()
     val mediaMaxHeight = if (dialogMetrics.isCompactHeight) 220.dp else 500.dp
 
@@ -233,7 +237,7 @@ fun AttachmentViewerDialog(
                     ) {
                         val icon = when {
                             isImage -> Icons.Default.Image
-                            isAudio -> Icons.Default.VolumeUp
+                            isAudio -> Icons.AutoMirrored.Filled.VolumeUp
                             isVideo -> Icons.Default.PlayArrow
                             else -> Icons.Default.Description
                         }
@@ -356,8 +360,11 @@ fun AttachmentViewerDialog(
                         ) {
                             Button(
                                 onClick = {
-                                    clipboardManager.setText(AnnotatedString(textContentState.value.orEmpty()))
-                                    onDismiss()
+                                    val text = textContentState.value.orEmpty()
+                                    clipboardScope.launch {
+                                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", text)))
+                                        onDismiss()
+                                    }
                                 }
                             ) {
                                 Text(stringResource(R.string.copy_content))

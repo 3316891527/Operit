@@ -42,7 +42,7 @@ import androidx.compose.material.icons.filled.Assistant
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.ScreenshotMonitor
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,11 +52,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,6 +67,7 @@ import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
+import com.ai.assistance.operit.ui.common.image.currentAppImageLoader
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.preview.AttachmentViewerDialog
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.preview.ChatAttachment
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.style.common.HiddenUserMessagePlaceholderContent
@@ -135,7 +134,6 @@ fun BubbleUserMessageComposable(
     val bubbleUserFontType = themeSnapshot.bubbleUserFontType
     val bubbleUserSystemFontName = themeSnapshot.bubbleUserSystemFontName
     val bubbleUserCustomFontPath = themeSnapshot.bubbleUserCustomFontPath
-    val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
 
     val voiceMessage = remember(message.content, isHiddenPlaceholder) {
@@ -363,7 +361,10 @@ fun BubbleUserMessageComposable(
 
                             if (!avatarUri.isNullOrEmpty()) {
                                 Image(
-                                    painter = rememberAsyncImagePainter(model = Uri.parse(avatarUri)),
+                                    painter = rememberAsyncImagePainter(
+                                        model = Uri.parse(avatarUri),
+                                        imageLoader = currentAppImageLoader(),
+                                    ),
                                     contentDescription = "User Avatar",
                                     modifier = Modifier
                                         .size(avatarSize)
@@ -680,7 +681,10 @@ fun BubbleUserMessageComposable(
                     // Avatar
                     if (!avatarUri.isNullOrEmpty()) {
                         Image(
-                            painter = rememberAsyncImagePainter(model = Uri.parse(avatarUri)),
+                            painter = rememberAsyncImagePainter(
+                                model = Uri.parse(avatarUri),
+                                imageLoader = currentAppImageLoader(),
+                            ),
                             contentDescription = "User Avatar",
                             modifier = Modifier
                                 .size(avatarSize)
@@ -708,6 +712,7 @@ fun BubbleUserMessageComposable(
         AttachmentViewerDialog(
             visible = true,
             attachment = selectedChatAttachment.value,
+            clipboardScope = scope,
             onDismiss = { showContentPreview.value = false }
         )
     }
@@ -1007,7 +1012,7 @@ private fun AttachmentTagContent(
     val icon: ImageVector =
         when {
             attachment.type.startsWith("image/") -> Icons.Default.Image
-            attachment.type.startsWith("audio/") -> Icons.Default.VolumeUp
+            attachment.type.startsWith("audio/") -> Icons.AutoMirrored.Filled.VolumeUp
             attachment.type.startsWith("video/") -> Icons.Default.PlayArrow
             attachment.type == "text/json" && attachment.filename == "screen_content.json" ->
                 Icons.Default.ScreenshotMonitor

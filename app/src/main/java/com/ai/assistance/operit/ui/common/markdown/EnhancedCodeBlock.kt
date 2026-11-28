@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.common.markdown
 
+import android.content.ClipData
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import android.view.MotionEvent
 import android.webkit.WebView
@@ -19,7 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -66,7 +68,7 @@ fun EnhancedCodeBlock(
     modifier: Modifier = Modifier,
     closed: Boolean = true,
 ) {
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     var showCopiedToast by remember { mutableStateOf(false) }
     var autoWrapEnabled by remember { mutableStateOf(true) }
@@ -99,8 +101,8 @@ fun EnhancedCodeBlock(
 
     // 处理复制事件
     val handleCopy: () -> Unit = {
-        clipboardManager.setText(AnnotatedString(code))
         scope.launch {
+            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("plain text", code)))
             showCopiedToast = true
             delay(1500)
             showCopiedToast = false

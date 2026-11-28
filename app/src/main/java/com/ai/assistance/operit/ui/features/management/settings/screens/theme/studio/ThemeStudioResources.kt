@@ -20,7 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -75,7 +75,7 @@ internal fun StudioResources(state: ThemeStudioState, onImport: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             OutlinedTextField(state.resourceQuery, { state.resourceQuery = it }, singleLine = true, placeholder = { Text(stringResource(R.string.studio_search_resources)) }, leadingIcon = { Icon(Icons.Default.Search, null) }, modifier = Modifier.weight(1f))
-            IconButton(onClick = { state.resourceList = !state.resourceList }) { Icon(Icons.Default.List, stringResource(R.string.studio_switch_resource_view)) }
+            IconButton(onClick = { state.resourceList = !state.resourceList }) { Icon(Icons.AutoMirrored.Filled.List, stringResource(R.string.studio_switch_resource_view)) }
             Box {
                 IconButton(onClick = { addMenu = true }) { Icon(Icons.Default.Add, stringResource(R.string.studio_add_resource)) }
                 WorkbenchDropdownMenu(expanded = addMenu, onDismissRequest = { addMenu = false }) {
@@ -91,7 +91,7 @@ internal fun StudioResources(state: ThemeStudioState, onImport: () -> Unit) {
                 TextButton(onClick = { state.currentFolder = segments.take(index + 1).joinToString("/"); state.resourceQuery = ""; state.resourceFilter = "all" }) { Text(if (index == 0) stringResource(R.string.studio_resources) else name) }
             }
         }
-        ScrollableTabRow(selectedTabIndex = listOf("all", "image", "icon", "font").indexOf(state.resourceFilter), edgePadding = 12.dp, containerColor = StudioBackground) {
+        SecondaryScrollableTabRow(selectedTabIndex = listOf("all", "image", "icon", "font").indexOf(state.resourceFilter), edgePadding = 12.dp, containerColor = StudioBackground, contentColor = TabRowDefaults.primaryContentColor) {
             listOf("all" to R.string.studio_all, "image" to R.string.studio_images, "icon" to R.string.studio_icons, "font" to R.string.studio_fonts).forEach { (kind, label) ->
                 val count = all.count { (id, path) -> kind == "all" || assetKind(state, id, path) == kind }
                 Tab(selected = state.resourceFilter == kind, onClick = { state.resourceFilter = kind }, text = { Text(stringResource(label) + " " + count) })

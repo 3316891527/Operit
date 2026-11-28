@@ -1,6 +1,5 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.waifu
 
-import android.os.SystemClock
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -12,8 +11,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -28,25 +25,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.format.formatElapsedDuration
-import com.ai.assistance.operit.ui.common.markdown.LocalMarkdownRenderMode
-import com.ai.assistance.operit.ui.common.markdown.MarkdownRenderMode
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.ToolTimingSummary
-import kotlinx.coroutines.delay
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.rememberToolElapsedMillis
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 
 /** 只有真实计时数据参与显示，工具并行区间沿用现有合并规则。 */
 @Composable
 internal fun waifuElapsedLabel(summary: ToolTimingSummary): String {
-    val streaming = LocalMarkdownRenderMode.current == MarkdownRenderMode.STREAMING
-    val ticking = summary.ticking(streaming)
-    val now by produceState(SystemClock.elapsedRealtime(), summary, ticking) {
-        value = SystemClock.elapsedRealtime()
-        while (ticking) {
-            delay(1_000L)
-            value = SystemClock.elapsedRealtime()
-        }
-    }
-    return summary.elapsedMillis(now, streaming)?.let(::formatElapsedDuration).orEmpty()
+    return rememberToolElapsedMillis(summary)?.let(::formatElapsedDuration).orEmpty()
 }
 
 @Composable

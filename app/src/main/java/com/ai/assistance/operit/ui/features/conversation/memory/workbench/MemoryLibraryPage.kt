@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.features.conversation.memory.workbench
 
+import androidx.compose.material.icons.automirrored.filled.DriveFileMove
+
+import androidx.compose.material.icons.automirrored.filled.List
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptButton as Button
@@ -236,7 +240,7 @@ internal fun MemoryLibraryPage(spaceId: String, onSwitchSpace: (String) -> Unit,
                                 Row(Modifier.padding(2.dp)) {
                                     listOf(false, true).forEach { showList ->
                                         val action = if (showList) R.string.memory_workbench_list else R.string.memory_workbench_graph
-                                        val icon = if (showList) Icons.Default.List else Icons.Default.Share
+                                        val icon = if (showList) Icons.AutoMirrored.Filled.List else Icons.Default.Share
                                         val selectedView = listView == showList
                                         val chooseView = {
                                             listView = showList
@@ -322,7 +326,7 @@ internal fun MemoryLibraryPage(spaceId: String, onSwitchSpace: (String) -> Unit,
                         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = { viewModel.toggleBoxSelectionMode(false) }) { Icon(Icons.Default.Close, stringResource(R.string.memory_workbench_finish)) }
                             Text(stringResource(R.string.memory_workbench_select_count, uiState.boxSelectedNodeIds.size), Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
-                            IconButton(enabled = uiState.boxSelectedNodeIds.isNotEmpty(), onClick = { moving = true }) { Icon(Icons.Default.DriveFileMove, stringResource(R.string.memory_workbench_move_selected)) }
+                            IconButton(enabled = uiState.boxSelectedNodeIds.isNotEmpty(), onClick = { moving = true }) { Icon(Icons.AutoMirrored.Filled.DriveFileMove, stringResource(R.string.memory_workbench_move_selected)) }
                             IconButton(enabled = uiState.boxSelectedNodeIds.size == 2, onClick = { link() }) { Icon(Icons.Default.Link, stringResource(R.string.memory_action_link)) }
                             IconButton(enabled = uiState.boxSelectedNodeIds.isNotEmpty(), onClick = { viewModel.showBatchDeleteConfirm() }) { Icon(Icons.Default.DeleteOutline, stringResource(R.string.memory_action_delete_selected), tint = MaterialTheme.colorScheme.error) }
                         }

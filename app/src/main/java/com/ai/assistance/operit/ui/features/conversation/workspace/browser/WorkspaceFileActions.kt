@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.browser
 
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -44,7 +46,7 @@ internal fun WorkspaceFileActionMenu(title: String, onDismiss: () -> Unit, actio
         WorkspaceFileActionSpec(Icons.Default.ContentPaste, R.string.file_manager_paste, actions.paste),
         WorkspaceFileActionSpec(Icons.Default.DriveFileRenameOutline, R.string.file_menu_rename, actions.rename),
         WorkspaceFileActionSpec(Icons.Default.Info, R.string.workspace_properties_title, actions.properties),
-        WorkspaceFileActionSpec(Icons.Default.OpenInNew, R.string.workspace_open_with, actions.openWith),
+        WorkspaceFileActionSpec(Icons.AutoMirrored.Filled.OpenInNew, R.string.workspace_open_with, actions.openWith),
         WorkspaceFileActionSpec(Icons.Default.Bookmark, R.string.workspace_browser_add_bookmark, actions.bookmark),
         WorkspaceFileActionSpec(Icons.Default.VisibilityOff,
             if (actions.hidden) R.string.workspace_browser_unhide else R.string.workspace_browser_hide, actions.hide),

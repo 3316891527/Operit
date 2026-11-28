@@ -9,6 +9,7 @@
 ## 计划索引
 
 - [Operit Kong 2.0.0 正式更新历史](kong-2-release-history/index.md)
+- [按官方迁移指引修复构建警告](documented-build-warnings/index.md)
 
 - [1.12.2+31 正式发行](release-plus31/index.md)
 

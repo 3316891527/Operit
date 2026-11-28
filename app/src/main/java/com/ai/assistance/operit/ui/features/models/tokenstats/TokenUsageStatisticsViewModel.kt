@@ -59,9 +59,25 @@ data class TokenStatsUiState(
     val detail: TokenStatsRequestRow? = null,
     val detailLoading: Boolean = false,
     val clearing: Boolean = false,
+    val hiddenConfigurationIds: Set<String> = emptySet(),
+    val settingsLoaded: Boolean = false,
+    val settingsSaving: Boolean = false,
 ) {
     val params: TokenStatsQueryParams get() = TokenStatsQueryParams(targetCurrency, manualRate)
     val currentRange: TokenStatsTimeRange? get() = filter.range
+
+    internal val visibleConfigurations: List<TokenStatsInsightsConfiguration>
+        get() = overview?.configurations.orEmpty().filter { isVisibleConfiguration(it.configId) }
+
+    internal val visibleConfigurationFilterIds: List<String>
+        get() = catalog?.configurations.orEmpty().asSequence()
+            .map { it.configId }
+            .filter(::isVisibleConfiguration)
+            .distinct()
+            .toList()
+
+    private fun isVisibleConfiguration(configId: String): Boolean =
+        isTokenStatsConfigurationVisible(configId, configurationNames.keys, hiddenConfigurationIds)
 }
 
 data class TokenStatsActionMessage(val text: String, val isError: Boolean = false)
@@ -84,7 +100,6 @@ class TokenUsageStatisticsViewModel(
     val state: StateFlow<TokenStatsUiState> = mutableState.asStateFlow()
     private val messages = MutableStateFlow<TokenStatsActionMessage?>(null)
     val actionMessage: StateFlow<TokenStatsActionMessage?> = messages.asStateFlow()
-    private var initialized = false
     private var loadGeneration = 0L
     private var pageGeneration = 0L
     private var detailGeneration = 0L
@@ -95,13 +110,14 @@ class TokenUsageStatisticsViewModel(
 
     fun consumeActionMessage() { messages.value = null }
     fun selectTab(tab: TokenStatsTab) { mutableState.update { it.copy(tab = tab) } }
-    fun loadForEntry() { if (!initialized && loadJob?.isActive != true) load(true) }
+    fun loadForEntry() { if (!state.value.settingsLoaded && loadJob?.isActive != true) load(true) }
 
     private suspend fun initialize() {
-        if (initialized) return
+        if (state.value.settingsLoaded) return
         val rate = settings.loadRateWithEstimate()
         val currency = settings.loadTargetCurrency()
         val unit = settings.loadTokenDisplayUnit()
+        val hiddenIds = settings.loadHiddenConfigurationIds()
         val storedRange = settings.loadTimeRange()
         val chosen = preferences.hasSelectedInsightsRange()
         val options = preferences.loadInsightsOptions()
@@ -109,9 +125,9 @@ class TokenUsageStatisticsViewModel(
         mutableState.update {
             it.copy(filter = it.filter.copy(range = range), quickRange = if (chosen && storedRange == null) TokenStatsQuickRange.ALL else if (storedRange != null) null else TokenStatsQuickRange.MONTH,
                 manualRate = rate.first, rateIsEstimated = rate.second, targetCurrency = currency,
-                tokenDisplayUnit = unit, increaseIsRed = options.first, monthlyBudgetCny = options.second)
+                tokenDisplayUnit = unit, increaseIsRed = options.first, monthlyBudgetCny = options.second,
+                hiddenConfigurationIds = hiddenIds, settingsLoaded = true)
         }
-        initialized = true
     }
 
     private fun cancelReads() {
@@ -288,10 +304,32 @@ class TokenUsageStatisticsViewModel(
 
     fun saveSettings(currency: PricingCurrency, rate: Double, unit: TokenStatsDisplayUnit, increaseIsRed: Boolean, budgetCny: Double?): Boolean {
         if (!rate.isFinite() || rate <= 0.0 || (budgetCny != null && (!budgetCny.isFinite() || budgetCny <= 0.0))) return false
-        mutate(R.string.token_stats_pricing_save_failed) {
-            settings.saveTargetCurrency(currency); settings.saveRate(rate); settings.saveTokenDisplayUnit(unit)
-            preferences.saveInsightsOptions(increaseIsRed, budgetCny)
-            mutableState.update { it.copy(targetCurrency = currency, manualRate = rate, rateIsEstimated = false, tokenDisplayUnit = unit, increaseIsRed = increaseIsRed, monthlyBudgetCny = budgetCny) }
+        val previous = state.value
+        if (!previous.settingsLoaded || previous.settingsSaving || previous.clearing) return false
+        // 提交前锁定入口，避免多次点击穿插写入或用未更新的草稿重新保存。
+        mutableState.update { it.copy(settingsSaving = true) }
+        viewModelScope.launch(dispatcher) {
+            try {
+                settings.saveTargetCurrency(currency)
+                settings.saveRate(rate)
+                preferences.saveInsightsOptions(increaseIsRed, budgetCny)
+                settings.saveTokenDisplayUnit(unit)
+                mutableState.update {
+                    it.copy(targetCurrency = currency, manualRate = rate, rateIsEstimated = false,
+                        tokenDisplayUnit = unit, increaseIsRed = increaseIsRed, monthlyBudgetCny = budgetCny)
+                }
+                // Token 单位只影响展示，切换时不用重新查询用量或价格。
+                if (currency != previous.targetCurrency || rate != previous.manualRate || budgetCny != previous.monthlyBudgetCny) {
+                    load(true)
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                AppLogger.e(TAG, "保存统计设置失败", error)
+                failure(R.string.token_stats_pricing_save_failed)
+            } finally {
+                mutableState.update { it.copy(settingsSaving = false) }
+            }
         }
         return true
     }
@@ -306,8 +344,8 @@ class TokenUsageStatisticsViewModel(
         mutate(R.string.token_stats_clear_invalid_configurations_failed) {
             val names = configurations.getAllConfigSummaries().associate { it.id to it.name }
             val invalid = invalidTokenStatsConfigurationIds(repository.usedConfigurationIds(), names.keys)
-            settings.hideConfigurationIds(invalid)
-            mutableState.update { it.copy(configurationNames = names) }
+            val hiddenIds = settings.hideConfigurationIds(invalid)
+            mutableState.update { it.copy(configurationNames = names, hiddenConfigurationIds = hiddenIds) }
         }
     }
     private fun mutate(failureResource: Int, action: suspend () -> Unit) {

@@ -22,6 +22,7 @@ import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertD
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -319,7 +320,10 @@ private fun VoiceAutoAttachCreateDialog(
                 ) {
                     OutlinedTextField(
                         modifier = Modifier
-                            .menuAnchor()
+                            .menuAnchor(
+                                type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                enabled = true
+                            )
                             .fillMaxWidth(),
                         value = selectedType?.let { voiceAutoAttachTypeTitle(it) } ?: "",
                         onValueChange = {},

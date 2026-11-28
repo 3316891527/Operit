@@ -115,4 +115,5 @@ data class TokenStatsInsightsOverview(
     val granularity: TokenStatsInsightsGranularity,
     val comparison: TokenStatsInsightsComparison?,
     val executionModels: List<TokenStatsInsightsBreakdown> = emptyList(),
+    val quality: TokenStatsInsightsQuality = TokenStatsInsightsQuality(),
 )

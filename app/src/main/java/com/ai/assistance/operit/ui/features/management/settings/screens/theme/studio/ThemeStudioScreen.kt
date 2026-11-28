@@ -164,7 +164,7 @@ private fun ThemeStudioScreen(session: ThemeEditorSession, projectKey: String, t
                     }
                     HorizontalDivider(color = StudioLine)
                     if (state.project != null) {
-                        TabRow(selectedTabIndex = state.workspace.ordinal, containerColor = StudioBackground) {
+                        SecondaryTabRow(selectedTabIndex = state.workspace.ordinal, containerColor = StudioBackground, contentColor = TabRowDefaults.primaryContentColor) {
                             StudioWorkspace.entries.forEach { workspace -> Tab(selected = workspace == state.workspace, onClick = { finishEditing(); state.enterWorkspace(workspace) }, text = { Text(stringResource(workspace.label)) }) }
                         }
                         state.error?.let { message ->
@@ -245,7 +245,7 @@ private fun StudioDesign(state: ThemeStudioState, viewport: IntSize, previewCove
                 Icon(Icons.Default.ChevronRight, null)
             }
             val properties = state.target.properties
-            if (properties.size > 1) TabRow(selectedTabIndex = properties.indexOf(state.property), containerColor = StudioBackground) {
+            if (properties.size > 1) SecondaryTabRow(selectedTabIndex = properties.indexOf(state.property), containerColor = StudioBackground, contentColor = TabRowDefaults.primaryContentColor) {
                 properties.forEach { property -> Tab(selected = state.property == property, onClick = { focusManager.clearFocus(force = true); state.property = property; if (property != StudioProperty.States) state.previewState = "always" }, text = { Text(stringResource(property.label)) }) }
             }
             Box(Modifier.fillMaxWidth().weight(1f)) { key(state.target.id, state.property, state.mode, state.textTarget) { StudioProperties(state) } }

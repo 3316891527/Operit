@@ -833,7 +833,10 @@ def build_component_renderer_function(spec: ComponentSpec, params: Sequence[Para
                 val modifier = applyScopedCommonModifier(Modifier, props, modifierResolver)
                 if (imageModel != null) {
                     androidx.compose.foundation.Image(
-                        painter = rememberAsyncImagePainter(model = imageModel),
+                        painter = rememberAsyncImagePainter(
+                            model = imageModel,
+                            imageLoader = currentAppImageLoader()
+                        ),
                         contentDescription = props.stringOrNull("contentDescription"),
                         modifier = modifier,
                         alignment = alignment,
@@ -1697,6 +1700,10 @@ def build_generic_renderer_function(spec: ComponentSpec, params: Sequence[Param]
     component = spec.dsl_name
     func_name = f"render{component}Node"
     fq_fn = f"{spec.package_name}.{spec.function_name}"
+    is_legacy_divider = fq_fn == "androidx.compose.material3.Divider"
+    if is_legacy_divider:
+        fq_fn = "androidx.compose.material3.HorizontalDivider"
+
     lines: List[str] = []
     lines.append("@Composable")
     lines.append(f"internal fun {func_name}(")
@@ -1724,6 +1731,16 @@ def build_generic_renderer_function(spec: ComponentSpec, params: Sequence[Param]
     for param in params:
         name = param.name
         type_name = param.type
+        if is_legacy_divider and name == "thickness":
+            # 保留旧 Divider 将 0.dp（包括未传 thickness）渲染为一个物理像素的行为。
+            lines.append('    val thickness = props.dp("thickness")')
+            lines.append("    val lineThickness = if (thickness == 0.dp) {")
+            lines.append("        (1f / androidx.compose.ui.platform.LocalDensity.current.density).dp")
+            lines.append("    } else {")
+            lines.append("        thickness")
+            lines.append("    }")
+            arg_lines.append("        thickness = lineThickness")
+            continue
         if _is_lambda_type(type_name):
             if is_action_lambda_param(param):
                 arg_type = parse_lambda_single_arg_type(type_name)

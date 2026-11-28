@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.extensions.packages.management
 
+import androidx.compose.material.icons.automirrored.filled.Sort
+
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -40,7 +42,7 @@ fun PluginListToolbar(
         }
         updateControls?.invoke()
         if (showSorting) IconButton(onClick = { showSort = true }, modifier = Modifier.size(40.dp)) {
-            Icon(Icons.Default.Sort, contentDescription = stringResource(R.string.plugin_sort_action))
+            Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = stringResource(R.string.plugin_sort_action))
         }
         IconButton(onClick = { showFilter = true }, modifier = Modifier.size(40.dp)) {
             Icon(Icons.Default.Tune, contentDescription = stringResource(R.string.plugin_filter_action),

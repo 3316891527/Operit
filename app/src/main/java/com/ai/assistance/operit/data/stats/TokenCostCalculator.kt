@@ -252,8 +252,11 @@ object TokenCostCalculator {
         targetCurrency: PricingCurrency,
         usdToCnyRate: Double,
     ): TokenStatsCostSummary {
+        // 统一倍率只作用于已知本币小计；不改变缺失用量和缺失定价的口径。
+        val billedAmount =
+            if (pricing.billingMultiplier == 0.0) 0.0 else nativeAmount * pricing.billingMultiplier
         val converted = TokenCostCurrency.convertTo(
-            nativeAmount,
+            billedAmount,
             pricing.currency,
             targetCurrency,
             usdToCnyRate,
@@ -265,7 +268,7 @@ object TokenCostCalculator {
             totalContributionCount = total,
             rateUsed = usdToCnyRate,
             originalCurrencyAmounts =
-                if (nativeAmount > 0.0) mapOf(pricing.currency to nativeAmount) else emptyMap(),
+                if (billedAmount > 0.0) mapOf(pricing.currency to billedAmount) else emptyMap(),
         )
     }
 }

@@ -24,6 +24,15 @@ class TokenStatsDisplayUnitTest {
     }
 
     @Test
+    fun `formatting the same total follows the million billion million round trip`() {
+        val total = 1_500_000_000L
+        val unit = TokenStatsDisplayUnit.MILLIONS
+        assertEquals("1500.0M", formatTokenCount(total, unit))
+        assertEquals("1.500B", formatTokenCount(total, unit.toggled()))
+        assertEquals("1500.0M", formatTokenCount(total, unit.toggled().toggled()))
+    }
+
+    @Test
     fun `display unit toggles between millions and billions`() {
         assertEquals(
             TokenStatsDisplayUnit.BILLIONS,

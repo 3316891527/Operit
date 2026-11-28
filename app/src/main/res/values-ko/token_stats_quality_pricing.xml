@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="token_stats_billing_multiplier">요금 배율</string>
+    <string name="token_stats_billing_multiplier_note">기본값은 1입니다. 0.1은 기본 요금의 10%입니다. 토큰 및 요청당 요금의 소계에 한 번만 적용합니다.</string>
+    <string name="token_stats_formula_billing_multiplier">소계 × %1$s (요금 배율)</string>
+    <string name="token_stats_request_tps">TPS (출력 토큰/초)</string>
+    <string name="token_stats_design_quality_samples">표본 %1$s개</string>
+    <string name="token_stats_design_quality_note">각 지표는 최소 개수 없이 유효한 표본을 따로 집계합니다. P95는 정렬 후 ⌈0.95 × 표본 수⌉번째 값입니다. TPS는 성공 요청의 출력 토큰 ÷ (전체 시간 − 첫 토큰 지연)의 평균입니다. 기록되지 않은 과거 필드는 해당 지표에서 제외합니다.</string>
+    <string name="token_stats_design_formula_currency">요금 통화: %1$s</string>
+</resources>

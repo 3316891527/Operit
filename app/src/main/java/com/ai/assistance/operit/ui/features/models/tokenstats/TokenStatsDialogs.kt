@@ -90,6 +90,10 @@ internal fun PriceSettingsDialog(
             formatEditablePrice(existing?.pricePerRequest ?: initialDraft.pricePerRequest)
         )
     }
+    var billingMultiplier by remember(existing, initialDraft) {
+        mutableStateOf(formatTokenStatsPrice(existing?.billingMultiplier ?: initialDraft.billingMultiplier))
+    }
+    val billingMultiplierValid = isValidMultiplier(billingMultiplier)
     var peakPricingEnabled by remember(existing, initialDraft) {
         mutableStateOf(existing?.peakPricingEnabled ?: initialDraft.peakPricingEnabled)
     }
@@ -224,7 +228,7 @@ internal fun PriceSettingsDialog(
                 StatsPrimaryAction(
                     text = stringResource(R.string.token_stats_design_save_recalculate),
                     modifier = Modifier.weight(1f),
-                    enabled = targetValid && allPricesValid && advancedRulesValid,
+                    enabled = targetValid && allPricesValid && advancedRulesValid && billingMultiplierValid,
                     onClick = {
                     val parse = { raw: String -> raw.trim().toDoubleOrNull() }
                     onSave(
@@ -235,6 +239,7 @@ internal fun PriceSettingsDialog(
                             configId = configId.takeIf { scope == TokenStatsPriceScope.CONFIG },
                             billingMode = billingMode,
                             currency = currency,
+                            billingMultiplier = requireNotNull(billingMultiplier.toDoubleOrNull()),
                             inputPricePerMillion =
                                 if (billingMode == BillingMode.TOKEN) parse(inputPrice) else null,
                             cachedInputPricePerMillion =
@@ -316,6 +321,14 @@ internal fun PriceSettingsDialog(
                     onSelect = { currency = if (it == 0) PricingCurrency.CNY else PricingCurrency.USD },
                 )
                 StatsDivider()
+                StatsDialogField(
+                    value = billingMultiplier,
+                    onChange = { billingMultiplier = it },
+                    label = stringResource(R.string.token_stats_billing_multiplier),
+                    isError = !billingMultiplierValid,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                StatsText(stringResource(R.string.token_stats_billing_multiplier_note), size = 10, color = LocalTokenStatsPalette.current.muted)
                 if (billingMode == BillingMode.TOKEN) {
                     Row(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
                     PriceField(
@@ -647,7 +660,7 @@ private fun isValidMultiplier(raw: String): Boolean =
 private fun formatEditableLong(value: Long?): String = value?.toString().orEmpty()
 
 private fun formatEditablePrice(value: Double?): String =
-    value?.let { String.format(Locale.US, "%.6f", it).trimEnd('0').trimEnd('.') } ?: ""
+    value?.let(::formatTokenStatsPrice).orEmpty()
 
 /** 开关按稿件的 38×23 尺寸绘制，同时保留原生开关的无障碍语义。 */
 @Composable

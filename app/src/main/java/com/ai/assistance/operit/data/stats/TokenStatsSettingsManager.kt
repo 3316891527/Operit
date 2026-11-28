@@ -35,6 +35,7 @@ data class TokenStatsPriceDraft(
     val longContextCachedInputMultiplier: Double = 1.0,
     val longContextCacheWriteMultiplier: Double = 1.0,
     val longContextOutputMultiplier: Double = 1.0,
+    val billingMultiplier: Double = 1.0,
 )
 
 data class TokenStatsPriceSetting(
@@ -64,11 +65,11 @@ data class TokenStatsPriceSetting(
     val longContextCachedInputMultiplier: Double?,
     val longContextCacheWriteMultiplier: Double?,
     val longContextOutputMultiplier: Double?,
+    val billingMultiplier: Double = 1.0,
 )
 
-class TokenStatsSettingsManager(context: Context) {
-    private val appContext = context.applicationContext
-    private val repository = TokenUsageRepository.getInstance(appContext)
+class TokenStatsSettingsManager internal constructor(private val repository: TokenUsageRepository) {
+    constructor(context: Context) : this(TokenUsageRepository.getInstance(context.applicationContext))
 
     fun validatePriceValue(name: String, value: Double?): Double? {
         if (value == null) return null
@@ -105,6 +106,7 @@ class TokenStatsSettingsManager(context: Context) {
     }
 
     suspend fun savePrice(draft: TokenStatsPriceDraft) {
+        requireValidBillingMultiplier(draft.billingMultiplier)
         val provider = normalizeProviderTypeId(draft.provider)
         val model = draft.model.trim()
         val configId = draft.configId?.trim().orEmpty()
@@ -122,6 +124,7 @@ class TokenStatsSettingsManager(context: Context) {
             dao.upsertStatsModel(
                 current.copy(
                     billingMode = draft.billingMode.name,
+                    billingMultiplier = draft.billingMultiplier,
                     currency = draft.currency.name,
                     inputPricePerMillion =
                         if (draft.billingMode == BillingMode.TOKEN) {
@@ -268,7 +271,8 @@ internal fun TokenStatsModelEntity.hasPriceSetting(): Boolean =
         longContextInputMultiplier != null ||
         longContextCachedInputMultiplier != null ||
         longContextCacheWriteMultiplier != null ||
-        longContextOutputMultiplier != null
+        longContextOutputMultiplier != null ||
+        billingMultiplier != 1.0
 
 internal fun TokenStatsModelEntity.toModelPriceSettings(): ModelPriceSettings =
     ModelPriceSettings(
@@ -293,6 +297,7 @@ internal fun TokenStatsModelEntity.toModelPriceSettings(): ModelPriceSettings =
         longContextCachedInputMultiplier = longContextCachedInputMultiplier,
         longContextCacheWriteMultiplier = longContextCacheWriteMultiplier,
         longContextOutputMultiplier = longContextOutputMultiplier,
+        billingMultiplier = billingMultiplier,
     )
 
 private fun TokenStatsModelEntity.toPriceSetting(): TokenStatsPriceSetting {
@@ -325,5 +330,6 @@ private fun TokenStatsModelEntity.toPriceSetting(): TokenStatsPriceSetting {
         longContextCachedInputMultiplier = longContextCachedInputMultiplier,
         longContextCacheWriteMultiplier = longContextCacheWriteMultiplier,
         longContextOutputMultiplier = longContextOutputMultiplier,
+        billingMultiplier = billingMultiplier,
     )
 }

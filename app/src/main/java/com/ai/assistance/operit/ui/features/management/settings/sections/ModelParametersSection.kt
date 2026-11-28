@@ -731,7 +731,10 @@ private fun AddCustomParameterDialog(
                         label = { Text(parameterTypeText) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = valueTypeExpanded) },
                         modifier = Modifier
-                            .menuAnchor()
+                            .menuAnchor(
+                                type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                enabled = true
+                            )
                             .fillMaxWidth()
                     )
                     ModelWorkspaceMenu(
@@ -863,7 +866,10 @@ private fun AddCustomParameterDialog(
                         label = { Text(parameterCategoryText) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                         modifier = Modifier
-                            .menuAnchor()
+                            .menuAnchor(
+                                type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                enabled = true
+                            )
                             .fillMaxWidth()
                     )
                     ModelWorkspaceMenu(

@@ -128,7 +128,8 @@ abstract class TokenUsageDao {
             longContextInputMultiplier = NULL,
             longContextCachedInputMultiplier = NULL,
             longContextCacheWriteMultiplier = NULL,
-            longContextOutputMultiplier = NULL
+            longContextOutputMultiplier = NULL,
+            billingMultiplier = 1.0
         WHERE configId = :configId AND provider = :provider AND model = :model
         """
     )
@@ -158,6 +159,7 @@ abstract class TokenUsageDao {
             AND longContextCachedInputMultiplier IS NULL
             AND longContextCacheWriteMultiplier IS NULL
             AND longContextOutputMultiplier IS NULL
+            AND billingMultiplier = 1.0
         """
     )
     abstract suspend fun deleteEmptyStatsModels(): Int

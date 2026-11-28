@@ -31,7 +31,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.MainChatControls
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -312,7 +312,7 @@ fun AppContent(
                             ) {
                                 ThemeScriptIcon(
                                     id = if (canGoBack) "appBar.back" else "appBar.menu",
-                                    imageVector = if (canGoBack) Icons.Default.ArrowBack
+                                    imageVector = if (canGoBack) Icons.AutoMirrored.Filled.ArrowBack
                                     else if (useTabletLayout)
                                     // 平板模式下使用开关图标表示收起/展开
                                         if (isTabletSidebarExpanded) Icons.Filled.ChevronLeft

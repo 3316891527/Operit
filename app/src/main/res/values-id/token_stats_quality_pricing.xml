@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="token_stats_billing_multiplier">Pengali biaya</string>
+    <string name="token_stats_billing_multiplier_note">Default: 1. Nilai 0.1 menagih 10% biaya dasar. Diterapkan sekali pada subtotal untuk biaya per token dan per permintaan.</string>
+    <string name="token_stats_formula_billing_multiplier">Subtotal × %1$s (pengali biaya)</string>
+    <string name="token_stats_request_tps">TPS (token keluaran/dtk)</string>
+    <string name="token_stats_design_quality_samples">%1$s sampel</string>
+    <string name="token_stats_design_quality_note">Setiap metrik memakai sampel validnya sendiri tanpa jumlah minimum. P95 adalah item ⌈0.95 × jumlah sampel⌉ setelah diurutkan. TPS merata-ratakan token keluaran ÷ (durasi total − latensi token pertama) pada permintaan berhasil. Kolom riwayat yang kosong tidak disertakan.</string>
+    <string name="token_stats_design_formula_currency">Mata uang harga: %1$s</string>
+</resources>
