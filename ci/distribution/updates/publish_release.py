@@ -119,6 +119,26 @@ def prepare_patch(base: Path, target: Path, output: Path, old_version: str, new_
     return patch, meta_file, summary
 
 
+def validate_release_notes(notes: str) -> str:
+    if not notes.strip():
+        raise ValueError("正式发布必须提供非空的更新说明")
+    if notes.lstrip().startswith(("{", "[")):
+        raise ValueError("Release 正文必须使用可读文本或 Markdown，JSON 元数据仅作为附件")
+    return notes
+
+
+def select_release_notes(version: str, supplied_notes: str | None) -> str:
+    # 正式 2.0.0 的正文随构建提交一同审阅，禁止派发时改用其他内容。
+    if version.removeprefix("v") == "2.0.0":
+        if version != "2.0.0":
+            raise ValueError("正式 2.0.0 的 APK 版本必须为 2.0.0")
+        if supplied_notes is not None:
+            raise ValueError("正式 2.0.0 使用仓库内的更新说明，请勿传入 --notes")
+        notes_file = Path(__file__).with_name("releases") / "2.0.0.md"
+        return validate_release_notes(notes_file.read_text(encoding="utf-8"))
+    return validate_release_notes(supplied_notes if supplied_notes is not None else "")
+
+
 def ensure_source_tag(tag: str, commit: str) -> None:
     endpoint = f"repos/{SOURCE_REPOSITORY}"
     refs = json.loads(run("gh", "api", f"{endpoint}/git/matching-refs/tags/{quote(tag, safe='')}"))
@@ -137,7 +157,7 @@ def main() -> None:
     parser.add_argument("--repository", required=True)
     parser.add_argument("--commit", required=True)
     parser.add_argument("--previous-tag", default="")
-    parser.add_argument("--notes", default="")
+    parser.add_argument("--notes", help="更新说明；正式 2.0.0 使用仓库内文件，不接受此参数")
     parser.add_argument("--output", type=Path, default=Path(".ci-release"))
     parser.add_argument("--prepare-only", action="store_true", help="核对 APK、生成并还原补丁及发布计划，不创建标签或 Release")
     args = parser.parse_args()
@@ -145,12 +165,11 @@ def main() -> None:
         raise ValueError("发布仓库或目标提交不属于本次独立发行流程")
     if args.apk.name != APK_NAME:
         raise ValueError(f"发行 APK 必须命名为 {APK_NAME}")
-    if not args.notes.strip():
-        raise ValueError("正式发布必须提供非空的更新说明")
-    if args.notes.lstrip().startswith(("{", "[")):
-        raise ValueError("Release 正文必须使用可读文本或 Markdown，JSON 元数据仅作为附件")
+    if args.notes is not None:
+        validate_release_notes(args.notes)
     info = inspect_apk(args.apk, args.build_tools)
     version = info["versionName"]
+    release_notes = select_release_notes(version, args.notes)
     tag = "v" + version
     destinations = release_repositories(version)
     releases = json.loads(run("gh", "api", f"repos/{UPDATE_REPOSITORY}/releases?per_page=100"))
@@ -162,7 +181,7 @@ def main() -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     summary = {
         "format": "operit-distribution-1", "tag": tag, **info,
-        "targetSha256": sha256(args.apk), "releaseNotes": args.notes,
+        "targetSha256": sha256(args.apk), "releaseNotes": release_notes,
         "updateRepository": UPDATE_REPOSITORY, **source_info(args.commit, tag),
     }
     assets = [args.apk]
@@ -191,7 +210,7 @@ def main() -> None:
     # 页面正文与增量元数据分别保存，防止发布页再次显示机器 JSON。
     notes_file = args.output / "release-notes.md"
     notes_file.write_text(
-        args.notes.rstrip() + f"\n\n源码：[对应提交](https://github.com/{SOURCE_REPOSITORY}/tree/{args.commit}) · "
+        release_notes.rstrip() + f"\n\n源码：[对应提交](https://github.com/{SOURCE_REPOSITORY}/tree/{args.commit}) · "
         f"[源码归档](https://github.com/{SOURCE_REPOSITORY}/archive/{args.commit}.zip)\n", encoding="utf-8")
     plan = {"tag": tag, "sourceCommit": args.commit, "repositories": list(destinations),
             "assets": [{"name": asset.name, "bytes": asset.stat().st_size, "sha256": sha256(asset)} for asset in assets]}

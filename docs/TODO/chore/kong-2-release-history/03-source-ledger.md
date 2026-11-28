@@ -1,0 +1,653 @@
+# 提交来源索引
+
+此处记录正式 1.12.2 至 +31 产品提交之间的 647 条非合并提交。每条提交都参与主题与路径筛查，主要用户变化再核对最终源码；不把提交数量、目录搬迁或生成文件当成新功能数量。三个独立修复 PR 不在这个产品头里，另列为待纳入项。
+
+- [9efa89d9](https://github.com/3316891527/Operit/commit/9efa89d9b66db2d72400a1c85ed01474ac055049) feat(tokenstats): add monthly/yearly activity views and re-anchor ranges to today
+- [7b9d5942](https://github.com/3316891527/Operit/commit/7b9d594278a2337b971cab2c555ff886cfe10870) feat(tokenstats): granular bar views per mode and standalone activity calendar
+- [f941a73f](https://github.com/3316891527/Operit/commit/f941a73ff26345598a8f52e58beaa56657f01ea2) fix(tokenstats): widen dense month labels and align monthly window with weekly
+- [6af59142](https://github.com/3316891527/Operit/commit/6af59142e86ad716a52b3b8b84bb9f56940f305c) fix(tokenstats): align yearly window with weekly and monthly rolling semantics
+- [6db9aa25](https://github.com/3316891527/Operit/commit/6db9aa2523365f818bdcb6d50255504da11946b4) fix(tokenstats): widen sparse weekly and monthly bars
+- [a3b8ad42](https://github.com/3316891527/Operit/commit/a3b8ad42ee34bf541a081a69f686603bc2a42273) fix(shell): reject only dangerous command words, not argument substrings
+- [20e6a62d](https://github.com/3316891527/Operit/commit/20e6a62d5490e764671d10816275fb550747b389) fix(tests): repair dev-broken provider tests so unit test workflow can compile
+- [62d93063](https://github.com/3316891527/Operit/commit/62d9306316f62cf01f1ae35027aef59addb780a1) fix(shell): treat rm force/recursive flags case-insensitively
+- [76a6e2a1](https://github.com/3316891527/Operit/commit/76a6e2a197454c7752f6538d0f225f8d12bc6475) feat(logcat): add export filters for debug, system, error context, and sensitive content
+- [7a42aed7](https://github.com/3316891527/Operit/commit/7a42aed7fb0a6c6129d665a9c0af89342c884691) fix(logcat): align MediaStore export string resource name
+- [59129ab2](https://github.com/3316891527/Operit/commit/59129ab263100262e0bf890141a1a6199b6ab0d2) fix(logcat): keep LogExportFilterTest string literals valid
+- [85c21e6f](https://github.com/3316891527/Operit/commit/85c21e6f1cb99a38fd3b6639715a7933b1d687eb) fix(extended_chat): report real chat errors instead of fake timeouts
+- [5ff8c9ea](https://github.com/3316891527/Operit/commit/5ff8c9ea1e28f2a875911d7c9a7e9accb459307e) fix(extended_chat): recover chat lookup by id when findChat misses
+- [4285f1af](https://github.com/3316891527/Operit/commit/4285f1af45339ffcf67e2ae5c56294a551a05648) fix(qqbot): persist listener state before service stop and allow IPC timeout
+- [c0205be5](https://github.com/3316891527/Operit/commit/c0205be59ca42b23b273395df7dbc989b4f971cf) fix(skills): key GitHub zip cache by commit SHA and invalidate on delete
+- [51c84e5b](https://github.com/3316891527/Operit/commit/51c84e5b5975133a91848c2f396c7f877b4f4505) feat(summary): allow thinking depth on summary function models
+- [4356d0b8](https://github.com/3316891527/Operit/commit/4356d0b84d1377f59a9115c42d36f45521f3d44e) fix(ffmpeg): serialize native FFmpegKit sessions
+- [58a8aa22](https://github.com/3316891527/Operit/commit/58a8aa22360ccb21cc5e43b87e7f17381d46c4c3) fix(summary): compile thinking request visibility and Gemini test
+- [71b292ca](https://github.com/3316891527/Operit/commit/71b292ca05b6cc8d3b381be3f9d57dac60e8efec) fix(ffmpeg): use MediaInformationSession and valid scale escape
+- [a8040fca](https://github.com/3316891527/Operit/commit/a8040fcaec57e6555a87af312ab9a40206cf5993) feat(settings): apply current character theme to all character cards
+- [02ea76a7](https://github.com/3316891527/Operit/commit/02ea76a7ecd837c8cc93de7522979891769b379d) fix(provider): sort Claude tool results by tool use order to preserve prompt cache
+- [95332c70](https://github.com/3316891527/Operit/commit/95332c70b1d3d85d3581852bf7332e8cda3b59eb) test(provider): fix @Test annotation in ClaudeProviderHistoryTest
+- [67e992a3](https://github.com/3316891527/Operit/commit/67e992a3e51660dfbbeaf31ba0b3e3bdfb070249) fix(ui): allow markdown tables to expand naturally and scroll horizontally
+- [faf33010](https://github.com/3316891527/Operit/commit/faf330100000174c76da70eb8189c2ea6aafa53d) fix(shell): prevent Shizuku process pipe deadlocks
+- [d47cb7c9](https://github.com/3316891527/Operit/commit/d47cb7c9d79dfb8567be3124e27d19115c3e2b07) fix(shell): use coroutine context for reader cancellation
+- [d6ff5d5b](https://github.com/3316891527/Operit/commit/d6ff5d5bed307f22cf1fae1ded28e39c78da5aff) feat: organize and reorder model configurations
+- [23f45fda](https://github.com/3316891527/Operit/commit/23f45fda91450618b0004f41f2d809cb2fe4dd1a) fix: stabilize grouped model configuration behavior
+- [15d48262](https://github.com/3316891527/Operit/commit/15d48262018929d2f408ef33f4df7f2e94918b47) feat: localize and filter model selectors by group
+- [91e83aa0](https://github.com/3316891527/Operit/commit/91e83aa0b53db34c86b9adc7e131d3bad0be958a) feat: add data and storage management
+- [e3b9a6f8](https://github.com/3316891527/Operit/commit/e3b9a6f8c6902c544aabd9d1fff505580cb7e3c0) feat: reshape Operit storage overview
+- [fe979335](https://github.com/3316891527/Operit/commit/fe979335088f6f07076412b021ccc6ac18279cbd) feat: add Linux and local model storage pages
+- [6724fa99](https://github.com/3316891527/Operit/commit/6724fa99ea9bbad4ecdaec474c0cc81fef57efc1) feat: manage storage categories in-page and move cookie cleanup
+- [b15eaa52](https://github.com/3316891527/Operit/commit/b15eaa52fb2eda87c3cd1c6aaac38830bf3a1f7b) fix: stop exposing internal Linux storage cleanup types
+- [7a0c2eb7](https://github.com/3316891527/Operit/commit/7a0c2eb738bb33b83cbd71add63728ca505435b0) feat: restyle storage pages with logos, avatars, and delete progress
+- [2b028c81](https://github.com/3316891527/Operit/commit/2b028c815a77b461ba619999a9f22824c6d646bd) feat: expand memory and extension storage groups for deletion
+- [aa75446a](https://github.com/3316891527/Operit/commit/aa75446acbde86b19f74b3ecd355fb318a696424) feat: polish storage empty states, avatars, and action bar
+- [bc12842b](https://github.com/3316891527/Operit/commit/bc12842bd2bf45f0fc4866fad5a5b0cfc0202c38) fix: tighten storage delete guards and usage accounting
+- [ffbed687](https://github.com/3316891527/Operit/commit/ffbed6870fb7a71d100bd26ff01c262a16bdc67b) feat: fail over API key pool on quota errors with sticky scored routing
+- [f21f0ae2](https://github.com/3316891527/Operit/commit/f21f0ae25107c6752a192e6195f387f2ec4c4dfa) fix(http): honor timeout on built-in http_request
+- [b4295499](https://github.com/3316891527/Operit/commit/b4295499836a8b050b12c0929cc29512325f359a) fix(repo): keep nested SAF paths when writing workspace files
+- [51fe8f1f](https://github.com/3316891527/Operit/commit/51fe8f1f12703f5d648d1469a01e560478a4db76) fix(chat): keep thinking turns when retrying empty visible replies
+- [ab0efc7b](https://github.com/3316891527/Operit/commit/ab0efc7b1abac5b7f5acf47346a21fc6419cc696) fix(chat): attach screen content as image instead of OCR text
+- [62efd684](https://github.com/3316891527/Operit/commit/62efd6849aa80fb717c6e631c96a721fdf759420) feat(tokenstats): delete leftover stats for removed model configs
+- [14c8afdc](https://github.com/3316891527/Operit/commit/14c8afdc3bfb3bb22caa824d164bb49b57d7bff1) feat(draw): modernize SpaceXAI and prompt inputs
+- [ef1bf4b6](https://github.com/3316891527/Operit/commit/ef1bf4b6c307f9d64e16912fc8ac256d14d57f15) feat(draw): add image-to-image to bundled image packages
+- [29d67812](https://github.com/3316891527/Operit/commit/29d678120994ab535ddb80bda171a4fa77b4f1bc) fix(draw): upload OpenAI URL references as multipart
+- [a752eece](https://github.com/3316891527/Operit/commit/a752eecefac71ad4d3f15427ead50937c065110e) feat(tools): expose global permission mode in editor
+- [c48017db](https://github.com/3316891527/Operit/commit/c48017dbc32a94651e996eb2a60fae1f14792b82) fix(tools): sync editor permission tools into examples
+- [dd508f13](https://github.com/3316891527/Operit/commit/dd508f1301dada5e09cd2d7c03ef8ee06dc0d794) feat(deepseek): upload images via Files API for file_id references
+- [d01554fc](https://github.com/3316891527/Operit/commit/d01554fc3ea01ce8aac8f97d935ea36ebb22e2da) feat(deepseek): share Files API uploader across chat completions & responses
+- [f3c916df](https://github.com/3316891527/Operit/commit/f3c916df15301c7f8a9358430583c62c1ea36fd6) feat(deepseek): support list/retrieve/delete Files API endpoints with content-addressed dedup
+- [fe7714cf](https://github.com/3316891527/Operit/commit/fe7714cf266735ab8b8c40579a58974b0fc8ec1f) fix(deepseek): mark applyAuthAndCustomHeaders as suspend (getApiKey is suspend)
+- [86773d0e](https://github.com/3316891527/Operit/commit/86773d0ea45f23e12c43521254fac0ee2b25b7ac) fix(ui): move deepseek files hint under image toggle; prompt when attaching with no active chat
+- [c5d7665f](https://github.com/3316891527/Operit/commit/c5d7665f940cda152248ac6fdd6e04ac82f3191f) fix(chat): show no-active-chat prompt for all attachment entry points
+- [62b78739](https://github.com/3316891527/Operit/commit/62b78739876408fab595af35a55674aa1fce1421) fix(chat): use native toast for no-active-chat prompt, matching send path
+- [1f1c4be3](https://github.com/3316891527/Operit/commit/1f1c4be3585bd76e6053862b08b9c23d17048416) fix(storage): keep dev package TypeScript out of the gallery
+- [a80f9ab9](https://github.com/3316891527/Operit/commit/a80f9ab99367a8b8edb41a62ad6204f9fbbc198f) fix(codex): keep prompt cache affinity stable
+- [bd04cc96](https://github.com/3316891527/Operit/commit/bd04cc9678129529a994c22da898f0cbf719ae3c) fix(summary): drop retried stream prefixes
+- [89d85c75](https://github.com/3316891527/Operit/commit/89d85c75131f20bfddd86e1ca6b6d64e2a92f655) fix(chat): draw the thinking guide without parent constraints
+- [c896c690](https://github.com/3316891527/Operit/commit/c896c69056391e4c76fc2571d749cf4b2b7f98fe) feat(summary): add a switch to review the previous summary
+- [63953157](https://github.com/3316891527/Operit/commit/6395315765ee088e5d787ce030d557528fe85900) feat(config): raise default context lengths for new configs
+- [55d052c8](https://github.com/3316891527/Operit/commit/55d052c8368d12cf489f0a2ecd144ce7a767cfaf) fix(tokenstats): add a delayed confirmation for clearing usage
+- [fead591d](https://github.com/3316891527/Operit/commit/fead591dfff972d41ca08569b7a9bb52a32f2a41) fix(provider): remove DeepSeek built-in web search
+- [5ed96bff](https://github.com/3316891527/Operit/commit/5ed96bffbdf54164e79a58cecca2f26b681f0051) fix(chat): explain thinking replies stopped by max tokens
+- [f0bffa78](https://github.com/3316891527/Operit/commit/f0bffa78e3f280cc3c3b170ab4d8897acc025c48) fix(tools): preserve string params in MCP and optional types in JS, optimize input IPC(#1125)
+- [aa8fb9ae](https://github.com/3316891527/Operit/commit/aa8fb9ae67446617fa4ce3ab05bfaddae73aa005) feat(settings): use toasts with detailed reason for model list fetching
+- [488f7252](https://github.com/3316891527/Operit/commit/488f7252c9093994639f3653bec8fe177a084931) fix(settings): optimize model list fetching timeout, add cancellation on config switch and precise DNS error feedback
+- [c9597e41](https://github.com/3316891527/Operit/commit/c9597e411a1efee74ef3af71e6ebf9b4ca79ba3e) fix(http): enforce overall request timeout semantics
+- [5ff31674](https://github.com/3316891527/Operit/commit/5ff31674399cc3328860b1d43d1b1679988919a6) fix(files): copy repository directories recursively
+- [41a2af8c](https://github.com/3316891527/Operit/commit/41a2af8c0d52841f281e0dedb475660fcdbd6615) fix(permissions): remove model-controlled tool bypass
+- [a3eb31a3](https://github.com/3316891527/Operit/commit/a3eb31a3de5e1d22d4f9e6ef797084581dbbd61d) fix(qqbot): validate service identity before stopping pid
+- [34513036](https://github.com/3316891527/Operit/commit/3451303620bf851d7102167ce499e18adc9a2618) fix(shell): close continuation and wrapper bypasses
+- [04435e63](https://github.com/3316891527/Operit/commit/04435e63e16b1ad091dd7d449d53898af6230300) fix(storage): exclude terminal runtime from package deletion
+- [8de92874](https://github.com/3316891527/Operit/commit/8de92874cd7bb284d964c2932b33475343818680) fix(keypool): preserve single-key retry budget
+- [56b9423d](https://github.com/3316891527/Operit/commit/56b9423dce1bf5b359f14d8e1bf77c844bcccf5e) fix(settings): restore model list cancellation imports
+- [6b42c451](https://github.com/3316891527/Operit/commit/6b42c451c83d8442b6fc16de58ce32fd2f2676e3) fix(repo): reject recursive copy into own directory
+- [ffb81353](https://github.com/3316891527/Operit/commit/ffb813539ed1bdad9ea04879d6d6985284cf1b4f) fix(shell): check adb find and xargs execution
+- [ea8a1df6](https://github.com/3316891527/Operit/commit/ea8a1df641864ea8aa7938bf97bf9a465172ab9d) ci: skip obsolete Android SDK tools package
+- [628f1b53](https://github.com/3316891527/Operit/commit/628f1b53fb27ffa64b5025af8b9a909c08636a16) fix(chat): move long-history work off main thread
+- [418b92d1](https://github.com/3316891527/Operit/commit/418b92d1494b0ec70d62df0b56ae6f653b46c570) fix(storage): guard deletion links and media warnings
+- [6527548b](https://github.com/3316891527/Operit/commit/6527548b7d842f156c6ca0dc5665dffb78df8bc2) fix(config): preserve groups across config import
+- [6219e7da](https://github.com/3316891527/Operit/commit/6219e7daabc1c9e17f74f555b1525eeb13037c0e) ci: skip obsolete Android SDK tools package
+- [f430903a](https://github.com/3316891527/Operit/commit/f430903ad3bf435634c7c27a702b5f42c4561229) fix(shell): read adb shell token by index
+- [8453aa57](https://github.com/3316891527/Operit/commit/8453aa575b0d4edd2c9525f3de4a43c00e7a25b5) fix(storage): keep media warning check in ui module
+- [92dd0fa4](https://github.com/3316891527/Operit/commit/92dd0fa40bba278a1f8a12c592080d6d8107d27e) fix(repo): clean failed copies and preserve cancellation
+- [ef388580](https://github.com/3316891527/Operit/commit/ef38858014d917438437c102f1521cad12f70bb4) fix(config): confirm group deletion and normalize moves
+- [3c5c76e8](https://github.com/3316891527/Operit/commit/3c5c76e83b6c0790196a9789abd73ef649417601) fix(shell): cover adb exec-out and find approvals
+- [d0fdd163](https://github.com/3316891527/Operit/commit/d0fdd163cbd6cf7b5fa5f25c7c1a425f99e6ecf2) fix(chat): serialize window refresh and handle async send errors
+- [9e32da6f](https://github.com/3316891527/Operit/commit/9e32da6f8539a9f8274c9b0590fd49b1c4e63cc9) feat(tokenstats): add advanced pricing rules
+- [56056677](https://github.com/3316891527/Operit/commit/56056677b9c93ee4f1bfc803b97b3413b933d742) fix(tokenstats): fix peak period removal lambda
+- [b55fa1b5](https://github.com/3316891527/Operit/commit/b55fa1b54ce1c323e3b81a92f9adfc8265657367) feat(tokenstats): add configurable advanced pricing rules
+- [29bc3cc1](https://github.com/3316891527/Operit/commit/29bc3cc146e8e891e5829177177a1205897c1f68) fix(tokenstats): keep aggregate input token calculation
+- [40672129](https://github.com/3316891527/Operit/commit/4067212991a549a6f265bafc16d2e24e3c081883) fix(deepseek): preserve both reasoning field types
+- [08b34ad9](https://github.com/3316891527/Operit/commit/08b34ad93162711af58f153865018f089ea0ab84) 修复 DeepSeek/XAI 单元测试工作流失败 (#1282)
+- [94b57556](https://github.com/3316891527/Operit/commit/94b57556eb638f8244918a5980f608139779f7d7) fix(files): map Linux grep paths for native ripgrep
+- [c848f2c4](https://github.com/3316891527/Operit/commit/c848f2c4ffdd4d51bd3e5972fa2cc4490bcd1b99) fix(attachment): bypass unstable picker URI grants
+- [f188fbdd](https://github.com/3316891527/Operit/commit/f188fbdddcef50cd40f531e0780eb956ff3ed2e7) 重做聊天思考质量滑块
+- [bb12827e](https://github.com/3316891527/Operit/commit/bb12827ebde8b889699a360af30e273cf2a1beb9) 对齐 Operit2 思考滑块交互
+- [1a6f89f0](https://github.com/3316891527/Operit/commit/1a6f89f0d1f178fdfd883c0c119c3c2e1cec0188) 修复思考滑块构建错误并清理旧配置
+- [83ed8ab9](https://github.com/3316891527/Operit/commit/83ed8ab939ded3af5c7c9649b47dba4ba3d05fbd) 修复思考滑块无障碍角色编译错误
+- [219f91ae](https://github.com/3316891527/Operit/commit/219f91aed7e0f4d0a23b01894ea52eabb60b104b) 优化思考滑块档位提示布局
+- [dc2f036b](https://github.com/3316891527/Operit/commit/dc2f036bc0c9ad4f1ad322ded5e60fa50d739c54) 恢复思考滑块渐变和拖动高光
+- [ee036296](https://github.com/3316891527/Operit/commit/ee0362969eb543f045e16f64654bd7d9b7e880c7) 增加思考粒子流动动画和主题颜色设置
+- [a662fc88](https://github.com/3316891527/Operit/commit/a662fc8886dab135e38f8858d10ae144ee405173) 修复思考滑块最高档回弹并增加密集粒子
+- [e001799b](https://github.com/3316891527/Operit/commit/e001799b1361912f5c588eb98d30a6811d517e06) fix(code-runner): bound hidden execution and recycle shells
+- [f308ecd7](https://github.com/3316891527/Operit/commit/f308ecd7825e21171ef1265f19f373b4125e5bcf) fix(code-runner): track hidden shell cleanup
+- [56e01b03](https://github.com/3316891527/Operit/commit/56e01b03d00cf43c0d582b41f2cc59d5ece18155) feat: 为 operit_editor 增加性能指标查询
+- [5e9e6e57](https://github.com/3316891527/Operit/commit/5e9e6e571390ddc24541c59b9c1c2975ad841b2a) feat(permissions): route tools by granted capabilities
+- [8a06c79c](https://github.com/3316891527/Operit/commit/8a06c79c520bfee86e903a08e434e8ab39965359) fix(permissions): cache capability checks per tool session
+- [49a68dc4](https://github.com/3316891527/Operit/commit/49a68dc406c8ed54a1797096ac8c0241cb4447a0) fix(permissions): cache capability checks per tool session
+- [2411554c](https://github.com/3316891527/Operit/commit/2411554cda431e6d65e04bc07047058779671edb) feat: restore chat export and streaming import
+- [20a6d822](https://github.com/3316891527/Operit/commit/20a6d822ddb161b2da18a5f107d51b026a6cd445) fix: correct CSV export model conversions
+- [a640d12b](https://github.com/3316891527/Operit/commit/a640d12b74d986b92bdf522d8382b9be0c436690) fix(permissions): distribute level tabs across width
+- [6e02bd19](https://github.com/3316891527/Operit/commit/6e02bd19d926c023af4f9066db2bcaf06670b3ec) feat(permissions): add system settings shortcuts to all levels
+- [4eccdd2d](https://github.com/3316891527/Operit/commit/4eccdd2d6f581e37507d8927ee28e73f1c2c340b) fix(permissions): avoid permission row overload ambiguity
+- [d8844ce8](https://github.com/3316891527/Operit/commit/d8844ce89a482e230f92d3f1593e89592fc40808) fix(chat-export): resolve CSV ordering and resource scope
+- [9d5a80f6](https://github.com/3316891527/Operit/commit/9d5a80f65f22e0f6c19e22fce6e06da335cd7484) fix(tokenstats): preserve usage when deleting model configs
+- [df9aed0f](https://github.com/3316891527/Operit/commit/df9aed0f8fcaca652f7d1bc95478b42a68e37343) fix(tokenstats): remove stale screen parameters
+- [a7676fa3](https://github.com/3316891527/Operit/commit/a7676fa356dd7a0562080b165733307bf51710cb) feat(provider): add Antigravity OAuth login and fingerprint spoofing (#1257)
+- [a2931437](https://github.com/3316891527/Operit/commit/a29314371a74b0bc9c54950d1e46d46c59660b0a) feat(display): configure orientation reload behavior
+- [d4c8a936](https://github.com/3316891527/Operit/commit/d4c8a9368b1af0dd05dc0651236630587d35cc7b) test: assert local model acquire succeeds
+- [0a39a0b1](https://github.com/3316891527/Operit/commit/0a39a0b101aee41df3aff927c4110a3ee8c1dcc0) test: provide application context in model config test
+- [3d936738](https://github.com/3316891527/Operit/commit/3d936738c48b8e0db5b64cedb576db4e990788a2) fix: address API key pool review feedback
+- [3df6c1ca](https://github.com/3316891527/Operit/commit/3df6c1ca061ca74d8d60e8a9e04fd3b90215d33f) fix: localize chat processing status messages
+- [dc522c71](https://github.com/3316891527/Operit/commit/dc522c71f31d46c582e1bfa5c6dd3531518cd947) fix: preserve usage and zero deleted config cost
+- [59defadf](https://github.com/3316891527/Operit/commit/59defadfd81a97849152a8fb26170bce5b3ffaa1) fix(markdown): constrain code fences to line boundaries
+- [351d3562](https://github.com/3316891527/Operit/commit/351d356248e646dfef387aa14d0a7daf0dac6eed) fix(waifu): preserve markdown list streams for issue 1280
+- [fd85521e](https://github.com/3316891527/Operit/commit/fd85521e89631d51dae39c14b8a1fb9f1ad30869) fix(pc-agent): secure configuration management for issue 1322
+- [770821f0](https://github.com/3316891527/Operit/commit/770821f05aac2b455e88ac9ddd9868a1e1d759cc) fix(waifu): render registered plugin XML tags
+- [e4697098](https://github.com/3316891527/Operit/commit/e4697098b0b21376c710e985abcb8773ca8b71b9) fix(waifu): keep registered emotion tags
+- [8e2ea297](https://github.com/3316891527/Operit/commit/8e2ea297c7991baba5e2f95590bd0faba1d5ce65) fix(waifu): separate display cleanup from speech output
+- [f1bbcd80](https://github.com/3316891527/Operit/commit/f1bbcd80b927bdbda50d07483322a805b1bfe432) feat(docs): 完善 ToolPkg 开发者文档并更新 SandboxPackage_DEV
+- [6801b643](https://github.com/3316891527/Operit/commit/6801b64355cd751462265d36ebff70f20a74a8d9) feat(workspace): 重构工作区文件浏览入口
+- [b6fbe8d5](https://github.com/3316891527/Operit/commit/b6fbe8d5a5cb29e3ce62a3a16586c09a93d83f15) refactor(toolbox): 移除独立文件管理器入口
+- [2a3164b0](https://github.com/3316891527/Operit/commit/2a3164b07d203a58d5734a07df63b9ffdff79000) 扩展工作区编辑器注释规则
+- [035f3199](https://github.com/3316891527/Operit/commit/035f319989191323e22344f18a79dcaf55028ea3) fix(workspace): preserve browser path after closing file
+- [6b3baefb](https://github.com/3316891527/Operit/commit/6b3baefb81ecc98bedbfe73899a9c00994692fbe) fix(workspace): 创建默认直接进入类型选择
+- [f33c623f](https://github.com/3316891527/Operit/commit/f33c623fa71e0aeb2d7e42c647b13bf77b1ed3b1) fix(workspace): 修复打开文件后顶部栏透明
+- [e24a30d9](https://github.com/3316891527/Operit/commit/e24a30d9ae773828827d2de1d2cb752771496a51) fix(workspace): 适配工具栏主题并接通聊天文件链接
+- [a6ae432c](https://github.com/3316891527/Operit/commit/a6ae432c965bf0b2343ef90d460bdb303c855cb8) fix(workspace): 落实文件浏览与编辑审阅意见
+- [6f239395](https://github.com/3316891527/Operit/commit/6f239395bd0febe5c27853b1c1e88a382be605f1) fix(workspace): 补齐文件链接复审与大文本读取限制
+- [49e8f043](https://github.com/3316891527/Operit/commit/49e8f0431be13dcb662a6341207c3a361011d888) fix(workspace): 修正设置标题主题并记录实机回归结果
+- [91b1d52f](https://github.com/3316891527/Operit/commit/91b1d52fc79b1d78aa5844c1800b69971de13406) fix(workspace): 补充模型文件引用约定并更新回归签收
+- [f96fc2da](https://github.com/3316891527/Operit/commit/f96fc2da194d48c36c95aa0436d28aeff8fafb99) fix(workspace): 修复 Markdown 预览链接跳转与异常处理
+- [03de658a](https://github.com/3316891527/Operit/commit/03de658a4ac12dbc80dcca8e5b0be96e6bda2fdb) feat(chat): 结构化持久化聊天记录并统一思考与工具渲染
+- [63d9c232](https://github.com/3316891527/Operit/commit/63d9c2329c5c41290314bc3d426521be1ecf2adb) docs(chat): 补全 PR1278 固定回归清单与设备结果
+- [39fb3dbc](https://github.com/3316891527/Operit/commit/39fb3dbc750857c1ba957d167a7e665a8237c257) feat(settings): 自动清理替换后的图片与字体资源
+- [122925d4](https://github.com/3316891527/Operit/commit/122925d487bcae86f10b359de9efca350f87c15f) fix(prompt): 移除默认文件引用提示词注入
+- [ff6d83b4](https://github.com/3316891527/Operit/commit/ff6d83b4cd0a5054e18e2de40ebedbf3580df933) fix(chat): 按结构化片段过滤复制正文中的工具内容
+- [b759dab1](https://github.com/3316891527/Operit/commit/b759dab1f6b421b6681882094d49958e2e9308a9) fix(chat): preserve cumulative token statistics across restores
+- [03a5ecc6](https://github.com/3316891527/Operit/commit/03a5ecc62ece45fa5ee9316140a0b62d8189b616) fix(chat): keep message loading and runtime sync after statistics failures
+- [cf632dbb](https://github.com/3316891527/Operit/commit/cf632dbb2a5d992762dd670a214d37fbfc65b559) fix(memory): narrow semantic candidates and expose query scores
+- [ea7ce28f](https://github.com/3316891527/Operit/commit/ea7ce28f8828dd17828cf2c3f2bb738dc62d61f3) test(memory): type empty semantic candidate sequence explicitly
+- [8d040e60](https://github.com/3316891527/Operit/commit/8d040e60e2e70bf23f7ce5cd451ea0c27e403c30) fix(chat): 修复长回复末尾卡片点击并统一聊天滚动
+- [15369fec](https://github.com/3316891527/Operit/commit/15369feca98b59f73cf7f7fe9cf41ada02c5a8d3) fix(memory): 同步工具阈值并优化范围检索
+- [af08bbd2](https://github.com/3316891527/Operit/commit/af08bbd2dd74d6f3a9f3da5cdf35e224aa1e1fb5) perf(chat): 缓存消息拆块并清理遗留代码
+- [00237dd4](https://github.com/3316891527/Operit/commit/00237dd4d47de4467365062319fc72468a14eb3a) fix(chat): 降低长历史发送前的重复读取和请求日志开销
+- [4740da86](https://github.com/3316891527/Operit/commit/4740da86fe5d0c4a5aa581d69ee3ac21cca441a4) test(chat): 修复请求体回归断言的 Android JSON API 兼容性
+- [eb90bfdb](https://github.com/3316891527/Operit/commit/eb90bfdb634b285b25f36e7b91a958d47ebd2c58) fix(chat): 按可见内容分块以修复空白气泡和首尾断层
+- [aa779dac](https://github.com/3316891527/Operit/commit/aa779dac7057f3427d2605047138f939b3d40ed2) feat(chat): 折叠消息生成详情并统一统计展示
+- [211ac40e](https://github.com/3316891527/Operit/commit/211ac40e729fa738933809ae6f65721ac3244c67) feat(ui): 精简侧边栏并重组设置与工具入口
+- [01bb5b92](https://github.com/3316891527/Operit/commit/01bb5b92b999ba7d3e2d606eebd4e603a805f3ca) feat(chat): 将嵌套对话目录与角色入口整合到侧边栏
+- [c793a3ae](https://github.com/3316891527/Operit/commit/c793a3ae27b3ed87f5d7cd5890e839aa96ad205b) feat(chat): 合并工作区与终端并增加统一主页
+- [36323033](https://github.com/3316891527/Operit/commit/36323033894eb7d05ef9de32f483069c30f48fd3) fix(ui): 修正系统栏图标与透明工具栏文字色的反向判断
+- [6c6447a7](https://github.com/3316891527/Operit/commit/6c6447a79a6faa4254dcb87be6d491a10a9b9350) feat(ui): 重构透明工具栏并统一默认主题与侧栏玻璃
+- [d96f070a](https://github.com/3316891527/Operit/commit/d96f070aa6d64267ccfd3028558e8066ec570b25) feat(character-card): 重构角色编辑分页与绑定资料入口
+- [7fe98fc5](https://github.com/3316891527/Operit/commit/7fe98fc52e862674266bb4e0bcc98f963758e0aa) feat(memory): 统一向量模型绑定与记忆设置分页
+- [080951c8](https://github.com/3316891527/Operit/commit/080951c85398ae58495516000c52987153b7f2aa) feat(chat): 为 Agent 输入栏增加供应商标识
+- [ce64910f](https://github.com/3316891527/Operit/commit/ce64910f4210492b0b478a263efc85bb389a3801) feat(packages): 重构包管理与插件获取配置界面
+- [8f317107](https://github.com/3316891527/Operit/commit/8f317107dc073ba64c6309f236920f30bf192caa) feat(workflow): 重构工作流界面并支持复制与 JSON 导入导出
+- [01d006e6](https://github.com/3316891527/Operit/commit/01d006e678e6261e6810f7129c2c1ca4a3e0ed12) feat(settings): 将全局用户名纳入主题统一保存
+- [1faffb73](https://github.com/3316891527/Operit/commit/1faffb73454ade8f7c12b2ab82c2288d4e5d47c2) chore(i18n): 补齐本轮界面文案与本地化条目
+- [72df213a](https://github.com/3316891527/Operit/commit/72df213a22e419a380d60fbdb1b7176707b0264e) feat(chat): 将上下文统计移入输入设置并增加累计用量
+- [67eef68e](https://github.com/3316891527/Operit/commit/67eef68e17884dfe4e1c16d3fa40aa2fc515f5d7) fix(ui): 修复审查指出的升级提示、转场与导航问题
+- [ba114e73](https://github.com/3316891527/Operit/commit/ba114e73890e2948b71481c39e798c37a1ee8711) fix(chat): 修正上下文入口标题的主题文字色
+- [757cceec](https://github.com/3316891527/Operit/commit/757cceecf94cbab4ff1248956253b4a79931a5d8) feat(backup): manage snapshot theme resources and logs
+- [2679206a](https://github.com/3316891527/Operit/commit/2679206a020a6a0e9b252442ff361f7a7a5695b9) feat(backup): restore snapshot media references on import
+- [dd836584](https://github.com/3316891527/Operit/commit/dd8365848fed2601d5cbe14d3e3ed424fe32ebdd) fix(backup): restore ZIP reader import and clean build warnings
+- [a11eed11](https://github.com/3316891527/Operit/commit/a11eed11beef9d6cad6b1a6de37438773895e325) fix(waifu): 转义 Android ICU 正则中的字面右花括号
+- [075c6435](https://github.com/3316891527/Operit/commit/075c64355a8f77bd01234789596659a37d945e92) feat(ui): 同步实机反馈修复与玻璃外观配置
+- [66d0c77d](https://github.com/3316891527/Operit/commit/66d0c77dfb7202327d1938251c094ee68dab4bba) fix(ui): 让设置分组与默认插件图标跟随定制主色
+- [90c03f82](https://github.com/3316891527/Operit/commit/90c03f82cb34bd48dd227b6f73151d7ce6eb5389) fix(ui): 补齐外观翻译并恢复聊天玻璃效果
+- [287fa9c6](https://github.com/3316891527/Operit/commit/287fa9c669abf6087ea650af96548fe7a9f06c5e) fix(i18n): 清理已删除设置的孤立日语翻译
+- [07c91aa3](https://github.com/3316891527/Operit/commit/07c91aa3837c04924fdead4c633a22757b0cc859) docs: 记录独立发行集成基点与52项PR来源
+- [76b22679](https://github.com/3316891527/Operit/commit/76b22679037647c5b3eeb1d3365015ab601ff021) fix(integration): 协调联合迁移与备份兼容并完成发行整合
+- [c4920663](https://github.com/3316891527/Operit/commit/c4920663426dbeaa0bd28a67c85792c934d6bcdf) fix(integration): 修复主题与流式渲染编译错误
+- [5c6a52d6](https://github.com/3316891527/Operit/commit/5c6a52d636b2f772b6f9919d8a793ce4543fb790) ci: 发布打包结束后仅保留APK下载产物
+- [e8b3b400](https://github.com/3316891527/Operit/commit/e8b3b4002f8b395f6fed9fada4b5b29c2f54c1bd) fix(integration): 补齐原生插件声明并适配快照测试
+- [bdff0056](https://github.com/3316891527/Operit/commit/bdff0056606a74761b1777926380d8e0dd64ee49) ci: 发行构建仅上传APK并接入固定签名密钥
+- [eed0b0bb](https://github.com/3316891527/Operit/commit/eed0b0bb688658db60ab6b9c215d68686fdf9c0b) feat(distribution): 固定发行签名并升级APK安装版本
+- [9f252d12](https://github.com/3316891527/Operit/commit/9f252d12c61e5064de9858fdc2dab4a533805fbc) test(integration): 修复JVM测试环境与过期预期
+- [fa1a0325](https://github.com/3316891527/Operit/commit/fa1a0325ac6036247c2a2b0bf307d3d186bba8ea) fix: 修复发行版本格式并更新设置入口与终端核心
+- [9ad3694f](https://github.com/3316891527/Operit/commit/9ad3694fa3cf7f9996c60e1c6b11e1ee28746e70) ci: 接入独立发行Release与增量包发布
+- [29244342](https://github.com/3316891527/Operit/commit/292443425feaa62b5d558c0645c0d13f14ee2a2c) feat: 接入独立发行更新源与增量发布
+- [2a7331e1](https://github.com/3316891527/Operit/commit/2a7331e1df167e5c4ab8148ace45a90ab2e9a50d) ci: 校验外置资源未打包并报告 APK 大小
+- [6dc1dbfa](https://github.com/3316891527/Operit/commit/6dc1dbfae6e96c2d3f48a4b29f916180125a02e3) feat: 外置离线资源并支持备份导入
+- [45b64499](https://github.com/3316891527/Operit/commit/45b644999367a4a62dc80d79fb037d10be1e9001) ci: 增加独立的云端离线资源发布作业
+- [7dc8bf3d](https://github.com/3316891527/Operit/commit/7dc8bf3d9cd386cca20ffcea8a0485c54ab0f272) ci: 在云端校验并发布固定离线资源
+- [38261aae](https://github.com/3316891527/Operit/commit/38261aae4270d356369e8813dec4176b374a0758) perf(chat): 减少历史加载与分块渲染重复处理
+- [c8f4ca9e](https://github.com/3316891527/Operit/commit/c8f4ca9e7309e7c403d970ba17b972bf2bf6d16f) feat(ui): 整理工作台终端与离线资源入口
+- [ec570588](https://github.com/3316891527/Operit/commit/ec5705882e91455156e31954f2095dd99d77271e) fix(htmlpackager): 修复导出完成后打开文件的工具引用
+- [e949eb5e](https://github.com/3316891527/Operit/commit/e949eb5eff3a7b9e651a3108b97563e4c79ff771) fix(plugins): 修复页面加载生命周期并保存聊天草稿
+- [8542070e](https://github.com/3316891527/Operit/commit/8542070e1878419533dc7eb7c8dbdf079c4229bd) feat: 完善个人版设置并接入原生消息翻译
+- [6803712c](https://github.com/3316891527/Operit/commit/6803712c4437436a4118ea2dc187f28a2a9de84e) fix(settings): 补齐模型列表透明背景的 Color 导入
+- [2c9212ae](https://github.com/3316891527/Operit/commit/2c9212ae3bfb6122fdaa342375ba214929f5c744) feat: 接入原生动态界面并精简图标包
+- [978fa79b](https://github.com/3316891527/Operit/commit/978fa79bc08bab659335f30773d2a444a03e4dde) fix: 修正工作台终端入口与默认包配置并适配 A2UI Compose
+- [ce727276](https://github.com/3316891527/Operit/commit/ce727276f66e222c342d2459c46bce3b1ba4ad3d) test: 同步代码围栏的闭合状态断言
+- [b2d7e307](https://github.com/3316891527/Operit/commit/b2d7e30741ad40e59c252d8678aa949c929401b9) feat(a2ui): 原生化生成工具并拆分外部可选引导
+- [049202d2](https://github.com/3316891527/Operit/commit/049202d23614bfe87dc8812190f053dea0a281b1) test(a2ui): 隔离 live 版本单测与 Android 落盘依赖
+- [0dfbea95](https://github.com/3316891527/Operit/commit/0dfbea95717c61ae0c187088744e30a94c6e1251) refactor(a2ui): 统一组件命名与私有状态目录
+- [d8a7d2a6](https://github.com/3316891527/Operit/commit/d8a7d2a6b04a9fb2343abc003dd4ee2a2fcce4c5) fix(a2ui): 修正 live 输入校验与错误分类
+- [66d9152d](https://github.com/3316891527/Operit/commit/66d9152da7f7c111b0450d798b36d152e45b09fb) fix(network): 统一传输错误 JSON 码
+- [8c40a9d9](https://github.com/3316891527/Operit/commit/8c40a9d901745b762c8008b517f7a6bf76ff0697) fix(network): 补齐传输错误依赖导入
+- [f43694ea](https://github.com/3316891527/Operit/commit/f43694ead87982d7aed627bf6230870cdd4c286f) test(network): 补齐传输错误测试依赖导入
+- [387ee3e8](https://github.com/3316891527/Operit/commit/387ee3e8eb73a13ed827ef38a3283c6a14fd418c) release(distribution): 发行版本设为 1.12.2+2 / versionCode 58
+- [732cd8bf](https://github.com/3316891527/Operit/commit/732cd8bf44b1257d0ce80043f49cb5d84ae00100) fix(distribution): 排除终端传递的完整图标库并补齐图标子集
+- [166a8f9e](https://github.com/3316891527/Operit/commit/166a8f9e6d38f906410928d84a741e2b34062a22) fix(ci): 图标引用检查改用 git ls-files，不再依赖 rg
+- [94a5313f](https://github.com/3316891527/Operit/commit/94a5313f739c652edd631e48c3a70e2a89877bad) fix(distribution): 修复终端配置和资源删除，准备 1.12.2+3 调试版
+- [eec34720](https://github.com/3316891527/Operit/commit/eec3472073216ce34e83fa1d2082939802200c42) fix(distribution): 恢复中断的终端删除并同步未安装状态
+- [6808131a](https://github.com/3316891527/Operit/commit/6808131a88bf2759fc6d614a6de9aa44c8220b7d) 修复 Ubuntu 资源删除竞态
+- [e12804ea](https://github.com/3316891527/Operit/commit/e12804ea13a2b01e72999c02392bc343b29e44ce) fix(resources): 清理无读取权限的终端目录并保留删除结果
+- [df8fc803](https://github.com/3316891527/Operit/commit/df8fc803583eb8349475ea16f8e7b0e42f3348e6) fix(resources): 修复零权限目录的权限恢复
+- [95c7768b](https://github.com/3316891527/Operit/commit/95c7768b5f09491b2908d2911e5eccf501facce4) test(resources): 按真实目录权限修正清理回归
+- [285c628f](https://github.com/3316891527/Operit/commit/285c628f6dab448de4fd3cc95bf80b1fb9490a10) feat(theme): 支持气泡和输入框背景百分比透明度
+- [0eb5674a](https://github.com/3316891527/Operit/commit/0eb5674a381fe0a0a1152fcb561dbc0da5fd15b0) fix(market): 默认关闭插件市场精选筛选
+- [ed386cc8](https://github.com/3316891527/Operit/commit/ed386cc8bf8751c23ee6f009784c1852f58010cd) fix(settings): 清理重复提醒并修正协议显示
+- [73ed1570](https://github.com/3316891527/Operit/commit/73ed157025234bea5e3632122d456a5129add8bd) feat(onboarding): 重构单页首次使用流程
+- [5fa6de67](https://github.com/3316891527/Operit/commit/5fa6de67925f4b726be186838d53bb4a252c1070) feat(onboarding): 接入完整用户协议并重设计欢迎页
+- [9e18fca7](https://github.com/3316891527/Operit/commit/9e18fca73b2f284e2550c5f96a26e857e974cc5d) fix(onboarding): 协议确认不再记录版本与日期
+- [ee0c0070](https://github.com/3316891527/Operit/commit/ee0c0070114858845416be2c3399737079820a96) feat(onboarding): 重做启动页并整理协议正文
+- [9d89cc34](https://github.com/3316891527/Operit/commit/9d89cc3479b32eca376d35d1f07566b06dd25bc0) fix(onboarding): 修正首次启动状态检查
+- [721688b2](https://github.com/3316891527/Operit/commit/721688b22b0a383a8864fae802d3f0ae1e2df425) fix: 分块回填超长消息正文
+- [0dbd1c8a](https://github.com/3316891527/Operit/commit/0dbd1c8afd546c0d9dff5b413bd3c2f03bb26176) fix: 修复终端主题和独立更新下载
+- [c86235ea](https://github.com/3316891527/Operit/commit/c86235ea9bf783303f25c0a88c9438665d51e770) fix(skills): 从个人仓库获取新版开发技能安装脚本
+- [832c8abd](https://github.com/3316891527/Operit/commit/832c8abd316ec34c33e1ebcf7613434d0ddc5222) fix(skills): 从独立文档仓库下载开发参考文档
+- [98310914](https://github.com/3316891527/Operit/commit/983109145fd422c116e57979a32c4a112b6e192f) fix(distribution): 发布 1.12.2+4 并补全技能示例
+- [eacd0c08](https://github.com/3316891527/Operit/commit/eacd0c084281ebe16004892ef1211788c1dba7cb) chore: 从 assets 移除内置签名密钥库
+- [c2baad1e](https://github.com/3316891527/Operit/commit/c2baad1eb473f07bfbe8f68199226b3335edfd75) chore: 从 assets 移除内置签名密钥库
+- [9a89e458](https://github.com/3316891527/Operit/commit/9a89e4585ddec55d369c82b60173d2d2755606cc) fix: 修复终端键盘遮挡、补丁选择和模型提示
+- [0cffc3b5](https://github.com/3316891527/Operit/commit/0cffc3b55d8ed4e0b4a10adf651ef77cc560981d) fix: 统一页面提示并修正终端键盘视口
+- [3e79e54c](https://github.com/3316891527/Operit/commit/3e79e54c2b2a552163bbe75df0143c0673332ed6) fix: 修复思考首字超时并完善对话和终端入口
+- [9d053ef0](https://github.com/3316891527/Operit/commit/9d053ef08171192f76280444e6c7e292b0b21f74) fix: 区分脚本执行日志与最终结果
+- [b659b100](https://github.com/3316891527/Operit/commit/b659b1009544a3324456ce517dc7907e3701dadc) fix: 修复 Toast 替换导致的 Kotlin 编译错误
+- [46e5ebcc](https://github.com/3316891527/Operit/commit/46e5ebcc7a12f21edc36090dca663ab6796fe5ba) fix: 修正终端键盘布局并更新通知品牌
+- [ff0b0f73](https://github.com/3316891527/Operit/commit/ff0b0f73a038f591be905e8e549bfc436168b3cc) fix: 修复终端键盘抬升并用 Beta 开关控制补丁更新
+- [7e539475](https://github.com/3316891527/Operit/commit/7e539475da231322218f9e78374ffccfef944ccd) fix: 将内置工具执行超时按失败返回
+- [a745b398](https://github.com/3316891527/Operit/commit/a745b398d5766ee3c7dc6b7429b56f360bf7bd21) docs: 补录 TODO 功能验收结果
+- [0caccba4](https://github.com/3316891527/Operit/commit/0caccba48452a1a3690f43c2f4a630f24fa2ec8f) feat: 增加聊天归档并整理工作区与资料入口
+- [722a08c3](https://github.com/3316891527/Operit/commit/722a08c35e03e2ee33538670d1ab80a0e22a5886) fix(chat): 修正当前会话删除检查与锁定误报
+- [fdb9d433](https://github.com/3316891527/Operit/commit/fdb9d4334ee61237843fb2975911d5ee5f3eccd1) fix: 修复请求错误静默结束并区分重试策略
+- [bb600a57](https://github.com/3316891527/Operit/commit/bb600a57b22509b47abf2a20bd31ba65b11e3520) fix: 补齐工作区状态订阅的 Compose 导入
+- [a9a33815](https://github.com/3316891527/Operit/commit/a9a33815e8a77aec80893ae1a08fa53d1c33304d) feat: 增加聊天图片全屏预览与应用内相册选择器
+- [7f9d45ce](https://github.com/3316891527/Operit/commit/7f9d45ce0aca0437bc23a6724b72ca49867d4c94) fix(profile): 恢复小图标并直达完整资料编辑页
+- [7af42208](https://github.com/3316891527/Operit/commit/7af422088b2cd888afd6c17aaba3faf66a1702f6) feat(logging): 增加每日恢复开启的日志写入开关
+- [64c280b9](https://github.com/3316891527/Operit/commit/64c280b9382e8991b85e659f6fea447a8f9af68b) feat(chat): 将语音通话迁到附件菜单并禁用空白发送
+- [ca96a5ee](https://github.com/3316891527/Operit/commit/ca96a5ee6df4bfddf86ddc473f8e444f15764150) feat(chat): 接入无用户消息的手动继续生成
+- [42051a70](https://github.com/3316891527/Operit/commit/42051a70ff05784d0f45a348342296726989ec20) chore(release): 记录统一验收通过并准备 1.12.2+6
+- [ebe507e4](https://github.com/3316891527/Operit/commit/ebe507e4d5030fd1ad6523033f6be354d5c12841) feat: 精简对话列表并统一短动画与 OKToast
+- [7a55b067](https://github.com/3316891527/Operit/commit/7a55b067b6926069a5dfa76858207f9b4d83390b) fix: 调整 OKToast 比例布局并处理缺失模型配置与请求失败
+- [e925c599](https://github.com/3316891527/Operit/commit/e925c599baae5b249e2ee6d1d24f265bec35db92) fix: 配置与 HTTP 请求错误统一使用上方提示卡片
+- [e6b77026](https://github.com/3316891527/Operit/commit/e6b770264ac94eaf7a97990b9e29c71bbe4c7373) release: 准备 1.12.2+7 并分离发行说明与增量元数据
+- [49db947c](https://github.com/3316891527/Operit/commit/49db947cf3a521867fe4c4b19966acd7b58bd8d9) feat: 完善对话管理、模型工作区与主题交互 (#18)
+- [462e0520](https://github.com/3316891527/Operit/commit/462e05202f038781036df93693ff2dbd3206fa1e) release: 准备 1.12.2+8 版本与发布说明 (#19)
+- [632e1648](https://github.com/3316891527/Operit/commit/632e16486a3f07b10a84ee79003d92a44c5d085e) 完善模型配置、工作流与主题显示设置并支持对话批量移动
+- [0c6a1d51](https://github.com/3316891527/Operit/commit/0c6a1d515404979404c35b22108f8e590e0d4dd1) 修复重试与插件大结果分配并分类整理 TODO
+- [20b02178](https://github.com/3316891527/Operit/commit/20b0217851067985fa3a19b0a59b393606c26ef5) 移除内置表情与恢复默认并处理空分组
+- [aac8a2ec](https://github.com/3316891527/Operit/commit/aac8a2eca5578b434d633a9eec3e220558e1010a) release: 准备 1.12.2+9 版本与发行说明 (#22)
+- [083b1d1b](https://github.com/3316891527/Operit/commit/083b1d1bce137c74b55003f1f6f96f8e6a496a01) feat(settings): 整合数据备份、主题与角色配置 (#24)
+- [319d1b6e](https://github.com/3316891527/Operit/commit/319d1b6e5f319c37d672b745b67a210dc79dea9b) fix(tools): 补充包工具 JSON 参数错误诊断
+- [4796bce5](https://github.com/3316891527/Operit/commit/4796bce5f9ef1c262000b48662d4fa7260eae915) fix(llm): 保留交错工具调用与最终快照的参数
+- [7f2bbfef](https://github.com/3316891527/Operit/commit/7f2bbfefc3a129f34b3e07a382bf13e701d095f8) fix(a2ui): 统一编译说明和围栏并由宿主投递卡片
+- [e1696ce1](https://github.com/3316891527/Operit/commit/e1696ce117745584d6bb0071d6e84b59b129fb39) test(llm): 隔离工具参数流回归的 Android 日志
+- [25ab8786](https://github.com/3316891527/Operit/commit/25ab878642b3e6d06a4940fdc2eae7e0b4f8a79f) fix(ui): 移除崩溃报告换行开关的灰色涟漪
+- [b917b392](https://github.com/3316891527/Operit/commit/b917b3924069e894fcff1a7e066ffa0b55cda45e) docs(ui): 增加离线资源与本地模型交互设计稿
+- [ec75dfb4](https://github.com/3316891527/Operit/commit/ec75dfb48be157ca496b8383266bd06372ef7b20) docs(ui): 增加模型与对话设置交互设计稿
+- [51641db8](https://github.com/3316891527/Operit/commit/51641db8c2f2753641770665915db26e996a1156) docs(ui): 基于原第二版修订四页签与功能分配
+- [4e025277](https://github.com/3316891527/Operit/commit/4e025277477078da6766d61bbd072161cb26aa7a) feat(settings): 将完整上下文总结接入四标签模型工作区
+- [b561522c](https://github.com/3316891527/Operit/commit/b561522caaf94e22d79292abb7ab2b6d6237899b) docs: 记录六个分支的统一联调范围与验证入口
+- [2230a7c9](https://github.com/3316891527/Operit/commit/2230a7c95d3e64fda9546c248ad3a38dfc3b2d33) fix(terminal): 将所有非零退出码统一判为失败
+- [44d4b928](https://github.com/3316891527/Operit/commit/44d4b9280b35253dfc1d8a5cef37262fdc3c3f3c) feat(chat): 支持独立语音条录制、试听和 STT 文字请求
+- [d81c402f](https://github.com/3316891527/Operit/commit/d81c402f5f13d9adbe9a8a28efac05f4575695f0) fix(chat): 修正语音发送提前返回的任务类型
+- [ca726e6a](https://github.com/3316891527/Operit/commit/ca726e6af977564dc4cd91d4b434f70c1e6c7472) fix(chat): 收紧语音气泡并重设计录音面板与波形反馈
+- [ccafa6f2](https://github.com/3316891527/Operit/commit/ccafa6f2e4357a987a77b6eb17e5f3d67bb2d911) feat(chat): 接入语音音频理解顺序并修正命令框对齐
+- [a3bfde68](https://github.com/3316891527/Operit/commit/a3bfde68f3eff27e7882acb1c01257bec172650d) docs(memory): 新增记忆空间入口与图谱 HTML 交互稿
+- [f749f61a](https://github.com/3316891527/Operit/commit/f749f61aa399689612a847185ff2c7157e155197) docs(memory): 按反馈完善第二版空间入口与图谱交互稿
+- [916345f0](https://github.com/3316891527/Operit/commit/916345f0620b412836c673935ad49884c154a5cd) feat(memory): 落地记忆空间入口与图谱工作台
+- [8a70022e](https://github.com/3316891527/Operit/commit/8a70022e1c4a9ac8e5269110a05c4a598826954e) fix(memory): 补齐记忆工作台 Material 图标子集
+- [a5a1d744](https://github.com/3316891527/Operit/commit/a5a1d744370c041b1d81e051e33891a13bd95c01) fix(keypool): 缩短冷却并完善恢复与状态提示
+- [ecc46741](https://github.com/3316891527/Operit/commit/ecc46741d66a7e447d354780b829afef89d49f09) fix(memory): 改善选择弹窗与默认空间删除状态
+- [6cf6331c](https://github.com/3316891527/Operit/commit/6cf6331cdc1f542ef57cfc28b6b2dcb8200b7cac) chore(i18n): 补齐多语言缺项并记录日语剩余范围
+- [861009bd](https://github.com/3316891527/Operit/commit/861009bde17378d3fc0184e2679c808215f0c301) chore(i18n): 完成日语缺项补译与八语种资源核对
+- [0d8bc945](https://github.com/3316891527/Operit/commit/0d8bc9455dc451dec52de28ac23d3f1c160cc2d1) refactor(resources): 清理工具箱与旧用户偏好86个废弃字符串
+- [8eef0fbc](https://github.com/3316891527/Operit/commit/8eef0fbc802d6a0eacc4ba1d5b78b26b9a6603d1) ci(release): 准备1.12.2+11独立发行
+- [5d234fb6](https://github.com/3316891527/Operit/commit/5d234fb6e39c090623858eea1afa90c73d5f497e) fix(ui): 修复界面媒体交互并准备1.12.2+12 (#37)
+- [e203badd](https://github.com/3316891527/Operit/commit/e203baddd62145cbeac5806b5c04fd6127e83fd5) fix(chat): 拆分发送协程并完善取消收尾 (#39)
+- [e0f8f171](https://github.com/3316891527/Operit/commit/e0f8f17105beed8aa869e5738aeef802b50cd117) fix(update): 按实际字节范围筛选镜像并校验补丁分段 (#40)
+- [4d657807](https://github.com/3316891527/Operit/commit/4d6578070e1344d920edaea804c7b1e75bacfee5) fix(voice): 将音频理解限定为原话转写 (#41)
+- [96b44e58](https://github.com/3316891527/Operit/commit/96b44e58e05f7539f253cfa77d16787cb7a31f66) fix(chat): 缩小图片过期角标并将过期语音移出气泡 (#42)
+- [3a232219](https://github.com/3316891527/Operit/commit/3a232219da63454491ef79394613378cbac23465) feat: 语音原话与声音观察分离，累计用量按九类展示 (#43)
+- [76336d49](https://github.com/3316891527/Operit/commit/76336d49b1c8766e7cada4a34b5e88ac2014ddcf) fix: 保留终端失败输出并去除重复错误 (#44)
+- [4385d4aa](https://github.com/3316891527/Operit/commit/4385d4aaef129390169ec2c36236a3bddf7b0b0e) fix(chat): 对齐过期媒体标签并保留音频消息头像 (#45)
+- [fc74dbf7](https://github.com/3316891527/Operit/commit/fc74dbf78a939f1c77a858d2abefe2c79e4b44d5) fix(mcp): 改为手动启动并修复作者空值崩溃 (#46)
+- [f91ad450](https://github.com/3316891527/Operit/commit/f91ad450373b58e7d6bd2ef7891677fda26b93a6) ci(release): 准备 1.12.2+13 正式发行 (#47)
+- [a9e0e449](https://github.com/3316891527/Operit/commit/a9e0e449957bbb6e36c1a179b882843df331fe80) docs(speech): 添加语音服务配置交互设计稿
+- [a0dac38a](https://github.com/3316891527/Operit/commit/a0dac38ae3236b374ac236b2d57f582f8ac74304) feat(settings): 落地语音服务原生工作区
+- [3de3d756](https://github.com/3316891527/Operit/commit/3de3d7567600036221892016358098719a0899d8) fix(storage): 修复数据管理角色卡与聊天列表头像显示 (#56)
+- [541a1a14](https://github.com/3316891527/Operit/commit/541a1a144c6fcaf807c15e6ccce228250e4d5295) feat(resources): 离线资源按需分发与模型存储管理 (#54)
+- [0a1860fe](https://github.com/3316891527/Operit/commit/0a1860feb7146da45a5b8a38491e3b63f27f7bfe) fix(packages): 保留完整名称并固定四标签等宽布局 (#50)
+- [2c48f62f](https://github.com/3316891527/Operit/commit/2c48f62f8f563617d82a628e90471917b7484294) fix(toolpkg): 避免助手语音条挂载时抢焦点 (#52)
+- [cbd04afd](https://github.com/3316891527/Operit/commit/cbd04afdb66d62e3123230382659c9740ab82110) fix(chat): 在流式解析前隐藏协议元数据 (#49)
+- [558632b4](https://github.com/3316891527/Operit/commit/558632b41901d0c04c3e0a048f20dcd753c5b309) fix(chat): 阻止重试后工具卡片累积并释放已完成子流 (#55)
+- [93503038](https://github.com/3316891527/Operit/commit/93503038d45ba89bb61c32cbb65b9ef801b9a038) feat(distribution): 发布1.12.2+15并分离补丁与资源仓库 (#58)
+- [d1232b73](https://github.com/3316891527/Operit/commit/d1232b73a68d5d1ae6c9a88b2769a650b5dbdbd0) fix(release): 通过 Release ID 核对并公开迁移草稿
+- [6383d701](https://github.com/3316891527/Operit/commit/6383d701ff9ddcbad1697dadcc72c90457e79422) fix(release): 通过 Release ID 核对并公开迁移草稿 (#60)
+- [a9db43b8](https://github.com/3316891527/Operit/commit/a9db43b8bd716cda649e1327a8e2729d9cb4e9b2) chore(docs): 删除未引用的 Legacy 图片
+- [852ec1e4](https://github.com/3316891527/Operit/commit/852ec1e48347cdff1fe072a6aab2bad20e544a62) chore(docs): 删除未引用的 Legacy 图片
+- [6a4b9bfb](https://github.com/3316891527/Operit/commit/6a4b9bfb399c670321518089592ae3e02e38897e) fix(chat): 按故障位置细分请求错误并保留后台提示 (#66)
+- [f4b28b21](https://github.com/3316891527/Operit/commit/f4b28b216c53553abf92587a3e621189d5733a07) fix(chat): 按故障位置细分请求错误并保留后台提示 (#66)
+- [3dd12589](https://github.com/3316891527/Operit/commit/3dd12589cae8374379179f4eafb5a77c7daabe4f) fix(packages): 按当前应用真实来源删除扩展并核实结果 (#62)
+- [74c8010c](https://github.com/3316891527/Operit/commit/74c8010cf44e4294a146b3f443425809d10f532c) fix(ui): 美化终端选项菜单并保持原导航 (#63)
+- [b1d7bc62](https://github.com/3316891527/Operit/commit/b1d7bc628cfbe685f318ca31d1cfea8a3aeadf4b) fix(workflow): 展示失败节点名称、执行动作和具体原因 (#64)
+- [7c72bf2a](https://github.com/3316891527/Operit/commit/7c72bf2a3d5f327139e9f4db976b16b5ebb81815) feat(market): 显示真实下载进度、速度和剩余时间 (#65)
+- [3ff9a2a7](https://github.com/3316891527/Operit/commit/3ff9a2a757554b9cd8e30c745656422016aaf1df) refactor(layout): 整理职责目录、删除废弃界面并修复验收问题 (#67)
+- [d836594c](https://github.com/3316891527/Operit/commit/d836594cc81cc4b2cf3bf66c5aad09a97ae45a4d) ci(release): 准备 1.12.2+16 与递增版本号 72
+- [886580d4](https://github.com/3316891527/Operit/commit/886580d4f1f94879954097f7338de0df1e087d7f) ci: 将 PR 检查目标同步为 dev
+- [937a6e30](https://github.com/3316891527/Operit/commit/937a6e30b4a7539866698d8250f2e9e65efd5c8e) ci: 保留完整构建流程并停止创建源码仓库标签
+- [42fc9d9f](https://github.com/3316891527/Operit/commit/42fc9d9f3362e9d473e30eec80240c7b4d3596a3) docs(ci): 记录工作流完整结构与发布范围核对
+- [b60e94e3](https://github.com/3316891527/Operit/commit/b60e94e33f1bf084866c630a998924aedf56fa6e) fix(tools): 正确返回包激活失败与不存在错误 (#72)
+- [5d0c4656](https://github.com/3316891527/Operit/commit/5d0c465657b634782c27646f150784a2142cfcd8) fix(resources): 升级保留已下载扩展及安装状态 (#73)
+- [62758a0d](https://github.com/3316891527/Operit/commit/62758a0df1795046573392a36fbc0a5b67335529) ci(release): 准备 1.12.2+17 紧急修复发行
+- [901471c5](https://github.com/3316891527/Operit/commit/901471c562ced9aea321526a49fb01e13f5955df) fix: 合入 +17 统一验收修复与同步扩展资源 (#83)
+- [780c5849](https://github.com/3316891527/Operit/commit/780c5849a315d1c5ffc6e5a266e83a9827bf50a0) fix(tools): 相同工具失败说明只输出一次 (#84)
+- [ea6359c8](https://github.com/3316891527/Operit/commit/ea6359c86cd6fc35bb0a50ba91d5c1e15b37cae9) feat(patch18): 集成工作区、消息、语音、工具计时、终端与资源管理改进
+- [79001e79](https://github.com/3316891527/Operit/commit/79001e79cb01bcd3a10688226212a6d5a5db0ab9) fix(patch18): 修正删除警告、亚秒计时与图片读取失败状态
+- [08a6c89d](https://github.com/3316891527/Operit/commit/08a6c89d358ed433e5693fbf77ebd6ac90a77bb1) fix(patch18): 补齐资源导入并统一生成结构化失败结果
+- [5b709b88](https://github.com/3316891527/Operit/commit/5b709b88d979a786cfc425c0507d930783f6538e) fix(patch18): 修正流式完成收尾并记录连接中止进度
+- [92a321bd](https://github.com/3316891527/Operit/commit/92a321bdfd7a74d46b763b2c87dd8af586757151) fix(speech): 修复离线语音崩溃与设置卡顿并完善试听配置 (#86)
+- [2f27a844](https://github.com/3316891527/Operit/commit/2f27a844a731aef6a1361ac2f0c6219e462835e0) chore(release): 准备 1.12.2+18 并固定补丁仓库发布范围
+- [ffb78d30](https://github.com/3316891527/Operit/commit/ffb78d3017df07329b8de37af45a4f17e6800d6d) ci: 将构建工作流改名为 build 并更新入口 (#90)
+- [718707fd](https://github.com/3316891527/Operit/commit/718707fd19ab7c27e38c8807055c80809d25e6dc) refactor(tools): 收口三档权限实现与 Shizuku 后端命名
+- [f33b310e](https://github.com/3316891527/Operit/commit/f33b310ea5791946a7f6d07cbfdd6daa22bedd6d) refactor(tools): 按逐文件清单整理内置工具与插件包目录
+- [cf31c7c7](https://github.com/3316891527/Operit/commit/cf31c7c74c255cd1d314d95ef7d7b9b43a23cfaa) fix(tools): 补齐解析器字符串插值常量导入
+- [528a8070](https://github.com/3316891527/Operit/commit/528a8070cb29774133234c353949943b79e640a5) fix(tests): 修复工具卡片测试 XML 字符串引号
+- [a9dd8317](https://github.com/3316891527/Operit/commit/a9dd831752956dd68fb2edb1395683e47f8a08ff) fix(workspace): 流式复制文件并显示粘贴进度
+- [9b9bb75d](https://github.com/3316891527/Operit/commit/9b9bb75d93b96b72204067fa576db30e5279d960) fix(workspace): 补齐单项和批量删除进度窗口
+- [d4e90bd1](https://github.com/3316891527/Operit/commit/d4e90bd1c02e703240fbc15b27f71c5c1188a734) refactor(chat): 按职责整理会话和工作区目录
+- [029426a5](https://github.com/3316891527/Operit/commit/029426a5acb7da5f6953b77927d8b82fc2ff36cb) fix(test): 修正工具卡流边界用例的 XML 字符串
+- [de1bc854](https://github.com/3316891527/Operit/commit/de1bc854fed181ebdd1d9ee6091c6adcf7cc405b) fix(ui): 将主题外观标签名称改为界面
+- [35396470](https://github.com/3316891527/Operit/commit/35396470127a4ee7d192e5c1089dc5ea2f862af1) feat(terminal): 内置 Codex apply_patch 并支持现有 Ubuntu 环境自动安装
+- [1de577c8](https://github.com/3316891527/Operit/commit/1de577c8ed573bbffa118b317fd44f1e04b7deea) fix(ci): 补齐 apply_patch ARM64 交叉链接开发依赖
+- [28f97ea9](https://github.com/3316891527/Operit/commit/28f97ea99039a1d32d13e20d9e3ef7910694ab5e) fix(voice): 停止重发已拒绝音频并隔离临时错误通知
+- [432c36a6](https://github.com/3316891527/Operit/commit/432c36a61f7eb18fd4723f4dc11671a5c166e69c) feat(terminal): 扩展 apply_patch 参数、内存检查与 JSON 输出
+- [c56058e4](https://github.com/3316891527/Operit/commit/c56058e4e0dd6df4e6af5fd934cc04ec8fa253f0) fix(voice): 按硅基流动文档适配 audio_url 音频输入
+- [4510d853](https://github.com/3316891527/Operit/commit/4510d853e516232f688f5af04b29718bb5e3706b) feat(terminal): 增加 apply_patch 禁止覆盖、只读预览与静默规则
+- [ba2a64e3](https://github.com/3316891527/Operit/commit/ba2a64e3e5da43e9845f3d7a33dd2a87092d33c7) fix(terminal): 保留 apply_patch 原生路径中的制表符与换行字节
+- [86aacf8b](https://github.com/3316891527/Operit/commit/86aacf8b61236552b087ef71216f27195ee9fb51) fix(chat): 按实际密钥模式生成请求失败提示
+- [8ec87cd2](https://github.com/3316891527/Operit/commit/8ec87cd22b84699bd6eda09f65489970a8518603) fix(chat): 实时显示总结重试进度并统一错误提示
+- [75a57a6d](https://github.com/3316891527/Operit/commit/75a57a6d04f26e453eac408dc7d8c9c6dd368ba6) test(chat): 按异常类型校验密钥重试的原始 HTTP 错误
+- [8f693b22](https://github.com/3316891527/Operit/commit/8f693b22e1b69729d2a7ac51aaa4470842d063e4) feat(theme): add role-scoped JavaScript appearance API
+- [e9b4a063](https://github.com/3316891527/Operit/commit/e9b4a063513233a00339e84a040c079897608885) feat(theme): 落地原生主题工作室与目录资源工程
+- [65cf774d](https://github.com/3316891527/Operit/commit/65cf774d8677d5348db72d2f31e8c3bf8cc4be55) fix(chat): 简化附件成功提示并支持点击关闭
+- [2531e495](https://github.com/3316891527/Operit/commit/2531e4953c46c5a5d136b796831818d89b4e3cce) fix(theme): 完善外观消费、原生预览与源码编辑
+- [a8cb4c99](https://github.com/3316891527/Operit/commit/a8cb4c99bec128e400ae2feca05b08b1f162d6cb) fix(theme): 修正气泡预览的偏好字段读取
+- [208ddb51](https://github.com/3316891527/Operit/commit/208ddb51546632e7032182098c7e31b56074cf1c) fix(theme): 显示工作室背景并补充验收与方向评估
+- [c47c24a2](https://github.com/3316891527/Operit/commit/c47c24a2bcda42d761d0c6ce0cdddf7034b97a8f) chore(release): 准备 1.12.2+19 发行与增量更新
+- [75703e5b](https://github.com/3316891527/Operit/commit/75703e5bdcd91322ff236b44db38d32e3f6ee057) fix(theme): 扩大工作室图片与工程资源预算
+- [e9cf4f82](https://github.com/3316891527/Operit/commit/e9cf4f826183772099afc27650d6c8b0101d4e2d) fix(mcp): 已配置服务静默加载并移除加载浮层
+- [5e2a1547](https://github.com/3316891527/Operit/commit/5e2a1547d3ed21119438fa4e6a1593ff58720f80) fix(chat): 修复复制消息面板底色错位与内容裁切
+- [536d9e67](https://github.com/3316891527/Operit/commit/536d9e67fea6a582b5a127a5070f6663fce8d3d9) feat(theme): 支持聊天弹起菜单独立形状与位置偏移
+- [4224c46c](https://github.com/3316891527/Operit/commit/4224c46c3717e6e73394cf490d46dc0629f8ca8d) fix(theme): 互斥菜单上下偏移并补全聊天预览参照
+- [d87daaea](https://github.com/3316891527/Operit/commit/d87daaea5d1af5360fff6ebfc78e9ce0d4901604) fix(theme): 放大小预览并支持滚动定位
+- [33b8e6be](https://github.com/3316891527/Operit/commit/33b8e6be24fa7ca93aeff0e3f00faa0876a944e7) chore(release): 准备 1.12.2+20 发行与增量更新
+- [580b0daf](https://github.com/3316891527/Operit/commit/580b0daf0410d7530a94551e30c8a351e166fb46) refactor(model): 按业务领域拆分模型并保留持久化身份
+- [12ec78c9](https://github.com/3316891527/Operit/commit/12ec78c96a967d950d2c8f55572ea58d7055e783) fix(chat): 过滤历史摘要中的模型协议负载
+- [6ff74671](https://github.com/3316891527/Operit/commit/6ff74671b0e7206529ad45d21a84936c886dadaf) feat(terminal): 接入托管任务并保留现有执行接口
+- [1caebe21](https://github.com/3316891527/Operit/commit/1caebe21d37809a43bb72d129e2f42510b14fdc0) fix(ci): 按固定资源快照校验开发构建
+- [0fc56cbb](https://github.com/3316891527/Operit/commit/0fc56cbb0f7c46c026d58721c6b6bbfc8a1e05b5) fix(terminal): 保留取消后恢复的会话并报告真实存活状态
+- [5c9ad041](https://github.com/3316891527/Operit/commit/5c9ad041ae10c318d5001a84c6b709d5ca33143c) fix(notification): 点击通知打开来源会话
+- [9f991f48](https://github.com/3316891527/Operit/commit/9f991f480c5227c8224ea6d00ea2ec7cb82c9d5c) fix(gemini): 过滤空 Part 并拒绝空请求
+- [5b6933a0](https://github.com/3316891527/Operit/commit/5b6933a0fa38ba376134b35524af1a811b450f6c) fix(test): 修正 Gemini 回归用例的工具类导入
+- [e5e51de0](https://github.com/3316891527/Operit/commit/e5e51de0da24975c7deafe5a5f2941d95f42e2c6) fix(ui): 补齐 MCP 启动反馈并仅用斜杠触发菜单
+- [6795ca9d](https://github.com/3316891527/Operit/commit/6795ca9dd54e4e3f5b350417f1e5e224368e6e16) fix(a2ui): 隔离 HTML 标签页承载器的复用与销毁
+- [93f36a63](https://github.com/3316891527/Operit/commit/93f36a639ee90920e510e3754ad10ac43261343b) feat(a2ui): 支持当前轮次等待表单提交并返回结构化数据
+- [ac86467c](https://github.com/3316891527/Operit/commit/ac86467c446da4971f7594fe0b5fb9cec55fb472) fix(a2ui): 统一快照原子读写并补齐 live 等待联用校验
+- [a71bf9be](https://github.com/3316891527/Operit/commit/a71bf9bee0e7b42087943691f9be166ffc52d9be) fix(theme): 记住工作室预览模式与编辑位置
+- [c7182072](https://github.com/3316891527/Operit/commit/c7182072c69ee7dfc5044439a3f78659628dd9c4) fix(chat): 修复分块气泡重复切角与九宫格首尾
+- [4dd1f233](https://github.com/3316891527/Operit/commit/4dd1f23368a11dd71bf2bd68425d6d9c1e75476c) chore(release): 准备 1.12.2+21 发行
+- [2d21ab4b](https://github.com/3316891527/Operit/commit/2d21ab4baf955a17dbf5a30e5a4a4e3432c04304) fix(a2ui): 移除外部示例引导脚本并更新使用说明
+- [5dc391ce](https://github.com/3316891527/Operit/commit/5dc391ce9df9057ab5a3e6605e4a596625ff2038) fix(ci): 签名发行前准备并发布当前源码离线资源
+- [f9cda429](https://github.com/3316891527/Operit/commit/f9cda4296182df809bd6df29a17374ba73914e98) fix(permissions): 权限页工具说明跟随应用语言
+- [59b146a1](https://github.com/3316891527/Operit/commit/59b146a1cc4eb852394878686690bc44fc536abc) fix(permissions): 权限列表实时反映已安装启用的工具
+- [0285ae32](https://github.com/3316891527/Operit/commit/0285ae32a01b3adb2a7785d61f9d2a764627af5e) feat(http): 终端管理服务并支持浏览器自动登录
+- [ff54ab5e](https://github.com/3316891527/Operit/commit/ff54ab5e6b92f1ba7e896334f919ba85817b2dbd) refactor(terminal): 拆分公共命令构建与资源校验
+- [b7e7922d](https://github.com/3316891527/Operit/commit/b7e7922db621152e9a9aebc77c1511f8ef420dba) fix(chat): 避免发送触发总结时阻塞主线程
+- [018f6867](https://github.com/3316891527/Operit/commit/018f6867653db65d2226d09df0409ba0f7ad80dd) fix(memory): 同步上游文档块编辑器高度限制
+- [a4c7cef7](https://github.com/3316891527/Operit/commit/a4c7cef7e8836f0aa3b5258cf5140fbb40837b90) fix(chat): 同步 NUL 消息读取修复并适配结构化存储
+- [3f3ec85c](https://github.com/3316891527/Operit/commit/3f3ec85ccaea5a7281d9de1d31db42732131bb36) fix(chat): 同步流式重试修订与 Waifu 撤回
+- [9de59d24](https://github.com/3316891527/Operit/commit/9de59d2444dea4848abf049731e57a4bfce0a770) fix(mcp): 同步 stdio 工作目录与启动失败诊断
+- [74fd5c39](https://github.com/3316891527/Operit/commit/74fd5c394190d1b2ca4f9a3a05db25383a930968) fix(browser): 同步点击目标与导航结果校验
+- [501bc976](https://github.com/3316891527/Operit/commit/501bc9767f88ff3d5ffe49a9afc594a5a490bab7) test(chat): 对齐协程异常传播与内部 XML 标签断言
+- [30fb82c1](https://github.com/3316891527/Operit/commit/30fb82c13912c9d962b63699747c1eb952c432af) test(chat): 修正文档标签断言的字符串引号
+- [8c3635fc](https://github.com/3316891527/Operit/commit/8c3635fc2e5cc85fdf4670a38b51861d76af22fb) fix(theme): 补齐自定义主题多语言并统一消息名称
+- [2e6050d2](https://github.com/3316891527/Operit/commit/2e6050d27caa382371dc3a11e82105741718fab4) fix(theme): 修正主题属性入口与描边可见效果
+- [54c5554a](https://github.com/3316891527/Operit/commit/54c5554a0f90eb18c4da6c70d3996992d1050e19) feat(theme): 拆分 11 个动作按钮的独立图标入口
+- [4334e021](https://github.com/3316891527/Operit/commit/4334e021a6169546511f8a306605814e58656e50) feat(theme): 为自定义主题字体增加独立文字描边
+- [203176c0](https://github.com/3316891527/Operit/commit/203176c07feba2be81d901a0cf85cdd925a03604) fix(theme): 明确文字描边组件的 Compose UI 目标
+- [d23e1b8a](https://github.com/3316891527/Operit/commit/d23e1b8a5e653333df70ac5b07dfc944c0488ddb) fix(summary): 空摘要重新生成一次并阻止无效结果入库
+- [3d92ee2b](https://github.com/3316891527/Operit/commit/3d92ee2bcc0cdaf596d5e2901d55f44dff3f3e29) fix(code-runner): 隔离脚本运行并限制清理等待
+- [5dd74a86](https://github.com/3316891527/Operit/commit/5dd74a86d561357264d53eec09e27465e1cc9465) fix(theme): 显示描边小数值并提供细线编辑预设
+- [a8c95ceb](https://github.com/3316891527/Operit/commit/a8c95ceb425325bd483664bdc2a405c3f87a695c) feat(theme): 为动作按钮接入独立外观图层和交互状态
+- [f1acdd02](https://github.com/3316891527/Operit/commit/f1acdd02ec9b9ab6b88239791890975e76e42701) fix(theme): 移除文字描边宽度下方说明
+- [5c4923ec](https://github.com/3316891527/Operit/commit/5c4923ec2f7d44785abf3d902e04da208704964a) fix(theme): 保留动作图标独立尺寸
+- [0415730e](https://github.com/3316891527/Operit/commit/0415730e28849bc94452a59ada7331464e961ce9) chore(release): 准备 1.12.2+22 并在发布后清理已合入分支
+- [472d1680](https://github.com/3316891527/Operit/commit/472d1680611a40d1f73639a34a909ab70f87c83c) fix(theme): 修复文字描边输入与正文覆盖一致性
+- [d2758d21](https://github.com/3316891527/Operit/commit/d2758d21d7aaaba395544d72da996c2d66cfaafb) fix(ai): 按持久化配置刷新模型服务缓存
+- [a368f277](https://github.com/3316891527/Operit/commit/a368f2773767a767b67cfe47e8b3de49df8cf365) fix(bluetooth): 同步 BLE 写属性与完整负载传输
+- [e22e8706](https://github.com/3316891527/Operit/commit/e22e8706ac57c0af3b2a44b373fe392b513d5f4e) ci: 同步 Shell 与容器定义的 LF 属性
+- [abf9aa8f](https://github.com/3316891527/Operit/commit/abf9aa8f91282d0ad7fabfb97d43976f874cbc7f) fix(settings): 保留提示词选区与编辑视口
+- [e677a2a6](https://github.com/3316891527/Operit/commit/e677a2a632414aead5de89062daf386618043533) fix(update): 统一下载来源排序与文件校验
+- [ca126f99](https://github.com/3316891527/Operit/commit/ca126f99c4dbaada730e34c4ca4996e339b3be82) test(ai): 补齐缓存回归的 applicationContext
+- [6cce30bb](https://github.com/3316891527/Operit/commit/6cce30bb46dbe97ba4780b4e2937bdc2935d5202) feat(ui): add guarded local execution to PhoneAgent
+- [67de0cb5](https://github.com/3316891527/Operit/commit/67de0cb5450addea0d7c1a43ccd83f357dc05b64) fix(resources): prevent extension reimports and show descriptions
+- [0e66c813](https://github.com/3316891527/Operit/commit/0e66c813da4f2585ecf27c79612e5fc90fc3328a) fix(ui): prevent PhoneAgent Android parsing crashes and stalled plans
+- [cba45d35](https://github.com/3316891527/Operit/commit/cba45d358fa9b998d9b9949725853a3cfa2437ee) feat(ui): show PhoneAgent tap locations and persistent execution phases
+- [9c5be271](https://github.com/3316891527/Operit/commit/9c5be2719adeb78144191883d196384fb6b21111) fix(ui): keep PhoneAgent input service alive during planning
+- [d6cf7b94](https://github.com/3316891527/Operit/commit/d6cf7b94bfa45f7fd10bf3db171776da2407f1d8) perf(phone-agent): compact node handoff and confirm launch completion
+- [a7cd8ed5](https://github.com/3316891527/Operit/commit/a7cd8ed5520c76ad637378ba95a921a1d55fe8f5) fix(phone-agent): invalidate node dispatch after user takeover
+- [061bedbb](https://github.com/3316891527/Operit/commit/061bedbbb37c53949e3276fe6cf37d4ea5260aa3) fix(phone-agent): preserve launch state and acknowledge tap delivery
+- [ad642967](https://github.com/3316891527/Operit/commit/ad642967091b01ed1a2d4041955541a227306992) fix(theme): include custom appearance fields in theme transfers
+- [421f5b20](https://github.com/3316891527/Operit/commit/421f5b208f2623c4e437533719885233709630d7) fix: sync verified TTS cleanup and A2A protocol fixes
+- [8643aa96](https://github.com/3316891527/Operit/commit/8643aa96b734dd43fddfc5dc8a43900cc311e224) fix(speech): project local message sections before TTS cleaning
+- [b56bea3a](https://github.com/3316891527/Operit/commit/b56bea3a6418e02574d302167787f89d4dd8a378) fix: correct grep line numbers and guard SSE writer close
+- [88cf4f27](https://github.com/3316891527/Operit/commit/88cf4f27d5551326c96ac3dd517039aba3316b54) fix(a2ui): support computed table cells and structured events
+- [baff7720](https://github.com/3316891527/Operit/commit/baff7720bde8f34621c3a7573590796b91ae2179) feat(extensions): 隔离脚本列表并路由化扩展详情
+- [f53afd73](https://github.com/3316891527/Operit/commit/f53afd73118a3926fb5f755272caeeacddbd6d81) fix(ui): preserve launcher task semantics when opening apps
+- [988f9c6d](https://github.com/3316891527/Operit/commit/988f9c6df7c2f36521750785cbb718520fb6dd49) build(shower): package app launch changes from current server sources
+- [6b4f94d9](https://github.com/3316891527/Operit/commit/6b4f94d9d18769e20f1a6ac7f468e8ff40bc215a) feat(extensions): rebuild complete extension detail pages
+- [a4c4b4fe](https://github.com/3316891527/Operit/commit/a4c4b4fe0c448a50c4010a7a15e594ce1263eba8) fix(extensions): import DpRect height in detail regression test
+- [f8434861](https://github.com/3316891527/Operit/commit/f8434861ca0f6a9eccb506aee7a98d0f04272988) fix(extensions): enforce disabled state in details and script execution
+- [a7547e20](https://github.com/3316891527/Operit/commit/a7547e2037255153556b99e229a70e474248f414) fix(extensions): use a single disabled-package error name
+- [070b71a2](https://github.com/3316891527/Operit/commit/070b71a213a331dd13e90da4c3a7dffec6a1a0ee) fix(extensions): use the requested disabled-package message
+- [bae1ed5b](https://github.com/3316891527/Operit/commit/bae1ed5b0617335bb7bb2781695fc1a8ce82fa75) fix(market): sync ToolPkg API compatibility from upstream #1474
+- [a576507e](https://github.com/3316891527/Operit/commit/a576507ed3cde27e51b887e5423fa4125421f21e) fix(terminal): integrate protocol replies for interactive prompts
+- [a4e4f9b3](https://github.com/3316891527/Operit/commit/a4e4f9b3bcdf2f86a95b146cf137f34f0c14f01a) fix(vision): preserve DeepSeek Responses images and expose native image reads
+- [5062f6de](https://github.com/3316891527/Operit/commit/5062f6dec54c5ad5c99281f61a8cb5a709ca4614) feat(settings): simplify API endpoint hints and refresh model defaults
+- [6ce3cbba](https://github.com/3316891527/Operit/commit/6ce3cbba78b21c96392e0ed9c731d498d634df8f) feat(draw): sync GPT Image 2.6 GIF parameters from upstream #1476
+- [0a4507bb](https://github.com/3316891527/Operit/commit/0a4507bb026ced48e96c2f8ab32f7a961f98649a) fix(gemini): keep configured service for model discovery
+- [35e26aac](https://github.com/3316891527/Operit/commit/35e26aac5cd86f127f1cc0736b38588b26785342) perf(phone-agent): align actions and measure observation costs
+- [b69aa717](https://github.com/3316891527/Operit/commit/b69aa717fc4340bc862a7344184474f2d0cfc518) feat(extensions): unify updates and move built-ins to market
+- [2f775380](https://github.com/3316891527/Operit/commit/2f775380e0e16ed43cb1e795b057d8265525ab5b) fix(ui): refine extension updates and batch theme resource imports
+- [aa03c52e](https://github.com/3316891527/Operit/commit/aa03c52e3f7280acf4494228fd307fd8cdb2ac1b) fix(extensions): restore built-in resource management and update feedback
+- [bd9ddba7](https://github.com/3316891527/Operit/commit/bd9ddba7a67a7512bef0a89ecd81401c6933acb7) fix(extensions): clarify ZIP import and finish deletion navigation
+- [080fead0](https://github.com/3316891527/Operit/commit/080fead02ab709cf7a78ba77c68b02b100ab5fc5) refactor(ui): simplify phone assistant progress and gesture feedback
+- [4f298ee8](https://github.com/3316891527/Operit/commit/4f298ee870c130137bbc7056f2fdeb817645704e) fix(worldbook): protect stored data and serialize package operations
+- [3902eb01](https://github.com/3316891527/Operit/commit/3902eb01fd0ad79f04aab6d8f97f340166f9e85e) fix(worldbook): synchronize distribution and validate fault fixtures
+- [662d23bc](https://github.com/3316891527/Operit/commit/662d23bc30e6a80e7e10dad2df501c32571409f9) docs(worldbook): record passing storage regression and validation limits
+- [779ad323](https://github.com/3316891527/Operit/commit/779ad3235811d44b71a56a8a5e1c30d14c76c023) fix(chat): parse streamed display incrementally and restore rollback state off main
+- [f9e1ffbd](https://github.com/3316891527/Operit/commit/f9e1ffbd73f50b24d0c14857138a6afef3a52211) test(chat): restore tool payload filter checkpoints in rollback regression
+- [f13ace03](https://github.com/3316891527/Operit/commit/f13ace037da138a4be882eace78d5946d4fc8d95) release: prepare 1.12.2+23 and retire verified temporary PR checks
+- [8e2379f0](https://github.com/3316891527/Operit/commit/8e2379f034cd9624b72de97928fd601548cf31b2) fix(chat): bound inline code context to prevent protocol leaks and stalled output
+- [f674c32f](https://github.com/3316891527/Operit/commit/f674c32f02751f9fe31c3c8921f5612d3a180da1) ci(terminal): 自动同步应用采用的终端核心版本
+- [b734ee72](https://github.com/3316891527/Operit/commit/b734ee72dfde713f48edbd0e9e8ef1d5d33d966f) ci(terminal): 自动同步应用采用的终端核心版本
+- [9916834d](https://github.com/3316891527/Operit/commit/9916834d1a46a5a621c0f204a28d3ffb19c000c1) docs(terminal): 记录自动同步部署和实际运行结果
+- [e054b23f](https://github.com/3316891527/Operit/commit/e054b23f3d0a0359f52f8050b8fa7eb3aaee1457) fix(http): preserve timeout forwarding in package source
+- [da5c92d3](https://github.com/3316891527/Operit/commit/da5c92d37fb43ac9434c0cc15cf78f002d10b680) fix(claude): keep serializer private and isolate history test logging
+- [1d44a096](https://github.com/3316891527/Operit/commit/1d44a096bde2eba5dd258b5ea758d72975cb7716) ci: validate PR merge candidate against its base history
+- [174f4db2](https://github.com/3316891527/Operit/commit/174f4db2f423d64b69fe8d359f4ba14438b38ce4) fix(chat): stop appending thinking levels to message model names
+- [a26c052d](https://github.com/3316891527/Operit/commit/a26c052d0b6a6df9b64a028b7fb1fe296e74c0ad) feat(theme): add gradients, page backgrounds and text targets
+- [74002c36](https://github.com/3316891527/Operit/commit/74002c36359f9506995ec0bea65478c5819a16ba) fix(theme): wire page preview focus and scene selection
+- [d25ac293](https://github.com/3316891527/Operit/commit/d25ac2932511a080bc48e97b03b457a453b51056) revert: undo PRs #170 through #176 pending maintainer review
+- [70a5323e](https://github.com/3316891527/Operit/commit/70a5323ecfbcbb3eaa3f780ec89625f7d8d27579) ci: require complete Android validation for restored PRs
+- [56c23007](https://github.com/3316891527/Operit/commit/56c2300725a41f799ec5b8edb1de64b3d0105db5) fix(skill): restore ZIP cache fix for review
+- [4d7b99e8](https://github.com/3316891527/Operit/commit/4d7b99e82649aa5ae434096784103313a9765360) fix(ffmpeg): restore native session serialization for review
+- [c0375d6d](https://github.com/3316891527/Operit/commit/c0375d6de81c7e3b811effa89fbfcaf5fcb03f7f) fix(claude): restore tool result ordering for review
+- [a1db67cb](https://github.com/3316891527/Operit/commit/a1db67cb030c9282208bd3310a5fcdcd627c99da) fix(http): restore overall request timeout for review
+- [eb8f4885](https://github.com/3316891527/Operit/commit/eb8f4885a3f3b986eebb193dad3fe97556bf9c9d) ci: restore candidate base validation fix for review
+- [c0a0e399](https://github.com/3316891527/Operit/commit/c0a0e3991a340dae040b25b8dc5803493270ccc4) fix(chat): restore model name suffix removal for review
+- [97e8e027](https://github.com/3316891527/Operit/commit/97e8e027564b56a046463620a095756d8d4195ff) feat(theme): restore foundation extensions for review
+- [c389c49e](https://github.com/3316891527/Operit/commit/c389c49e472f39aaabe9c854eec2c26913ff6fa6) fix(worldbook): register storage IPC when the main runtime loads
+- [0c2856e3](https://github.com/3316891527/Operit/commit/0c2856e309c7496c815d05e0b1d4fe3d5816755a) feat(theme): 收拢背景编辑并加入原生交互效果
+- [025a80d1](https://github.com/3316891527/Operit/commit/025a80d1fc2e59c5b9b4cf2dd39c2e2ca18ec633) fix(theme): 补齐页面预览引用的 Material 图标
+- [e82e26c2](https://github.com/3316891527/Operit/commit/e82e26c2dacd0ce5e352f2b640d1839e6dd2889c) fix(theme): 修正背景绘制判断函数的导入
+- [1f72a906](https://github.com/3316891527/Operit/commit/1f72a906a8eea9acfe11ffefa0948e579ee53a18) feat(theme): 整理属性分组并复用真实页面预览
+- [6b5709d2](https://github.com/3316891527/Operit/commit/6b5709d226d71bc9fee2d1c6053ffa5f6ef2b1af) fix(waifu): 保留思考展示并仅在末条显示请求统计
+- [a57c971e](https://github.com/3316891527/Operit/commit/a57c971e60b2582123152a1131b3ed8229065c72) fix(theme): 完善 JPG 媒体导入与定量资源限制提示
+- [1861c708](https://github.com/3316891527/Operit/commit/1861c708536eff67776e83657ed36eb667432d37) fix(theme): 精简超限红条并补充本地化错误提示
+- [52445499](https://github.com/3316891527/Operit/commit/52445499d0956d59d9ac895738d70fae7693cf96) fix(theme): 移除重复的资源错误 Toast
+- [d136c363](https://github.com/3316891527/Operit/commit/d136c363309d4a30ed76aac0afb9c2599131a36f) fix(stats): hide deleted configurations without removing usage
+- [c61678fd](https://github.com/3316891527/Operit/commit/c61678fdc384d80bf76df54a631550831a654e4e) fix: retain navigation across activity recreation
+- [af2e4dea](https://github.com/3316891527/Operit/commit/af2e4deaf9c6117200dbb1fd25ccd690e926bf33) feat: collapse completed response activity
+- [799cf450](https://github.com/3316891527/Operit/commit/799cf450548ae2fc5ed1cb2555ccbfc84962f632) feat: queue messages and steer the active response
+- [1edc0351](https://github.com/3316891527/Operit/commit/1edc03516a45008984a6eb4e2020f1d3f8878f06) fix: use existing toast and chat draft APIs
+- [fb7bf270](https://github.com/3316891527/Operit/commit/fb7bf270aac04039f26ccb8ee52abcce6bdac1c6) test: isolate Android system logging in sampling tests
+- [4444d047](https://github.com/3316891527/Operit/commit/4444d0478b1918da8cc0aab9c0f3e3f369fc73c6) docs: plan integration of thirteen pending PRs
+- [72ecce9a](https://github.com/3316891527/Operit/commit/72ecce9a609c5210b72f3aa725832c498cdfd33c) docs: record integrated sources and device acceptance checklist
+- [ba1d2075](https://github.com/3316891527/Operit/commit/ba1d2075e562744c58b7fc947013a64751bd8ec5) fix: apply theme tint to active-turn guidance text
+- [2dbc0154](https://github.com/3316891527/Operit/commit/2dbc0154813d947e2932a1c325d9dc3ecedcac04) docs: update integrated guidance theme fix source
+- [c3d0588e](https://github.com/3316891527/Operit/commit/c3d0588e2a9161623922e6d9af59778612ea1d10) fix(extensions): show update progress and completion feedback
+- [8f275aa0](https://github.com/3316891527/Operit/commit/8f275aa0620d2015df4177746209385bb39b8c6f) chore(release): prepare 1.12.2+24 version and notes
+- [aafc4d6a](https://github.com/3316891527/Operit/commit/aafc4d6acc3035dfe48c8680d45ef4e2f9ee355a) docs(release): include PR #166 in the 1.12.2+24 restart
+- [c679d673](https://github.com/3316891527/Operit/commit/c679d67382ec3ec4082174828db2ee6d49169d41) fix: improve themed text, copy selection, and A2UI delivery
+- [1637e2a0](https://github.com/3316891527/Operit/commit/1637e2a03331289839e2bb18eb0476a4bb17a063) fix: correct coroutine and composable contexts
+- [8d00a696](https://github.com/3316891527/Operit/commit/8d00a696519ba544490a53b7f1d5e7be53bfa555) fix: render A2UI cards after tool results
+- [582ea78f](https://github.com/3316891527/Operit/commit/582ea78f58569c8b7fe0d432c0152f0203db23af) fix: preserve A2UI post-result delivery
+- [44bead03](https://github.com/3316891527/Operit/commit/44bead0362d1ed6b2452469eb79c43115d6c95bb) feat: refresh market creator center UI
+- [29f98f5e](https://github.com/3316891527/Operit/commit/29f98f5e0566ae4747ad76e8c1985bd290bca099) fix: add missing market screen imports
+- [c05ca059](https://github.com/3316891527/Operit/commit/c05ca059821d1b44bc1322f650ce3aa4f6091b59) feat: consolidate market creator center UI
+- [a15fb38c](https://github.com/3316891527/Operit/commit/a15fb38ca8210dae4575516cfbc3a02b923927ff) fix: match creator center states and layout
+- [f418295c](https://github.com/3316891527/Operit/commit/f418295cb36b7f8d7b36e3aca50522caf242cb13) fix: import Compose state setter for creator screen
+- [3420644c](https://github.com/3316891527/Operit/commit/3420644c8a4974077d8d6570b5aacfc08341e78d) feat(chat): add pre-send image editing
+- [3b76a76f](https://github.com/3316891527/Operit/commit/3b76a76f28f9af6b454cf55ffbe35995c91f9dc1) fix(i18n): escape editor discard apostrophe
+- [bdffdcfb](https://github.com/3316891527/Operit/commit/bdffdcfb2e2fa39c32c822355908c40c12dfe4e9) fix(chat): qualify editor paint color receiver
+- [22ee1d27](https://github.com/3316891527/Operit/commit/22ee1d27c05ad8f69a01dfbeefd51d23feb88d16) refactor(chat): simplify image editor controls and unify toast feedback
+- [4c62b259](https://github.com/3316891527/Operit/commit/4c62b2593df42842633a5d7daecd4b24ab2a3eaa) feat(chat): refine image editor controls and add crop rotation
+- [4db8119a](https://github.com/3316891527/Operit/commit/4db8119a4a9b34bcb45f6239095ce2fa69cce05e) fix(settings): update provider branding and Claude logo
+- [637a0394](https://github.com/3316891527/Operit/commit/637a0394615a9a2aca9c6dc617edc0e4146037f8) chore: remove empty DragonBones model placeholder
+- [5ddf83d0](https://github.com/3316891527/Operit/commit/5ddf83d0bc208fcfcfd4cf9bccea4cbaf1f2908e) fix(models): preserve thinking rules and resolve valid levels
+- [ae0149a0](https://github.com/3316891527/Operit/commit/ae0149a0a06568028db30739f7e5c046139ba97c) fix(models): preserve requested thinking without JSON controls
+- [ccd0f1d5](https://github.com/3316891527/Operit/commit/ccd0f1d53e2e959449b2e99d115efea77aff06f4) fix(settings): use workspace style for thinking rule menu
+- [8b2a77a5](https://github.com/3316891527/Operit/commit/8b2a77a5863747dd57abfc957991a78476fc77c5) fix(waifu): remove thinking display and keep reply bubbles
+- [251808a6](https://github.com/3316891527/Operit/commit/251808a68fa4e3c80670ccd077e7baa5f90e8f24) test(waifu): remove JNI dependency from reply-only stream regression
+- [f969706f](https://github.com/3316891527/Operit/commit/f969706fa9905cc98b55f3736ccac3f1a2d50648) fix(openai_draw): retain optional-frame fix in resource sources
+- [884ef0fe](https://github.com/3316891527/Operit/commit/884ef0fe2d3631ab36d7719a3bda10366868a52d) fix(resources): pin drawing repair and preserve installed versions
+- [0ad84be7](https://github.com/3316891527/Operit/commit/0ad84be748a3381fb1df3b729a6ad174606fa500) docs(resources): record verified drawing update publication
+- [2e9a36b3](https://github.com/3316891527/Operit/commit/2e9a36b3413d215e779970abe88e39edf55dc506) fix(theme): allow up to 96 studio media assets
+- [563731e4](https://github.com/3316891527/Operit/commit/563731e4ba5a837588d4f80f195a45a3a7905283) test(resources): match catalog fixtures to v2 and v3 layouts
+- [5046eea4](https://github.com/3316891527/Operit/commit/5046eea48dc1c53cf9d73f1e107e0a5bacebd4a9) chore(release): prepare 1.12.2+25 integrated candidate
+- [146e9513](https://github.com/3316891527/Operit/commit/146e95132a62ce03c0ddbbbc68e028f1a92ac048) fix(worldbook): enforce group character_card_ids binding in runtime filter
+- [8b5ee894](https://github.com/3316891527/Operit/commit/8b5ee894f75382734f0ae16737b286b3719ec594) fix(openai-draw): apply extended timeout to reference image uploads
+- [0c1f204c](https://github.com/3316891527/Operit/commit/0c1f204c58c7b60791a749951c8ff8ffccffa7db) ci(resources): upload prepared resource artifact
+- [e315b2e1](https://github.com/3316891527/Operit/commit/e315b2e1d6e475001db13f83aae2c7f1ba1f504f) fix(resources): sync catalogs for draw and worldbook updates
+- [9d645198](https://github.com/3316891527/Operit/commit/9d645198b3cab8748e053edc0d691d47130ce126) fix: replace error dialogs with OKToast and align image upload timeouts
+- [78d5c9c8](https://github.com/3316891527/Operit/commit/78d5c9c87fb8f4917f00da105adb34a99d5b9202) fix(resources): pin extended drawing upload timeouts
+- [a5e52505](https://github.com/3316891527/Operit/commit/a5e525052e2c812cf234a01908405aaf1aa7c59f) fix(chat): allow manual generation continuation
+- [d9a9b836](https://github.com/3316891527/Operit/commit/d9a9b8366809e2b4ad383ece19f22c47ca567fd5) fix(workspace): preserve browser path and detect TypeScript files
+- [ccd35a1f](https://github.com/3316891527/Operit/commit/ccd35a1fd269ed21f13d134a0c3d4ed5a9cd4110) refactor: organize repository root, modules and plugin sources (#212)
+- [4e480e75](https://github.com/3316891527/Operit/commit/4e480e75bb1136f4a20948973c37cddf62b527a3) feat(chat): display elapsed time in minutes hours and days (#213)
+- [28af5bb5](https://github.com/3316891527/Operit/commit/28af5bb55464667f8bf097ff3ca239025b853e4e) fix(chat): prevent new chat intro crash when its request is cleared (#214)
+- [45733506](https://github.com/3316891527/Operit/commit/457335063b63ae1d17e6aab47784cf2a31bcc18d) fix(ui): adapt market text and character menus to the current theme (#215)
+- [fb8c4966](https://github.com/3316891527/Operit/commit/fb8c496633fe825472e9d2b3b8ddc1813a029fb6) feat(workspace): 完善工作台、文件管理与原生 HTML 构建命令 (#216)
+- [963d5fbc](https://github.com/3316891527/Operit/commit/963d5fbc59cb703491c4e543a88d691e06ad00d9) ci(release): prepare 1.12.2+26 for dev validation (#217)
+- [eb14e210](https://github.com/3316891527/Operit/commit/eb14e2101e71363374cb26875dbdbf0544b2b58f) docs: group editor highlighting guide schema and examples (#218)
+- [1e346500](https://github.com/3316891527/Operit/commit/1e346500fe32e0a81e48aa4412d20d7cfc22c083) fix(build): avoid Release lint crash on applied Kotlin script (#220)
+- [5ac91cfd](https://github.com/3316891527/Operit/commit/5ac91cfdf971ec786c7ea9cbcb815a7ba62ec5c5) fix(workspace): improve review interaction and stream chat imports
+- [53825ab6](https://github.com/3316891527/Operit/commit/53825ab6a56013218d674880461b654f8ceb1c22) fix(workspace): retain diff expansion and summarize recorded changes
+- [9bed5d69](https://github.com/3316891527/Operit/commit/9bed5d694cdb3fff2a972b735c2a3838fad2f3c5) fix(workspace): isolate blame limits from review loading policy
+- [f26751f3](https://github.com/3316891527/Operit/commit/f26751f375e642c9c193de71117df89ade48947c) fix(workspace): observe file changes and streamline project entry
+- [4c453816](https://github.com/3316891527/Operit/commit/4c45381649ab961b3aae05d6675d432bb41a0bde) fix(workspace): remove stale preview and command references
+- [7acc5472](https://github.com/3316891527/Operit/commit/7acc5472e17813bca420b9d88e51a2677114be3d) fix(browser): qualify floating content receiver to prevent recursion
+- [abb37f2c](https://github.com/3316891527/Operit/commit/abb37f2c8bb47d0050cf92049c54a4844f1ea254) fix(terminal): record file changes without workspace binding
+- [04387e4d](https://github.com/3316891527/Operit/commit/04387e4d9676503afcc9f642d89d66454fa0c59b) fix(workspace): reconcile terminal edits and show diff lines before highlighting
+- [8995de3f](https://github.com/3316891527/Operit/commit/8995de3f905c592a6ac686af3d97458829cd9bc5) fix(workspace): keep terminal edits in the original conversation
+- [89e6801b](https://github.com/3316891527/Operit/commit/89e6801bbf0ab6752ce7f2606f8949a0bacad7f7) fix(terminal): keep file observation off the command path
+- [edfcd776](https://github.com/3316891527/Operit/commit/edfcd77644e6f540063cc0e68757000bea89c7ca) feat(theme): customize chat input placeholder
+- [92b54d65](https://github.com/3316891527/Operit/commit/92b54d6589aa9ab0790d6f972c3f3f579f32a556) fix(chat): stabilize processing status and stream scrolling
+- [cfdf982b](https://github.com/3316891527/Operit/commit/cfdf982b8dfe0875d6d65c77737f9c5aadd43743) fix(chat): keep tool groups open and count remaining calls
+- [fe6cfb40](https://github.com/3316891527/Operit/commit/fe6cfb40aefc56414456f22e5c7d47243d978533) fix(web): bound visit lifecycle and report failures
+- [52090b1c](https://github.com/3316891527/Operit/commit/52090b1cf4add37913e2232dc5ab15f1bbe76b27) fix(web): expose visit timeouts and detect access blocks
+- [d63e72b2](https://github.com/3316891527/Operit/commit/d63e72b2f0d9b4184152b7f0960ac34c8280aa25) fix(shell): isolate root tool commands and enforce deadlines
+- [7ea432f3](https://github.com/3316891527/Operit/commit/7ea432f305934bf480a1f8eea596602941899654) fix(chat): stream JSON imports one message at a time
+- [48831aad](https://github.com/3316891527/Operit/commit/48831aad311cb72ca5f020fbc27991bddf4de215) feat(markdown): render Mermaid offline and align code actions
+- [36dba898](https://github.com/3316891527/Operit/commit/36dba898b6730c3d096550151fd6b00d73333e21) fix(markdown): fit Mermaid content to the SVG viewport
+- [c993dcdc](https://github.com/3316891527/Operit/commit/c993dcdc29165264368b8308f6db2b84291b13c6) fix(markdown): replace Mermaid WebView with native Canvas
+- [d8460056](https://github.com/3316891527/Operit/commit/d84600566db344b80876779528f975dd9276943e) chore(markdown): remove the unused Mermaid bundle attribution
+- [2b7bf8e3](https://github.com/3316891527/Operit/commit/2b7bf8e3dabbf0cd52faa712edf90b909a402a59) feat(markdown): extend common syntax and fix editor opening position
+- [08caa5cd](https://github.com/3316891527/Operit/commit/08caa5cdb4639525c602380a296e3cfa27963ca9) fix(markdown): cover new types in stable block boundaries
+- [f668864a](https://github.com/3316891527/Operit/commit/f668864aadaa3c375f84dbef3045c60a9fdd6dcc) fix(tests): correct Compose assertion import and compile device tests
+- [a57550c8](https://github.com/3316891527/Operit/commit/a57550c852a82c91900c10904fc51904de06f832) feat(tools): route platform editor through host commands
+- [2d16801f](https://github.com/3316891527/Operit/commit/2d16801f0b12f4d01af54d56936e845f1dca4000) chore(tools): sync editor output with TypeScript 5.9.3
+- [4a24be74](https://github.com/3316891527/Operit/commit/4a24be740bc33a3a65d432d87368104a5a469aea) feat(ui): refine voice recording, backgrounds and editor scrolling
+- [eb30e8d5](https://github.com/3316891527/Operit/commit/eb30e8d5a0576159ca0318553774bc221860af1b) fix(runtime): sync upstream fixes and align glass preview
+- [d556dfcc](https://github.com/3316891527/Operit/commit/d556dfcc3bf09dc612961eed6a14b6b4d440d5f0) fix(voice): close rejected recordings and protect edge gestures
+- [104aa428](https://github.com/3316891527/Operit/commit/104aa428ee7bc95db85656dc834e1ed765d8345e) feat(ui): refine neutral dark theme and recording surface
+- [13ee9126](https://github.com/3316891527/Operit/commit/13ee91266b43b653145e72642f32c68dc9f33cc7) docs(ui): add interactive subagent prototype and design research
+- [e81dec5c](https://github.com/3316891527/Operit/commit/e81dec5cf20e071091317e4bfbec9d8b00c41a12) feat: add automatic subagent collaboration [skip ci]
+- [12872b5d](https://github.com/3316891527/Operit/commit/12872b5d6e653a2d367cd9e005f909f3195ecf83) feat: persist complete subagent conversations [skip ci]
+- [b25ce420](https://github.com/3316891527/Operit/commit/b25ce4200ebf24dfc42b35116aebc6e8640fe6da) fix: correct subagent catalog and tool prompt compilation [skip ci]
+- [3a73d3a3](https://github.com/3316891527/Operit/commit/3a73d3a30eae240775765d1a3868b4ac865eef8e) feat: refine subagent task controls and model selection
+- [c5434dd1](https://github.com/3316891527/Operit/commit/c5434dd16c380b7687ade38cd354d6936cf84b92) fix: include subagent schema in integrated migration tests
+- [d3c2daee](https://github.com/3316891527/Operit/commit/d3c2daee058407afa5f06080e43913e02df7dc20) feat: add subagent context inheritance and runtime limits
+- [ae754715](https://github.com/3316891527/Operit/commit/ae754715cc02e0db4ed60b2c51937021ceafd93e) fix: hide provider metadata in subagent displays
+- [30fae461](https://github.com/3316891527/Operit/commit/30fae4614990d2cf0c66f0a932d8aa2b90008817) feat: add subagent trees, messaging and graph backups
+- [34bb6605](https://github.com/3316891527/Operit/commit/34bb6605ac825c3ccea041204a2333b1a16e7e9f) docs: plan unified validation for release 27 updates
+- [5289c7d9](https://github.com/3316891527/Operit/commit/5289c7d90e080f76059483da8b623e7415d5a990) test: verify combined release 27 updates and import integration
+- [7263e6d3](https://github.com/3316891527/Operit/commit/7263e6d3f4fe898a97507a53c79ed109ab0e0bed) fix(subagents): stabilize task windows and add compact tool cards
+- [28992c72](https://github.com/3316891527/Operit/commit/28992c727ed38683b1a1d558870e929746266892) chore(release): prepare 1.12.2+27 and verified branch cleanup
+- [cb31d5f2](https://github.com/3316891527/Operit/commit/cb31d5f2f084f0e0c7f076f0d9e2deaa2535b143) fix(workspace): exclude restricted paths from terminal observation
+- [d91c2696](https://github.com/3316891527/Operit/commit/d91c2696d398513b587ef0d75c96abc41be0542b) fix(files): recognize log and common text attachments
+- [9d3fddd5](https://github.com/3316891527/Operit/commit/9d3fddd534da890d9d6934eef19c45d3f91239ec) fix(subagent): recover final reports and preserve execution outputs
+- [4bbfd185](https://github.com/3316891527/Operit/commit/4bbfd18539fb6532622a747bfcef9a54289b4791) fix(subagent): import active task status in tool execution
+- [b37ca493](https://github.com/3316891527/Operit/commit/b37ca493bafa9a7884cf455896230ccaccb12374) test(subagent): mock Android process UID in artifact tests
+- [9deae971](https://github.com/3316891527/Operit/commit/9deae9716b07de709a753549f45517e97fc26076) fix(chat): handle unsupported thinking level updates without crashing
+- [1f5ec3b8](https://github.com/3316891527/Operit/commit/1f5ec3b89ec2dd570394f1488826c35ec1655e02) fix(backup): rebind theme scripts when restoring snapshots
+- [dbe7bf93](https://github.com/3316891527/Operit/commit/dbe7bf93b9bb04698062aff4e18d13773de928eb) fix(chat): avoid writing thinking levels when opening settings
+- [4486b78d](https://github.com/3316891527/Operit/commit/4486b78d900df9951c58538cc70c19aa1b11e52e) fix(subagent): bound history reads during inbox recovery
+- [a05fed46](https://github.com/3316891527/Operit/commit/a05fed46fab1f6c3ed0a99ed1c28cee9b74e63d0) feat(terminal): compress known progress in chat tool output
+- [34c69677](https://github.com/3316891527/Operit/commit/34c69677c46b4c8b4489f1f0ff2084fba472fc6d) ci: document +28 integration candidate and validation scope
+- [6fb68072](https://github.com/3316891527/Operit/commit/6fb6807293cb4e44983c889f5893f5d35c79835d) fix(workspace): bound terminal baseline memory with disk indexes
+- [4f8990e3](https://github.com/3316891527/Operit/commit/4f8990e3e3b6b00467c453393eb73d869058ec7c) ci: verify release integration candidates on push
+- [c0ad8585](https://github.com/3316891527/Operit/commit/c0ad85854418ed2bfd147b44b13ad3424fd2499f) chore(release): prepare Operit Kong 1.12.2+28
+- [065e0597](https://github.com/3316891527/Operit/commit/065e059739128757a488e078d2e9f07c6bf8ec0c) fix(waifu): preserve thinking and tool calls in conversation
+- [2608849c](https://github.com/3316891527/Operit/commit/2608849c15ec81d27d2f1813be9dc69ae49d2756) fix(waifu): group continuous process updates without chat shells
+- [1df0d2d9](https://github.com/3316891527/Operit/commit/1df0d2d9742df6538852e9213c751045415bbfd1) test(waifu): validate recovered coroutine failures
+- [45d088c9](https://github.com/3316891527/Operit/commit/45d088c93a77d31f356f910988a627f55d77a755) fix(waifu): restore process hierarchy and pair tool cards
+- [d90390c6](https://github.com/3316891527/Operit/commit/d90390c67b916c0dbad189a1fa10271b953b83fb) fix(chat): settle previous send before summary continuation
+- [d2d786c2](https://github.com/3316891527/Operit/commit/d2d786c207fb4a241ac621c0265be5f7d6929b5a) fix(workspace): display large file sizes in GB and TB
+- [230e206a](https://github.com/3316891527/Operit/commit/230e206a188fd00dc277dfe4474d4ffd7a215ef1) fix(waifu): join process layouts and handle cleared history
+- [cac260d0](https://github.com/3316891527/Operit/commit/cac260d0f4eff396e185f1c1f842a6a5ad4948e1) feat(workspace): pack snapshots and correct Waifu row spacing
+- [c7cab89c](https://github.com/3316891527/Operit/commit/c7cab89c8d46a30626fa85a7c57e1303bd39a9f6) fix(workspace): sync snapshot directories with public Android APIs
+- [86bcec63](https://github.com/3316891527/Operit/commit/86bcec630d2bec4ddfc8d27d513c3cc6a1888eb7) docs(workspace): measure snapshot scale and metadata costs
+- [0a5bb1c8](https://github.com/3316891527/Operit/commit/0a5bb1c82adb241328e57f75584d5f13a37ba739) fix(workspace): bound history persistence and review memory
+- [5212101c](https://github.com/3316891527/Operit/commit/5212101cbe7e1af4725db96d657be5b62b124ebb) docs(workspace): link history optimization review
+- [e8596182](https://github.com/3316891527/Operit/commit/e8596182f7f325a7adaea73f868491b9b55d8309) fix(workspace): keep monitoring off tool execution paths
+- [b848588b](https://github.com/3316891527/Operit/commit/b848588bb56a8bfa5bd8e3183b32dac06f8900f1) fix(release): prepare verified +29 monitoring hotfix
+- [09d10008](https://github.com/3316891527/Operit/commit/09d100087a1b7d44c32f06aa8efd2cfd0f5a320a) docs(release): include remaining fixes in +29 delivery
+- [134e421e](https://github.com/3316891527/Operit/commit/134e421ed49f98b7a63886d13bdd1debfea7bf3f) fix(workspace): record only explicitly bound workspaces for +30
+- [b8b1649c](https://github.com/3316891527/Operit/commit/b8b1649c0f05f1a2be78c20bddc70e2fae231064) fix(chat): bind workspace recording and align reply avatars
+- [51763fd7](https://github.com/3316891527/Operit/commit/51763fd7f4db02c36f5d3607a29322529b905226) fix(workspace): sync all buffered snapshot references before publishing
+- [99a65571](https://github.com/3316891527/Operit/commit/99a6557181ad325592370ab497e411db8f45edd9) feat(token-stats): rebuild usage insights and request history
+- [933075bb](https://github.com/3316891527/Operit/commit/933075bb5a03763735bb890d68643ffe166f41d5) test(token-stats): correct monthly comparison coverage fixtures
+- [b77cfcda](https://github.com/3316891527/Operit/commit/b77cfcda34efae524b080f39e816b846509cc396) fix(token-stats): restore usage screen to reviewed design
+- [cf719e4f](https://github.com/3316891527/Operit/commit/cf719e4fab8c515db478a955b91c869c948b8e1f) fix(token-stats): use provider logos and streamline date queries
+- [d50766ac](https://github.com/3316891527/Operit/commit/d50766ac642732c1f5eae78084be27723836e144) fix(chat): preserve tool timing associations after steering
+- [359228b7](https://github.com/3316891527/Operit/commit/359228b769dd4be6ffa152be137cdab66f8338d3) feat(theme): 添加系统状态栏主题部件
+- [eb56a7bf](https://github.com/3316891527/Operit/commit/eb56a7bfa4e52fb5cd6303f5168b54fbfadf2231) fix(chat): 将 Waifu 折叠思考预览限制为八字
+- [26599b5d](https://github.com/3316891527/Operit/commit/26599b5d3a9a69d7ddc1a8706fb4d8c8a090825b) feat(a2ui): polish native controls and expandable headers
+- [cf83c5e1](https://github.com/3316891527/Operit/commit/cf83c5e16d4d6ccdb73fa61ac8b3a11dabb9498c) fix(quickjs): continue pending jobs and release temporary engines
+- [0b37185d](https://github.com/3316891527/Operit/commit/0b37185dac42299684234394d8798e2e29ae234c) feat(editor): add scoped theme commands and safe draft merging
+- [fba7b025](https://github.com/3316891527/Operit/commit/fba7b025c53ecb032acce7162de3b038316e0580) fix(chat): reduce streaming display backlog and order shared delivery
+- [fe203623](https://github.com/3316891527/Operit/commit/fe20362349ed2f9673df733541cac3f4fe270817) fix(chat): preserve stream element types in rollback prefixes
+- [3feb7159](https://github.com/3316891527/Operit/commit/3feb7159fbcf2c63b9461bbcc782426ac27f11fb) feat(editor): add waifu settings commands
+- [78ae42f7](https://github.com/3316891527/Operit/commit/78ae42f7cb0718e6816f7ef17f0766d37036717f) fix(token-stats): remove unknown-value question marks
+- [9011d9dd](https://github.com/3316891527/Operit/commit/9011d9dd3f6ff6e52da6eca693ae61d6539e08f1) fix(theme): composite the status bar over the theme background
+- [067e7208](https://github.com/3316891527/Operit/commit/067e72080dc170e233e9e54bbf9831f96547ea58) refactor(token-stats): remove CSV export
+- [294e2cb8](https://github.com/3316891527/Operit/commit/294e2cb8cbb16eef87677f8a3172db6d58982bfd) style(a2ui): scope card typography, corners and dividers
+- [d3afdf12](https://github.com/3316891527/Operit/commit/d3afdf120bd6bde3c5919024b6ec8882d1d940b9) fix(chat): display confirmed server input in context usage
+- [f6eca881](https://github.com/3316891527/Operit/commit/f6eca881f35857889b9f80b2f576d75b0a9db20a) fix(waifu): restore reply avatar after standalone content
+- [e8574241](https://github.com/3316891527/Operit/commit/e857424164e26d9ef94746eff8678560b441c369) test(waifu): import dp for avatar timeline regression
+- [18b50b82](https://github.com/3316891527/Operit/commit/18b50b82825f61f19ca13abc3a23e292a797bbdd) fix(waifu): show custom emoticons during segmented replies
+- [056284ce](https://github.com/3316891527/Operit/commit/056284ce0beda35c1799850852fc7ab1f29e80d1) test: record validation scope for PRs 272-274 on PR 271
+- [2f0090a4](https://github.com/3316891527/Operit/commit/2f0090a4d15ebedfb129b07e6af1ada28d269e36) fix: refine Waifu layout and gallery selection
+- [b1b1015d](https://github.com/3316891527/Operit/commit/b1b1015d815b420c9e3cea59e816d88c05d3e923) test: assert attachment failure semantics across coroutines
+- [988ad7af](https://github.com/3316891527/Operit/commit/988ad7afdb9b82ce1d9529acdd3d7f3a4e4500c4) fix: propagate caller cancellation to package terminal commands
+- [131cc79c](https://github.com/3316891527/Operit/commit/131cc79cc77cf2634a3c5aed3dc077e72575d7aa) fix: expose image loading errors and emotion selection diagnostics
+- [3fbad1f4](https://github.com/3316891527/Operit/commit/3fbad1f4e0e7f298d98d012aa2aa30a33df4dd66) fix: serialize shared GitHub terminal lifecycles and trace waits
+- [4b20b8e5](https://github.com/3316891527/Operit/commit/4b20b8e5b53928b7994d762f2aa51597a32c1ac3) fix: regenerate GitHub bundle with locked esbuild output
+- [e8f669d6](https://github.com/3316891527/Operit/commit/e8f669d6bf47642efffa2712d4f2222be199f050) ci(release): prepare Operit Kong 1.12.2+31
+
+[DONE] 固定范围的提交索引已保存。

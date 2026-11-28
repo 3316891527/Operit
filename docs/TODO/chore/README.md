@@ -8,6 +8,8 @@
 
 ## 计划索引
 
+- [Operit Kong 2.0.0 正式更新历史](kong-2-release-history/index.md)
+
 - [1.12.2+31 正式发行](release-plus31/index.md)
 
 - [1.12.2+27 正式发行](release-plus27/index.md)
