@@ -8459,11 +8459,11 @@
     <string name="display_behavior_su_row_desc">Folosită în modul de execuție KernelSU.</string>
     <string name="display_behavior_collapse_editor_desc">Alege după preferințele de lectură; instrumentele se execută în continuare normal.</string>
     <string name="display_behavior_collapse_read">Restrânge mai multe instrumente doar pentru citire</string>
-    <string name="display_behavior_collapse_read_desc">Grupează instrumentele consecutive doar pentru citire.</string>
+    <string name="display_behavior_collapse_read_desc">Restrânge implicit procesele doar pentru citire cu mai multe apeluri sau o căutare. Extinde celelalte procese.</string>
     <string name="display_behavior_collapse_all">Restrânge mai multe instrumente</string>
-    <string name="display_behavior_collapse_all_desc">Grupează instrumentele consecutive și păstrează apelurile individuale extinse.</string>
+    <string name="display_behavior_collapse_all_desc">Restrânge implicit procesele cu mai multe apeluri sau o căutare. Extinde un singur apel de instrument.</string>
     <string name="display_behavior_collapse_full">Restrânge toate instrumentele</string>
-    <string name="display_behavior_collapse_full_desc">Și apelurile individuale sunt restrânse inițial; extinde-le când este nevoie.</string>
+    <string name="display_behavior_collapse_full_desc">Restrânge implicit toate procesele de instrumente. Extinde pentru a vedea apelurile și rezultatele.</string>
     <string name="display_behavior_reading_preview">Previzualizare lectură</string>
     <string name="display_behavior_orientation_editor_desc">Comportamentul paginii după schimbarea orientării.</string>
     <string name="display_behavior_orientation_always">Reîncarcă automat</string>

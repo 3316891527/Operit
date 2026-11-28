@@ -24,6 +24,9 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.markdown.LocalMarkdownRenderMode
+import com.ai.assistance.operit.ui.common.markdown.MarkdownRenderMode
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.toolTimingTitle
 import com.ai.assistance.operit.ui.common.format.formatElapsedDuration
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.ToolTimingSummary
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.rememberToolElapsedMillis
@@ -46,12 +49,16 @@ internal fun WaifuProcessHeader(
 ) {
     val action = stringResource(if (expanded) R.string.common_collapse else R.string.common_expand)
     val title = when {
+        toolCount > 0 -> toolTimingTitle(
+            timing,
+            thoughtCount = thoughtCount,
+            toolCount = toolCount,
+            isMessageStreaming = LocalMarkdownRenderMode.current == MarkdownRenderMode.STREAMING,
+        )
         thoughtCount > 0 -> stringResource(R.string.thinking_process)
-        toolCount > 0 -> stringResource(R.string.tools_group_title_with_count, toolCount)
         else -> stringResource(R.string.tool_result_block)
     }
-    val count = if (toolCount > 0 && thoughtCount > 0) stringResource(R.string.tools_group_title_with_count, toolCount) else ""
-    val elapsed = waifuElapsedLabel(timing)
+    val elapsed = if (toolCount == 0) waifuElapsedLabel(timing) else ""
     Row(
         Modifier.fillMaxWidth().semantics { stateDescription = action }
             .clickable(role = Role.Button, onClick = onToggle).padding(vertical = 8.dp),
@@ -65,7 +72,7 @@ internal fun WaifuProcessHeader(
             modifier = Modifier.size(14.dp).rotate(if (expanded) 90f else 0f),
         )
         Text(
-            text = listOf(title, count).filter(String::isNotEmpty).joinToString(" · "),
+            text = title,
             color = textColor.copy(alpha = 0.65f),
             style = MaterialTheme.typography.labelMedium,
             maxLines = 1,

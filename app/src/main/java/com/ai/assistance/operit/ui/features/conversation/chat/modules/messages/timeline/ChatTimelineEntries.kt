@@ -182,12 +182,14 @@ internal fun rememberChatTimelineEntries(
                     }
                     val nodes = state.renderNodes.toList()
                     // Waifu 使用专用过程入口，不叠加普通消息的整段回复折叠标题。
-                    val boundary = completedProcessEnd(nodes, collapseCompletedProcess && !waifuEnabled, stream != null)
-                    val processEnd = if (boundary >= 0 && nodes.take(boundary + 1).any {
-                        isVisibleChatMarkdownNode(it, showThinkingProcess, showStatusTags)
-                    }) boundary else -1
+                    val processEnd = completedProcessEnd(
+                        nodes,
+                        collapseEnabled = collapseCompletedProcess && !waifuEnabled,
+                        streaming = stream != null,
+                        showThinkingProcess = showThinkingProcess,
+                    )
                     val processId = responseProcessKey(message.timestamp, message.selectedVariantIndex)
-                    val processExpanded = ResponseProcessExpansionState.isExpanded(chatId, processId)
+                    val processExpanded = processEnd >= 0 && ResponseProcessExpansionState.isExpanded(chatId, processId)
                     // 隐藏协议不触发拆块；原始节点仍用于分组键和 XML 子流索引。
                     val visibleNodes = remember(nodes, showThinkingProcess, showStatusTags) {
                         nodes.filter { isVisibleChatMarkdownNode(it, showThinkingProcess, showStatusTags) }
@@ -220,7 +222,7 @@ internal fun rememberChatTimelineEntries(
                     val expansionSnapshot = overrides.toMap()
                     val rows = remember(
                         split, groups, nodes, grouper, mode, expansionSnapshot, timingSnapshot, timingLive,
-                        showThinkingProcess, showStatusTags, isWaifuProcess, processEnd,
+                        showThinkingProcess, showStatusTags, isWaifuProcess,
                     ) {
                         if (isWaifuProcess) {
                             buildWaifuProcessRows(nodes, expansionSnapshot["waifu-process"] ?: true, showThinkingProcess)
@@ -229,7 +231,6 @@ internal fun rememberChatTimelineEntries(
                                 groups, nodes, expansionSnapshot,
                                 showThinkingProcess = showThinkingProcess,
                                 showStatusTags = showStatusTags,
-                                coveredThroughIndex = processEnd,
                             ) { group ->
                                 grouper.describeGroup(
                                     group, nodes,

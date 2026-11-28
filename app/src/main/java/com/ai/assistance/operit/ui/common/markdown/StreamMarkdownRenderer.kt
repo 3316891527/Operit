@@ -4,6 +4,9 @@ import com.ai.assistance.operit.core.chat.protocol.MessageSectionCodec
 import com.ai.assistance.operit.data.model.MessageSection
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardStateStore
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownRenderFragment
+import com.ai.assistance.operit.ui.common.markdown.lazy.MarkdownCardStateStore
+import com.ai.assistance.operit.ui.common.markdown.lazy.markdownNodeIdentityKeys
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.ThinkToolsXmlNodeGrouper
 import com.ai.assistance.operit.util.logging.AppLogger
 import android.widget.ImageView
 import androidx.collection.LruCache
@@ -33,10 +36,14 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.mapSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.onPlaced
 import kotlin.math.roundToInt
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -1267,6 +1274,25 @@ internal fun AnimatedNode(
     }
 }
 
+/** 组内节点沿用同一份文档的锚点、布局坐标系和对话框配置。 */
+internal class MarkdownGroupNodeRendering(
+    val enableDialogs: Boolean,
+    val modifierFor: @Composable (Int) -> Modifier,
+)
+
+internal val LocalMarkdownGroupNodeRendering = compositionLocalOf<MarkdownGroupNodeRendering> {
+    error("过程组必须在 Markdown 文档中渲染")
+}
+
+private val DocumentCardValueSaver = mapSaver<SnapshotStateMap<String, Any?>>(
+    save = { it.toMap() },
+    restore = { saved -> mutableStateMapOf<String, Any?>().apply { putAll(saved) } },
+)
+
+private class MarkdownDocumentLayout {
+    var coordinates: LayoutCoordinates? = null
+}
+
 @Composable
 internal fun UnifiedMarkdownCanvas(
     nodes: List<MarkdownNodeStable>,
@@ -1285,9 +1311,11 @@ internal fun UnifiedMarkdownCanvas(
     responseDurationMs: Long = 0L,
 ) {
     val outline = LocalMarkdownOutline.current
-    val headings = remember(nodes.toList()) { markdownHeadings(nodes) }
+    // 使用真实节点快照，回滚后相同长度、相同尾节点也可能改变过程边界。
+    val nodeSnapshot = nodes.toList()
+    val headings = remember(nodeSnapshot) { markdownHeadings(nodeSnapshot) }
     val anchors = LocalMarkdownAnchorRegistry.current ?: remember(rendererId) { MarkdownAnchorRegistry() }
-    val anchorNames = remember(nodes.toList(), headings) { markdownAnchorNames(nodes, headings) }
+    val anchorNames = remember(nodeSnapshot, headings) { markdownAnchorNames(nodeSnapshot, headings) }
     val linkScope = rememberCoroutineScope()
     val linkContext = LocalContext.current
     val handleLink: (String) -> Unit = { url ->
@@ -1309,31 +1337,56 @@ internal fun UnifiedMarkdownCanvas(
         }
     }
 
-    val tailNode = nodes.lastOrNull()
-    val groupingKey = remember(nodes.size, tailNode?.content?.length, tailNode?.type, rendererId, nodeGrouper) {
-        Triple(nodes.size, tailNode?.content?.length ?: -1, tailNode?.type)
+    val groupedItems = remember(nodeSnapshot, rendererId, nodeGrouper) {
+        nodeGrouper.group(nodeSnapshot, rendererId)
     }
-
-    val groupedItems =
-        remember(groupingKey, rendererId, nodeGrouper) {
-            nodeGrouper.group(nodes, rendererId)
-        }
     val processId = LocalResponseProcessId.current
     val processChatId = LocalResponseProcessChatId.current
-    val processEnd = completedProcessEnd(nodes, collapseCompletedProcess && processId != null)
-    val processExpanded = processId != null && ResponseProcessExpansionState.isExpanded(processChatId, processId)
-    val processItems = flattenGroupsCoveredByResponseProcess(groupedItems, nodes, processEnd)
-    val displayedItems = processItems.filter { item ->
+    val thinkToolsGrouper = nodeGrouper as? ThinkToolsXmlNodeGrouper
+    val processEnd = completedProcessEnd(
+        nodeSnapshot,
+        collapseEnabled = collapseCompletedProcess && processId != null,
+        streaming = LocalMarkdownRenderMode.current == MarkdownRenderMode.STREAMING,
+        showThinkingProcess = thinkToolsGrouper?.showThinkingProcess != false,
+    )
+    val processExpanded = processEnd >= 0 && processId != null &&
+        ResponseProcessExpansionState.isExpanded(processChatId, processId)
+    val displayedItems = groupedItems.filter { item ->
         val end = when (item) {
             is MarkdownGroupedItem.Single -> item.index
             is MarkdownGroupedItem.Group -> item.endIndexInclusive
         }
         responseProcessItemVisible(end, processEnd, processExpanded)
     }
-    // 只观察当前文档的顶层节点，嵌套渲染器不会覆盖目录。
-    CompositionLocalProvider(LocalMarkdownOutline provides null, LocalMarkdownAnchorRegistry provides anchors) {
-    nodeGrouper.RenderScope(nodes) {
-    Column(modifier = modifier) {
+    val cardStore = LocalMarkdownCardStateStore.current
+    // 展开与收起会卸载卡片，使用原节点身份保留用户已编辑的状态。
+    val documentCardStore = if (cardStore == null && groupedItems.any { it is MarkdownGroupedItem.Group }) {
+        val values = rememberSaveable(saver = DocumentCardValueSaver) { mutableStateMapOf<String, Any?>() }
+        val nodeKeys = remember(nodeSnapshot) { markdownNodeIdentityKeys(nodeSnapshot) }
+        remember(nodeKeys, values) { MarkdownCardStateStore(nodeKeys, values) }
+    } else cardStore
+    val documentLayout = remember { MarkdownDocumentLayout() }
+    val modifierForNode: @Composable (Int) -> Modifier = { index ->
+        val anchorModifier = markdownAnchorModifier(anchors, anchorNames[index].orEmpty())
+        if (outline != null && index in headingIndices) {
+            anchorModifier.onGloballyPositioned { nodeCoordinates ->
+                val coordinates = documentLayout.coordinates
+                if (coordinates != null && coordinates.isAttached) {
+                    outline.updateOffset(index, coordinates.localPositionOf(nodeCoordinates, Offset.Zero).y.roundToInt())
+                }
+            }
+        } else anchorModifier
+    }
+    val groupRendering = MarkdownGroupNodeRendering(enableDialogs, modifierForNode)
+    // 只观察当前文档的顶层节点，组内成员沿用同一份目录与锚点注册表。
+    CompositionLocalProvider(
+        LocalMarkdownOutline provides null,
+        LocalMarkdownAnchorRegistry provides anchors,
+        LocalMarkdownCardStateStore provides documentCardStore,
+        LocalMarkdownGroupNodeRendering provides groupRendering,
+    ) {
+    nodeGrouper.RenderScope(nodeSnapshot) {
+    Column(modifier = if (outline != null) modifier.onPlaced { documentLayout.coordinates = it } else modifier) {
         if (processEnd >= 0 && processId != null) {
             ResponseActivityHeader(
                 durationMs = responseDurationMs,
@@ -1346,7 +1399,7 @@ internal fun UnifiedMarkdownCanvas(
             when (item) {
                 is MarkdownGroupedItem.Single -> {
                     val index = item.index
-                    val node = nodes.getOrNull(index) ?: return@forEach
+                    val node = nodeSnapshot[index]
                     val nodeKey = nodeKeyForIndex(index)
                     key(nodeKey) {
                         AnimatedNode(
@@ -1362,10 +1415,7 @@ internal fun UnifiedMarkdownCanvas(
                             enableDialogs = enableDialogs,
                             fillMaxWidth = fillMaxWidth,
                             isLastNode = index == lastRenderableIndex,
-                            modifier = markdownAnchorModifier(anchors, anchorNames[index].orEmpty()).then(
-                                if (outline != null && index in headingIndices) Modifier.onGloballyPositioned {
-                                    outline.updateOffset(index, it.positionInParent().y.roundToInt())
-                                } else Modifier),
+                            modifier = modifierForNode(index),
                         )
                     }
                 }
@@ -1376,7 +1426,7 @@ internal fun UnifiedMarkdownCanvas(
                     key(groupKey) {
                         nodeGrouper.RenderGroup(
                             group = item,
-                            nodes = nodes,
+                            nodes = nodeSnapshot,
                             rendererId = rendererId,
                             isVisible = nodeAnimationStates[firstNodeKey] ?: true,
                             isLastNode = item.endIndexInclusive == lastRenderableIndex,

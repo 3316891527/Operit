@@ -47,44 +47,27 @@ internal fun rememberToolElapsedMillis(summary: ToolTimingSummary): Long? {
     return summary.elapsedMillis(now)
 }
 
-/** 工具完成和取消后使用固定区间，分组和单项共用同一个计时入口。 */
+/** 一条过程标题累计所有调用；单项工具行把空间留给名称和参数。 */
 @Composable
 internal fun toolTimingTitle(
     summary: ToolTimingSummary,
     thoughtCount: Int = 0,
     searchCount: Int = 0,
+    isMessageStreaming: Boolean = false,
+    toolCount: Int = summary.calls.size,
 ): String {
     val millis = rememberToolElapsedMillis(summary)
-    val elapsed = if (millis == null) {
-        ""
-    } else {
-        stringResource(R.string.tool_timing_elapsed, formatElapsedDuration(millis))
-    }
     val status = when {
-        summary.complete -> R.string.tool_timing_group_completed
         summary.stopped -> R.string.tool_timing_stopped
-        summary.ticking() || thoughtCount > 0 -> R.string.tool_timing_running
+        isMessageStreaming || summary.ticking() -> R.string.tool_timing_running
+        summary.complete || summary.calls.isEmpty() -> R.string.tool_timing_completed
         else -> R.string.tool_call_block
     }
     val title = if (thoughtCount > 0) {
-        stringResource(R.string.tool_timing_combined, stringResource(status), elapsed, thoughtCount, summary.calls.size)
+        stringResource(R.string.tool_timing_combined, stringResource(status), thoughtCount, toolCount)
     } else {
-        stringResource(R.string.tool_timing_simple, stringResource(status), summary.calls.size, elapsed)
+        stringResource(R.string.tool_timing_simple, stringResource(status), toolCount)
     }
-    return if (searchCount > 0) title + " • " + stringResource(R.string.tool_timing_searches, searchCount) else title
-}
-/** 单项状态与工具名称同排，不重复显示分组的调用次数。 */
-@Composable
-internal fun toolCallTimingLabel(summary: ToolTimingSummary): String {
-    val millis = rememberToolElapsedMillis(summary)
-    val elapsed = if (millis == null) "" else {
-        stringResource(R.string.tool_timing_elapsed, formatElapsedDuration(millis))
-    }
-    val status = when {
-        summary.complete -> R.string.tool_timing_completed
-        summary.stopped -> R.string.tool_timing_stopped
-        summary.ticking() -> R.string.tool_timing_running
-        else -> R.string.tool_call_block
-    }
-    return stringResource(R.string.tool_timing_inline, stringResource(status), elapsed)
+    val counted = if (searchCount > 0) title + " · " + stringResource(R.string.tool_timing_searches, searchCount) else title
+    return if (millis == null) counted else formatElapsedDuration(millis) + " · " + counted
 }

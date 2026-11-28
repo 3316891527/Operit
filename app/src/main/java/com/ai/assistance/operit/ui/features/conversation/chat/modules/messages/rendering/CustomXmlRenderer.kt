@@ -6,9 +6,6 @@ import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextBut
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
 
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
-import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeIndex
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalToolTimingIndex
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.toolCallTimingLabel
 import com.ai.assistance.operit.ui.common.markdown.lazy.rememberMarkdownCardValue
 import android.webkit.WebView
 import android.webkit.WebSettings
@@ -1142,21 +1139,17 @@ class CustomXmlRenderer(
                 )
             }
 
-        // 独立渲染可能没有节点索引，此时不关联其他工具的耗时。
-        val nodeIndex = LocalMarkdownCardNodeIndex.current
-        val timing = if (nodeIndex != null) LocalToolTimingIndex.current.tool(nodeIndex) else null
-        val timingLabel = timing?.let { toolCallTimingLabel(it) }
         if (waifuProcessMode) {
             WaifuProcessToolRow(
                 name = renderState.rawToolName,
-                status = timingLabel ?: stringResource(R.string.tool_call_block),
+                status = stringResource(R.string.tool_call_block),
                 details = renderState.paramText,
                 textColor = textColor,
                 modifier = modifier,
             )
             return
         }
-        // 单项状态交给工具标题行绘制，避免额外换行和重复的分组次数。
+        // 状态与累计耗时由过程标题统一绘制，工具行只保留名称和参数。
         // 特殊处理文件编辑类工具
         if (renderState.displayToolName == "apply_file" ||
             renderState.displayToolName == "create_file" ||
@@ -1168,7 +1161,6 @@ class CustomXmlRenderer(
                     params = renderState.paramText,
                     textColor = textColor,
                     modifier = modifier,
-                    statusLabel = timingLabel,
                     enableDialog = enableDialogs
                 )
             } else {
@@ -1177,7 +1169,6 @@ class CustomXmlRenderer(
                     params = renderState.paramText,
                     textColor = textColor,
                     modifier = modifier,
-                    statusLabel = timingLabel,
                     enableDialog = enableDialogs
                 )
             }
@@ -1189,7 +1180,6 @@ class CustomXmlRenderer(
                         params = renderState.paramText,
                         textColor = textColor,
                         modifier = modifier,
-                        statusLabel = timingLabel,
                         enableDialog = enableDialogs  // 传递弹窗启用状态
                 )
             } else {
@@ -1198,7 +1188,6 @@ class CustomXmlRenderer(
                         params = renderState.paramText,
                         textColor = textColor,
                         modifier = modifier,
-                        statusLabel = timingLabel,
                         enableDialog = enableDialogs  // 传递弹窗启用状态
                 )
             }

@@ -7867,11 +7867,11 @@
     <string name="display_behavior_su_row_desc">Digunakan dalam mode eksekusi KernelSU.</string>
     <string name="display_behavior_collapse_editor_desc">Pilih sesuai kebiasaan membaca; alat tetap berjalan normal.</string>
     <string name="display_behavior_collapse_read">Ciutkan beberapa alat baca saja</string>
-    <string name="display_behavior_collapse_read_desc">Kelompokkan alat baca saja yang berurutan.</string>
+    <string name="display_behavior_collapse_read_desc">Ciutkan proses hanya baca dengan beberapa panggilan atau pencarian secara default. Bentangkan proses lainnya.</string>
     <string name="display_behavior_collapse_all">Ciutkan beberapa alat</string>
-    <string name="display_behavior_collapse_all_desc">Kelompokkan alat berurutan dan biarkan panggilan tunggal terbuka.</string>
+    <string name="display_behavior_collapse_all_desc">Ciutkan proses dengan beberapa panggilan atau pencarian secara default. Bentangkan satu panggilan alat.</string>
     <string name="display_behavior_collapse_full">Ciutkan semua alat</string>
-    <string name="display_behavior_collapse_full_desc">Panggilan tunggal juga diciutkan; buka saat diperlukan.</string>
+    <string name="display_behavior_collapse_full_desc">Ciutkan semua proses alat secara default. Bentangkan untuk melihat panggilan dan hasil.</string>
     <string name="display_behavior_reading_preview">Pratinjau bacaan</string>
     <string name="display_behavior_orientation_editor_desc">Perilaku halaman setelah orientasi berubah.</string>
     <string name="display_behavior_orientation_always">Muat ulang otomatis</string>
