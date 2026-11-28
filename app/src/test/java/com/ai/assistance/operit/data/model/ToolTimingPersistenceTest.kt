@@ -49,6 +49,32 @@ class ToolTimingPersistenceTest {
     }
 
     @Test
+    fun freezeAndArchiveKeepOnlyLocalRecordsForAProjectedSegment() {
+        val state = ToolTimingState()
+        state.update(execution.copy(durationMs = 100L))
+        state.update(execution.copy(callIndex = 4))
+        val message = ChatMessage("ai", content, toolTimingState = state, toolTimingStartIndex = 4)
+        val frozen = message.freezeToolTimings()
+        val variant = MessageVariantEntity.fromChatMessage("chat", message.timestamp, 1, message)
+        val switched = variant.applyTo(message, 2)
+        assertNull(switched.toolTimingState)
+        assertEquals(0, switched.toolTimingStartIndex)
+        assertEquals(execution, (switched.resolvedSections().single() as MessageSection.ToolCall).execution)
+        state.update(execution.copy(callIndex = 4, durationMs = 9_000L))
+        val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
+        val encoded = json.encodeToString(frozen)
+        assertFalse(encoded.contains("toolTimingStartIndex"))
+        assertFalse(encoded.contains("toolTimingState"))
+        val reloaded = json.decodeFromString<ChatMessage>(encoded)
+        listOf(frozen, reloaded).forEach { snapshot ->
+            assertNull(snapshot.toolTimingState)
+            assertEquals(0, snapshot.toolTimingStartIndex)
+            assertEquals(execution, (snapshot.sections.single() as MessageSection.ToolCall).execution)
+            assertEquals(content, snapshot.content)
+        }
+    }
+
+    @Test
     fun loadedExecutionSurvivesLaterTextUpdatesAndUnknownHistoryStaysUnknown() {
         val sections = listOf((MessageSectionCodec.parse(content).single() as MessageSection.ToolCall).copy(execution = execution))
         val message = ChatMessage("ai", content, sections = sections)

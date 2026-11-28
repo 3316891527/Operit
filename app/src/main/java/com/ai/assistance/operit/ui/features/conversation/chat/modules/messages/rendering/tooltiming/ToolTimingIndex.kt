@@ -18,33 +18,37 @@ internal data class ToolCallTiming(
 ) {
     val complete: Boolean get() = resultSeen && !batchStopped &&
         (clockId == null || durationMs != null || batchEndedMs != null)
-    fun ticking(streaming: Boolean): Boolean = streaming && clockId == ToolExecutionTiming.clockId &&
-        startedMs != null && durationMs == null && batchEndedMs == null
+    fun ticking(live: Boolean): Boolean = live && clockId == ToolExecutionTiming.clockId &&
+        startedMs != null && durationMs == null && batchEndedMs == null && !batchStopped
 
-    fun interval(now: Long, streaming: Boolean): LongRange? {
+    fun interval(now: Long, live: Boolean): LongRange? {
         val start = startedMs
         if (start == null) return if (durationMs == 0L) 0L..0L else null
         val duration = durationMs
         val end = when {
             duration != null -> start + duration
             batchEndedMs != null -> batchEndedMs
-            ticking(streaming) -> now
+            ticking(live) -> now
             else -> return null
         }
         return start..end.coerceAtLeast(start)
     }
 }
 
-internal data class ToolTimingSummary(val calls: List<ToolCallTiming>) {
+internal data class ToolTimingSummary(
+    val calls: List<ToolCallTiming>,
+    val live: Boolean = false,
+) {
     val complete: Boolean get() = calls.isNotEmpty() && calls.all { it.complete }
     val stopped: Boolean get() = !complete && calls.any { it.batchStopped }
-    fun ticking(streaming: Boolean): Boolean = calls.any { it.ticking(streaming) }
+    fun ticking(): Boolean = calls.any { it.ticking(live) }
 
-    fun elapsedMillis(now: Long, streaming: Boolean): Long? {
-        // 旧历史缺少计时记录时不把部分新数据当成整个分组的耗时。
-        if (calls.isEmpty() || calls.any { it.clockId == null }) return null
-        val clockGroups = calls.groupBy { it.clockId }
-        val known = clockGroups.values.map { group -> group.mapNotNull { it.interval(now, streaming) } }
+    fun elapsedMillis(now: Long): Long? {
+        // 活动组只统计已开始的真实区间；追加尚未执行的调用不能遮蔽已有时间。
+        // 旧历史仍要求每项都有记录，避免把不完整快照当成整组耗时。
+        if (calls.isEmpty() || (!live && calls.any { it.clockId == null })) return null
+        val clockGroups = calls.filter { it.clockId != null }.groupBy { it.clockId }
+        val known = clockGroups.values.map { group -> group.mapNotNull { it.interval(now, live) } }
         if (known.all { it.isEmpty() }) return null
         // 不同进程或重启后的单调时钟不能直接互相合并。
         return known.sumOf(::elapsedUnion)
@@ -70,15 +74,22 @@ internal fun elapsedUnion(intervals: List<LongRange>): Long {
 }
 
 /** 按批次和原始位置关联，支持同名工具、串行、并行及多轮工具调用。 */
-internal class ToolTimingIndex private constructor(private val calls: Map<Int, ToolCallTiming>) {
-    fun tool(index: Int): ToolTimingSummary? = calls[index]?.let { ToolTimingSummary(listOf(it)) }
+internal class ToolTimingIndex private constructor(
+    private val calls: Map<Int, ToolCallTiming>,
+    private val live: Boolean = false,
+) {
+    fun tool(index: Int): ToolTimingSummary? = calls[index]?.let { ToolTimingSummary(listOf(it), live) }
     fun group(start: Int, end: Int): ToolTimingSummary =
-        ToolTimingSummary(calls.values.filter { it.nodeIndex in start..end })
+        ToolTimingSummary(calls.values.filter { it.nodeIndex in start..end }, live)
 
     companion object {
         val Empty = ToolTimingIndex(emptyMap())
 
-        fun parse(nodes: List<MarkdownNodeStable>, records: List<ToolCallExecution> = emptyList()): ToolTimingIndex {
+        fun parse(
+            nodes: List<MarkdownNodeStable>,
+            records: List<ToolCallExecution> = emptyList(),
+            live: Boolean = false,
+        ): ToolTimingIndex {
             data class Call(val node: Int, var result: Boolean = false)
             val calls = mutableListOf<Call>()
             for ((index, node) in nodes.withIndex()) {
@@ -102,7 +113,7 @@ internal class ToolTimingIndex private constructor(private val calls: Map<Int, T
                     batchEndedMs = execution?.endedMs,
                     batchStopped = execution?.stopped == true,
                 )
-            }.toMap())
+            }.toMap(), live)
         }
     }
 }

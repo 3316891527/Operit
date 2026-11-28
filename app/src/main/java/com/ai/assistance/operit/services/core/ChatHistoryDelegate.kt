@@ -34,7 +34,28 @@ import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.character.ActivePrompt
 import com.ai.assistance.operit.core.chat.message.ChatMessageTimestampAllocator
 import com.ai.assistance.operit.plugins.toolpkg.ToolPkgChatMessageHookBridge
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+
+internal fun restoreLiveWaifuTimingRows(
+    chatId: String,
+    rows: List<ChatMessage>,
+    snapshot: (String) -> List<ChatMessage>,
+): List<ChatMessage> {
+    if (rows.isEmpty()) return rows
+    val liveRows = snapshot(chatId).filter { it.toolTimingState != null }.associateBy { it.timestamp }
+    if (liveRows.isEmpty()) return rows
+    return rows.map { row ->
+        val live = liveRows[row.timestamp] ?: return@map row
+        row.copy(
+            content = live.content,
+            sections = live.sections,
+            toolTimingState = live.toolTimingState,
+            toolTimingStartIndex = live.toolTimingStartIndex,
+        )
+    }
+}
 
 /** 委托类，负责管理聊天历史相关功能 */
 class ChatHistoryDelegate(
@@ -70,6 +91,7 @@ class ChatHistoryDelegate(
     private val allowAddMessage = AtomicBoolean(true) // 控制是否允许添加消息，切换对话时设为false
     private var beforeDestructiveHistoryMutation: (suspend (String) -> Unit)? = null
     private var afterDestructiveHistoryMutation: (suspend (String) -> Unit)? = null
+    private var liveWaifuTimingSnapshot: suspend (String) -> List<ChatMessage> = { emptyList() }
 
 
     // This is no longer needed here as summary logic is moved.
@@ -85,6 +107,10 @@ class ChatHistoryDelegate(
     val hasNewerDisplayHistory: StateFlow<Boolean> = currentChatWindow.hasNewerDisplayHistory
     val isLoadingDisplayWindow: StateFlow<Boolean> = currentChatWindow.isLoadingDisplayWindow
     private val latestDisplayPageCountByChatId = mutableMapOf<String, Int>()
+
+    internal fun setLiveWaifuTimingSnapshot(provider: suspend (String) -> List<ChatMessage>) {
+        liveWaifuTimingSnapshot = provider
+    }
 
     fun setBeforeDestructiveHistoryMutation(handler: suspend (String) -> Unit) {
         beforeDestructiveHistoryMutation = handler
@@ -155,7 +181,10 @@ class ChatHistoryDelegate(
         chatId: String,
         messages: List<ChatMessage>,
     ): List<ChatMessage> {
-        val loadResult = buildCurrentChatLoadResult(chatId, messages)
+        // 数据库不持有瞬态订阅，重载时按当前会话恢复页内仍在执行的工具分段。
+        val liveRows = liveWaifuTimingSnapshot(chatId)
+        val restored = restoreLiveWaifuTimingRows(chatId, messages) { liveRows }
+        val loadResult = buildCurrentChatLoadResult(chatId, restored)
         currentChatWindow.applyLoadResult(loadResult, _chatHistory)
         if (loadResult.messages.isEmpty()) {
             latestDisplayPageCountByChatId.remove(chatId)

@@ -122,6 +122,7 @@ fun AiMessageComposable(
         )
     }
     nodeGrouper.executionTimings = rememberMessageToolExecutions(message)
+    nodeGrouper.toolTimingsLive = message.toolTimingState != null
     val rememberedOnLinkClick = remember(context, onLinkClick, enableDialogs) {
         onLinkClick ?: { url ->
             // 如果启用了弹窗，显示链接预览；否则使用系统浏览器打开

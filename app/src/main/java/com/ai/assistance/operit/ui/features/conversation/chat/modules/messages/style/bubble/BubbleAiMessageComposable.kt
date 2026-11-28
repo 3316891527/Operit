@@ -221,6 +221,7 @@ fun BubbleAiMessageComposable(
         )
     }
     nodeGrouper.executionTimings = rememberMessageToolExecutions(message)
+    nodeGrouper.toolTimingsLive = message.toolTimingState != null
     val rememberedOnLinkClick = remember(context, onLinkClick, enableDialogs) {
         if (!enableDialogs) {
             { _: String -> }

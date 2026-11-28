@@ -13,12 +13,9 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.res.stringResource
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.format.formatElapsedDuration
-import com.ai.assistance.operit.ui.common.markdown.LocalMarkdownRenderMode
-import com.ai.assistance.operit.ui.common.markdown.MarkdownRenderMode
 import kotlinx.coroutines.delay
 
 internal val LocalToolTimingIndex = staticCompositionLocalOf { ToolTimingIndex.Empty }
-internal val LocalInsideToolGroup = staticCompositionLocalOf { false }
 
 /** 正文流和计时状态分别订阅，工具等待输出时仍能刷新标题。 */
 @Composable
@@ -26,7 +23,7 @@ internal fun rememberMessageToolExecutions(message: ChatMessage): List<ToolCallE
     val state = message.toolTimingState
     return if (state != null) {
         val records by state.records.collectAsState()
-        records
+        remember(records, message.toolTimingStartIndex) { message.localToolTimings(records) }
     } else {
         remember(message.content, message.sections) {
             message.resolvedSections().filterIsInstance<MessageSection.ToolCall>().mapNotNull { it.execution }
@@ -34,25 +31,30 @@ internal fun rememberMessageToolExecutions(message: ChatMessage): List<ToolCallE
     }
 }
 
-/** 只有仍在执行的可见标题刷新；完成后读取消息中的固定耗时。 */
+/** 计时由消息运行态驱动，正文暂停或按静态分段呈现时仍持续刷新。 */
+@Composable
+internal fun rememberToolElapsedMillis(summary: ToolTimingSummary): Long? {
+    val ticking = summary.ticking()
+    val now by produceState(SystemClock.elapsedRealtime(), summary, ticking) {
+        value = SystemClock.elapsedRealtime()
+        while (ticking) {
+            // 亚秒阶段以较短间隔刷新，让毫秒显示在工具尚未返回时也能推进。
+            val elapsed = summary.elapsedMillis(value)
+            delay(if (elapsed != null && elapsed < 1_000L) 100L else 1_000L)
+            value = SystemClock.elapsedRealtime()
+        }
+    }
+    return summary.elapsedMillis(now)
+}
+
+/** 工具完成和取消后使用固定区间，分组和单项共用同一个计时入口。 */
 @Composable
 internal fun toolTimingTitle(
     summary: ToolTimingSummary,
     thoughtCount: Int = 0,
     searchCount: Int = 0,
 ): String {
-    val streaming = LocalMarkdownRenderMode.current == MarkdownRenderMode.STREAMING
-    val ticking = summary.ticking(streaming)
-    val now by produceState(SystemClock.elapsedRealtime(), summary, ticking) {
-        value = SystemClock.elapsedRealtime()
-        while (ticking) {
-            // 亚秒阶段以较短间隔刷新，让毫秒显示在工具尚未返回时也能推进。
-            val elapsed = summary.elapsedMillis(value, streaming)
-            delay(if (elapsed != null && elapsed < 1_000L) 100L else 1_000L)
-            value = SystemClock.elapsedRealtime()
-        }
-    }
-    val millis = summary.elapsedMillis(now, streaming)
+    val millis = rememberToolElapsedMillis(summary)
     val elapsed = if (millis == null) {
         ""
     } else {
