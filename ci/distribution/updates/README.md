@@ -2,7 +2,7 @@
 
 客户端统一查询 `3316891527/Operit-Kong-patch` 的 GitHub Releases。该仓库保存所有正式版和补丁版；`3316891527/Operit` 只保留源码和开发协作，不发布应用或离线资源；固定离线资源位于 `3316891527/Operit-Kong-resources`。更新检查、补丁生成和 APK 还原仍在源码仓库实现。
 
-`1.12.2+15` 已完成发行分仓。当前产品基线为 `1.12.2+31`、versionCode 87；本轮准备 `2.0.0` 正式更新日志与历史接入，沿用统一发行仓库，不修改 APK 版号或公开版本。仓库创建、历史迁移、权限和完整回归见[分仓计划](../../../docs/TODO/chore/release-repositories/index.md)。
+`1.12.2+15` 已完成发行分仓。当前正式发行版本设置为 `2.0.0`、versionCode 88，高于 `1.12.2+31` 的 87。沿用统一发行仓库、现有包名和签名；跨基础版本提供完整 APK。仓库创建、历史迁移、权限和完整回归见[分仓计划](../../../docs/TODO/chore/release-repositories/index.md)。
 
 ## 渠道与安装
 
@@ -21,7 +21,7 @@
 
 工作流需要源码仓库的 Actions secret `OPERIT_DISTRIBUTION_TOKEN`，授予源码、补丁、资源仓库的 Contents 写入权限及源码仓库 Actions 读取权限。内置 `github.token` 不能向另外两个仓库发布。权限预检在签名构建前执行；缺少配置时明确失败。既有发行仓库和专用 secret 继续使用；本次保持 `complete_repository_migration=false`，不重复执行历史迁移清理。
 
-发布脚本读取 APK 的真实版本，检查 Kong 包名与固定证书；同基础版本的增量链还检查内部版本号递增。跨基础版本完整包的 versionCode 也必须高于已公开 Kong，需在正式发行前另行核对；本轮不提前修改。所有应用版本均只发往补丁仓库，先完成草稿上传及核验再公开；源码仓库不发布应用副本。已有 Release 不覆盖。
+发布脚本读取 APK 的真实版本，检查 Kong 包名与固定证书；同基础版本的增量链还检查内部版本号递增。跨基础版本完整包的 versionCode 也必须高于已公开 Kong，需在正式发行前另行核对。所有应用版本均只发往补丁仓库，先完成草稿上传及核验再公开；源码仓库不发布应用副本。已有 Release 不覆盖。
 
 当前 Build 发行步骤仅向统一更新仓库发布，不创建源码仓库版本标签，发行摘要也不再声明 sourceTag。源码提交和源码归档地址仍记录在正文与摘要中。发行仓库自己的 tag 继续承载 Release，已有标签不删除或移动。直接调用未变换的 publish_release.py 仍保留历史源码标签逻辑，正式发行应通过当前工作流。
 
@@ -62,6 +62,6 @@ python3 ci/distribution/updates/publish_release.py \
 
 ## 发布后清理本轮工作分支
 
-历史 `1.12.2+22` 发布曾使用 branch-cleanup-plan.json。本轮 2.0.0 准备保持 `cleanup_merged_branches=false`，保留独立 PR、功能分支和联合测试分支；历史清理名单不用于本轮准备。该选项默认关闭。
+历史 `1.12.2+22` 发布曾使用 branch-cleanup-plan.json。本轮 2.0.0 发行保持 `cleanup_merged_branches=false`，保留独立 PR、功能分支和联合测试分支；历史清理名单不用于本轮准备。该选项默认关闭。
 
 清理先核对公开 Release 与本次 release-plan.json 的版本、源码提交、附件大小和 SHA-256；仍有开放 PR 或包含本次发行未合入提交的分支会保留。实际删除使用观察到的分支头作为租约，构建期间新增的提交不会被误删。结果写入 branch-cleanup-report.json 并随发行报告上传，不需要持续轮询工作流。
