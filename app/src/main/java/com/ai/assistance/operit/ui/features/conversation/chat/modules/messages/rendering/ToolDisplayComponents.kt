@@ -49,7 +49,8 @@ fun CompactToolDisplay(
         params: String = "",
         textColor: Color,
         modifier: Modifier = Modifier,
-        enableDialog: Boolean = true  // 新增参数：是否启用弹窗功能，默认启用
+        enableDialog: Boolean = true,
+        statusLabel: String? = null,
 ) {
     val context = LocalContext.current
     val (displayToolName, displayParams) = remember(toolName, params) {
@@ -58,13 +59,13 @@ fun CompactToolDisplay(
     // 弹窗状态
     var showDetailDialog by remember { mutableStateOf(false) }
     val hasParams = displayParams.isNotBlank()
-    val semanticDescription = remember(displayToolName, displayParams.length) {
+    val semanticDescription = remember(displayToolName, displayParams.length, statusLabel) {
         buildToolSemanticDescription(
             context = context,
             toolName = displayToolName,
             params = displayParams,
             useByteSummary = false
-        )
+        ).let { description -> if (statusLabel == null) description else "$description, $statusLabel" }
     }
 
     // 显示详细内容的弹窗 - 仅在启用弹窗时显示
@@ -83,6 +84,7 @@ fun CompactToolDisplay(
         toolName = displayToolName,
         summary = summary,
         semanticDescription = semanticDescription,
+        statusLabel = statusLabel,
         leadingIcon = getToolIcon(displayToolName),
         titleColor = themeScriptContentColor("toolCard", MaterialTheme.colorScheme.primary),
         summaryColor = themeScriptContentColor("toolCard", textColor).copy(alpha = 0.7f),
@@ -103,7 +105,8 @@ fun DetailedToolDisplay(
         params: String = "",
         textColor: Color,
         modifier: Modifier = Modifier,
-        enableDialog: Boolean = true  // 新增参数：是否启用弹窗功能，默认启用
+        enableDialog: Boolean = true,
+        statusLabel: String? = null,
 ) {
     val context = LocalContext.current
     val (displayToolName, displayParams) = remember(toolName, params) {
@@ -111,13 +114,13 @@ fun DetailedToolDisplay(
     }
     var showDetailDialog by remember { mutableStateOf(false) }
     val hasParams = displayParams.isNotBlank()
-    val semanticDescription = remember(displayToolName, displayParams.length) {
+    val semanticDescription = remember(displayToolName, displayParams.length, statusLabel) {
         buildToolSemanticDescription(
             context = context,
             toolName = displayToolName,
             params = displayParams,
             useByteSummary = true
-        )
+        ).let { description -> if (statusLabel == null) description else "$description, $statusLabel" }
     }
     val paramsSizeLabel = remember(displayParams) {
         buildToolParamsSizeLabel(context, displayParams)
@@ -136,6 +139,7 @@ fun DetailedToolDisplay(
         toolName = displayToolName,
         summary = paramsSizeLabel,
         semanticDescription = semanticDescription,
+        statusLabel = statusLabel,
         leadingIcon = getToolIcon(displayToolName),
         titleColor = themeScriptContentColor("toolCard", MaterialTheme.colorScheme.primary),
         summaryColor = themeScriptContentColor("toolCard", textColor).copy(alpha = 0.7f),

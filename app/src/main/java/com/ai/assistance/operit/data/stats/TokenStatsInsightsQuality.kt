@@ -31,25 +31,31 @@ fun tokenStatsOutputTokensPerSecond(row: TokenStatsRequestRow): Double? {
     return output.toDouble() * 1000.0 / (end - first).toDouble()
 }
 
-internal fun tokenStatsCacheReadRatio(totals: TokenStatsInsightsTotals): Double? {
-    val parts = listOf(totals.uncachedInput, totals.cachedInput, totals.cacheWrite)
-    if (parts.any { !it.isFullyKnown || it.knownSum < 0L }) return null
-    val input = parts.sumOf { it.knownSum.toDouble() }
-    if (input == 0.0) return null
-    return totals.cachedInput.knownSum.toDouble() / input
+internal val TokenStatsCacheReadCoverage.ratio: Double?
+    get() = if (totalInputTokens > 0.0) cachedInputTokens / totalInputTokens else null
+
+internal data class TokenStatsSuccessCoverage(
+    val successfulRequests: Long,
+    val knownStatusRequests: Long,
+    val unknownStatusRequests: Long,
+) {
+    val ratio: Double?
+        get() = if (knownStatusRequests > 0L) successfulRequests.toDouble() / knownStatusRequests else null
 }
 
-internal fun tokenStatsSuccessRatio(totals: TokenStatsInsightsTotals): Double? {
-    if (totals.requests <= 0L || totals.unknownStatusRequests != 0L || totals.statusCounts.keys.any { it !in knownRequestStatuses }) return null
-    return (totals.statusCounts[TokenRequestLogEntity.SUCCESS] ?: 0L).toDouble() / totals.requests
+internal fun tokenStatsSuccessCoverage(totals: TokenStatsInsightsTotals): TokenStatsSuccessCoverage {
+    var known = 0L
+    var unknown = totals.unknownStatusRequests
+    totals.statusCounts.forEach { (status, count) ->
+        when (status) {
+            TokenRequestLogEntity.SUCCESS, TokenRequestLogEntity.FAILED, TokenRequestLogEntity.CANCELLED,
+            // 流正常结束但未确认成功：状态明确，只计入分母。
+            TokenRequestLogEntity.COMPLETED -> known = TokenCostCalculator.saturatedAdd(known, count)
+            else -> unknown = TokenCostCalculator.saturatedAdd(unknown, count)
+        }
+    }
+    return TokenStatsSuccessCoverage(totals.statusCounts[TokenRequestLogEntity.SUCCESS] ?: 0L, known, unknown)
 }
-
-private val knownRequestStatuses = setOf(
-    TokenRequestLogEntity.SUCCESS,
-    TokenRequestLogEntity.FAILED,
-    TokenRequestLogEntity.CANCELLED,
-    TokenRequestLogEntity.COMPLETED,
-)
 
 internal enum class TokenStatsRatioKind(val greenFrom: Double, val yellowFrom: Double) {
     CACHE_READ(0.90, 0.50),

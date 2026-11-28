@@ -7,4 +7,6 @@
     <string name="token_stats_design_quality_samples">%1$s samples</string>
     <string name="token_stats_design_quality_note">Each metric uses its own valid samples, with no minimum count. P95 is item ⌈0.95 × sample count⌉ after sorting. TPS averages output tokens ÷ (total duration − first-token latency) for successful requests. Missing historical fields are excluded from the relevant metric.</string>
     <string name="token_stats_design_formula_currency">Pricing currency: %1$s</string>
+    <string name="token_stats_design_cache_coverage">Successful usage: %1$s complete · %2$s without usable splits</string>
+    <string name="token_stats_design_success_coverage">%1$s valid samples · %2$s unknown statuses</string>
 </resources>

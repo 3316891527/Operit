@@ -58,6 +58,7 @@ internal fun CanvasToolSummaryRow(
     summaryColor: Color,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    statusLabel: String? = null,
 ) {
     val textStroke = themeTextStroke("toolCard")
     val density = LocalDensity.current
@@ -66,6 +67,7 @@ internal fun CanvasToolSummaryRow(
     val titleStyle = themeScriptTextStyle("toolCard", MaterialTheme.typography.labelMedium.copy(color = titleColor))
     val summaryStyle = themeScriptTextStyle("toolCard", MaterialTheme.typography.bodySmall.copy(color = summaryColor))
     val measuredSummary = remember(summary) { summary.toCanvasSingleLineText() }
+    val measuredStatus = remember(statusLabel) { statusLabel?.toCanvasSingleLineText().orEmpty() }
     val interactionSource = remember { MutableInteractionSource() }
     val clickableModifier =
         if (onClick != null) {
@@ -88,59 +90,66 @@ internal fun CanvasToolSummaryRow(
         val widthPx = with(density) { maxWidth.roundToPx() }.fastCoerceAtLeast(1)
         val topPaddingPx = with(density) { 4.dp.roundToPx() }
         val iconSizePx = with(density) { 16.dp.roundToPx().toFloat() }
-        val gap1Px = with(density) { 8.dp.roundToPx().toFloat() }
-        val gap2Px = with(density) { 8.dp.roundToPx().toFloat() }
+        val gapPx = with(density) { 8.dp.roundToPx() }
         val titleMinWidthPx = with(density) { 80.dp.roundToPx() }
         val titleMaxWidthPx = with(density) { 120.dp.roundToPx() }
-
-        val unconstrainedTitleLayout =
-            remember(toolName, titleStyle, textMeasurer) {
-                textMeasurer.measure(
-                    text = AnnotatedString(toolName),
-                    style = titleStyle,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        val titleWidthPx =
-            unconstrainedTitleLayout.size.width
-                .coerceAtLeast(titleMinWidthPx)
-                .coerceAtMost(titleMaxWidthPx)
-        val titleLayout =
-            remember(toolName, titleStyle, textMeasurer, titleWidthPx) {
-                textMeasurer.measure(
-                    text = AnnotatedString(toolName),
-                    style = titleStyle,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    constraints = Constraints(maxWidth = titleWidthPx),
-                )
-            }
-
-        val summaryMaxWidth =
-            (widthPx - iconSizePx.toInt() - gap1Px.toInt() - titleWidthPx - gap2Px.toInt())
-                .fastCoerceAtLeast(0)
-        val summaryLayout =
-            remember(measuredSummary, summaryStyle, textMeasurer, summaryMaxWidth) {
-                textMeasurer.measure(
-                    text = AnnotatedString(measuredSummary),
-                    style = summaryStyle,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    constraints = Constraints(maxWidth = summaryMaxWidth),
-                )
-            }
-
-        val contentHeightPx =
-            max(
-                iconSizePx.toInt(),
-                max(titleLayout.size.height, summaryLayout.size.height),
+        val statusTitleMinimum = with(density) { 48.dp.roundToPx() }
+        val naturalTitle = remember(toolName, titleStyle, textMeasurer) {
+            textMeasurer.measure(
+                text = AnnotatedString(toolName),
+                style = titleStyle,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
+        }
+        val naturalStatus = remember(measuredStatus, summaryStyle, textMeasurer) {
+            textMeasurer.measure(
+                text = AnnotatedString(measuredStatus),
+                style = summaryStyle,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        // 状态与工具名共用一行；窄屏先收缩参数预览，避免长参数挤掉计时。
+        val widths = toolSummaryWidths(
+            available = widthPx - iconSizePx.toInt() - gapPx,
+            preferredTitle = naturalTitle.size.width.coerceIn(titleMinWidthPx, titleMaxWidthPx),
+            preferredStatus = if (measuredStatus.isEmpty()) 0 else naturalStatus.size.width,
+            minimumTitle = statusTitleMinimum,
+            gap = gapPx,
+        )
+        val titleLayout = remember(toolName, titleStyle, textMeasurer, widths.title) {
+            textMeasurer.measure(
+                text = AnnotatedString(toolName),
+                style = titleStyle,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                constraints = Constraints(maxWidth = widths.title),
+            )
+        }
+        val statusLayout = remember(measuredStatus, summaryStyle, textMeasurer, widths.status) {
+            textMeasurer.measure(
+                text = AnnotatedString(measuredStatus),
+                style = summaryStyle,
+                maxLines = 1,
+                overflow = TextOverflow.StartEllipsis,
+                constraints = Constraints(maxWidth = widths.status),
+            )
+        }
+        val summaryLayout = remember(measuredSummary, summaryStyle, textMeasurer, widths.summary) {
+            textMeasurer.measure(
+                text = AnnotatedString(measuredSummary),
+                style = summaryStyle,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                constraints = Constraints(maxWidth = widths.summary),
+            )
+        }
+        val contentHeightPx = maxOf(
+            iconSizePx.toInt(), titleLayout.size.height, statusLayout.size.height, summaryLayout.size.height,
+        )
         val totalHeightPx = topPaddingPx + contentHeightPx
-
-        Canvas(
-            modifier = Modifier.fillMaxWidth().height(with(density) { totalHeightPx.toDp() })
-        ) {
+        Canvas(modifier = Modifier.fillMaxWidth().height(with(density) { totalHeightPx.toDp() })) {
             val iconTop = topPaddingPx + (contentHeightPx - iconSizePx) / 2f
             translate(top = iconTop) {
                 with(iconPainter) {
@@ -150,15 +159,15 @@ internal fun CanvasToolSummaryRow(
                     )
                 }
             }
-
-            val textTopBase = topPaddingPx.toFloat()
-            val titleX = iconSizePx + gap1Px
-            val titleY = textTopBase + (contentHeightPx - titleLayout.size.height) / 2f
-            drawThemeText(titleLayout, topLeft = Offset(titleX, titleY), textStroke = textStroke)
-
-            val summaryX = titleX + titleWidthPx + gap2Px
-            val summaryY = textTopBase + (contentHeightPx - summaryLayout.size.height) / 2f
-            drawThemeText(summaryLayout, topLeft = Offset(summaryX, summaryY), textStroke = textStroke)
+            val titleX = iconSizePx + gapPx
+            val titleY = topPaddingPx + (contentHeightPx - titleLayout.size.height) / 2f
+            if (widths.title > 0) drawThemeText(titleLayout, topLeft = Offset(titleX, titleY), textStroke = textStroke)
+            val statusX = titleX + widths.title + widths.statusGap
+            val statusY = topPaddingPx + (contentHeightPx - statusLayout.size.height) / 2f
+            if (widths.status > 0) drawThemeText(statusLayout, topLeft = Offset(statusX, statusY), textStroke = textStroke)
+            val summaryX = statusX + widths.status + widths.summaryGap
+            val summaryY = topPaddingPx + (contentHeightPx - summaryLayout.size.height) / 2f
+            if (widths.summary > 0) drawThemeText(summaryLayout, topLeft = Offset(summaryX, summaryY), textStroke = textStroke)
         }
     }
 }

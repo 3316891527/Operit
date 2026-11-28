@@ -1322,7 +1322,8 @@ internal fun UnifiedMarkdownCanvas(
     val processChatId = LocalResponseProcessChatId.current
     val processEnd = completedProcessEnd(nodes, collapseCompletedProcess && processId != null)
     val processExpanded = processId != null && ResponseProcessExpansionState.isExpanded(processChatId, processId)
-    val displayedItems = groupedItems.filter { item ->
+    val processItems = flattenGroupsCoveredByResponseProcess(groupedItems, nodes, processEnd)
+    val displayedItems = processItems.filter { item ->
         val end = when (item) {
             is MarkdownGroupedItem.Single -> item.index
             is MarkdownGroupedItem.Group -> item.endIndexInclusive

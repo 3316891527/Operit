@@ -6,8 +6,10 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.r
 import androidx.compose.ui.res.stringResource
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.markdown.MarkdownGroupedItem
+import com.ai.assistance.operit.ui.common.markdown.flattenGroupsCoveredByResponseProcess
 import com.ai.assistance.operit.ui.common.markdown.lazy.markdownNodeIdentityKeys
 import com.ai.assistance.operit.ui.common.markdown.lazy.splitPlainMarkdownNode
+import com.ai.assistance.operit.ui.common.markdown.responseProcessItemVisible
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
 import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuProcessItem
 import com.ai.assistance.operit.ui.features.conversation.chat.waifu.waifuProcessItems
@@ -35,7 +37,14 @@ internal sealed interface ThinkToolsRow {
 
     data class WaifuTool(val call: WaifuProcessItem.Tool, override val key: String) : ThinkToolsRow
 
-    data class Content(val index: Int, val inGroup: Boolean, override val key: String, val node: MarkdownNodeStable? = null, val waifuProcess: Boolean = false) : ThinkToolsRow
+    data class Content(
+        val index: Int,
+        val inGroup: Boolean,
+        override val key: String,
+        val node: MarkdownNodeStable? = null,
+        val waifuProcess: Boolean = false,
+        val groupEnd: Int? = null,
+    ) : ThinkToolsRow
 }
 
 /** 过程标题和配对工具仍展开为独立懒加载行，长过程不会集中测量全部内容。 */
@@ -70,10 +79,11 @@ internal fun buildThinkToolsRows(
     overrides: Map<String, Boolean>,
     showThinkingProcess: Boolean = true,
     showStatusTags: Boolean = true,
+    coveredThroughIndex: Int = -1,
     describeGroup: (MarkdownGroupedItem.Group) -> ThinkToolsGroupInfo,
 ): List<ThinkToolsRow> = buildList {
     val nodeKeys = markdownNodeIdentityKeys(nodes)
-    for (item in groups) {
+    for (item in flattenGroupsCoveredByResponseProcess(groups, nodes, coveredThroughIndex)) {
         when (item) {
             is MarkdownGroupedItem.Single -> {
                 if (item.index in nodes.indices) {
@@ -100,12 +110,31 @@ internal fun buildThinkToolsRows(
                             nodes[index].type == MarkdownProcessorType.XML_BLOCK &&
                             isVisibleChatMarkdownNode(nodes[index], showThinkingProcess, showStatusTags)
                         ) {
-                            add(ThinkToolsRow.Content(index, true, nodeKeys[index]))
+                            add(ThinkToolsRow.Content(index, true, nodeKeys[index], groupEnd = item.endIndexInclusive))
                         }
                     }
                 }
             }
         }
+    }
+}
+
+/** 总用时收起时隐藏过程前缀；跨边界的组仍保有自己的入口。 */
+internal fun visibleResponseProcessRows(
+    rows: List<ThinkToolsRow>,
+    processEnd: Int,
+    expanded: Boolean,
+    lastNodeIndex: Int,
+): List<ThinkToolsRow> {
+    if (processEnd < 0 || expanded) return rows
+    return rows.filter { row ->
+        val end = when (row) {
+            is ThinkToolsRow.Header -> row.info.group.endIndexInclusive
+            is ThinkToolsRow.Content -> row.groupEnd ?: row.index
+            is ThinkToolsRow.WaifuHeader -> lastNodeIndex
+            is ThinkToolsRow.WaifuTool -> row.call.resultIndex ?: row.call.index
+        }
+        responseProcessItemVisible(end, processEnd, expanded)
     }
 }
 

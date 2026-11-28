@@ -7,4 +7,6 @@
     <string name="tool_timing_running">Sedang berjalan</string>
     <string name="tool_timing_stopped">Dihentikan</string>
     <string name="tool_timing_searches">%1$d pencarian</string>
+    <string name="tool_timing_group_completed">Alat selesai</string>
+    <string name="tool_timing_inline">%1$s%2$s</string>
 </resources>

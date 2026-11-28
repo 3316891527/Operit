@@ -7,4 +7,6 @@
     <string name="tool_timing_running">Em execução</string>
     <string name="tool_timing_stopped">Interrompido</string>
     <string name="tool_timing_searches">%1$d pesquisas</string>
+    <string name="tool_timing_group_completed">Ferramentas concluídas</string>
+    <string name="tool_timing_inline">%1$s%2$s</string>
 </resources>

@@ -58,6 +58,23 @@ class CompletedProcessTest {
         assertTrue(responseProcessItemVisible(0, -1, false))
     }
 
+    @Test fun processOnlyFlattensFullyCoveredGroupsAtOriginalXmlIndices() {
+        val nodes = listOf(
+            xml("<tool name=\"read_file\"></tool>"), text("\n"), xml("<tool_result>done</tool_result>"),
+            xml("<think>跨界过程</think>"), text("跨界正文"), xml("<thinking>组外过程</thinking>"),
+        )
+        val covered = MarkdownGroupedItem.Group(0, 2, "covered")
+        val crossing = MarkdownGroupedItem.Group(3, 4, "crossing")
+        val outside = MarkdownGroupedItem.Group(5, 5, "outside")
+        val groups = listOf(covered, crossing, outside)
+
+        assertEquals(
+            listOf(MarkdownGroupedItem.Single(0), MarkdownGroupedItem.Single(2), crossing, outside),
+            flattenGroupsCoveredByResponseProcess(groups, nodes, processEnd = 3),
+        )
+        assertEquals(groups, flattenGroupsCoveredByResponseProcess(groups, nodes, processEnd = -1))
+    }
+
     @Test fun expansionIdentitySeparatesMessagesAndSelectedVariants() {
         assertNotEquals(responseProcessKey(10, 0), responseProcessKey(11, 0))
         assertNotEquals(responseProcessKey(10, 0), responseProcessKey(10, 1))

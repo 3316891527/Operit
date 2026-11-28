@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering
 
 import com.ai.assistance.operit.ui.common.markdown.MarkdownGroupedItem
+import com.ai.assistance.operit.ui.common.markdown.completedProcessEnd
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 import org.junit.Assert.assertEquals
@@ -41,6 +42,53 @@ class ThinkToolsRowsTest {
         assertEquals(201, rows.size)
         assertEquals(nodes.indices.toList(), rows.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
         assertEquals(rows.size, rows.map { it.key }.toSet().size)
+    }
+
+    @Test
+    fun totalDurationOwnsTheProcessEvenWithOldCollapsedGroupOverrides() {
+        val nodes = tools(2) + node("中途说明", xml = false) + tools(2) +
+            listOf(node("最终标题", xml = false), node("最终正文", xml = false))
+        val grouper = grouper()
+        val groups = grouper.group(nodes, "test")
+        val toolGroups = groups.filterIsInstance<MarkdownGroupedItem.Group>()
+        assertEquals(2, toolGroups.size)
+        val overrides = toolGroups.associate { it.stableKey to false }
+        val processEnd = completedProcessEnd(nodes)
+        assertEquals(8, processEnd)
+        val rows = buildThinkToolsRows(groups, nodes, overrides, coveredThroughIndex = processEnd) {
+            error("总用时覆盖的组不应计算标题或自动展开状态")
+        }
+
+        val expanded = visibleResponseProcessRows(rows, processEnd, expanded = true, lastNodeIndex = nodes.lastIndex)
+        assertTrue(expanded.all { it is ThinkToolsRow.Content && !it.inGroup })
+        val contentRows = expanded.filterIsInstance<ThinkToolsRow.Content>()
+        assertEquals(nodes.indices.toList(), contentRows.map { it.index })
+        val nodeKeys = markdownNodeIdentityKeys(nodes)
+        assertEquals(listOf(0, 1, 2, 3, 5, 6, 7, 8).map { nodeKeys[it] },
+            contentRows.filter { nodes[it.index].type == MarkdownProcessorType.XML_BLOCK }.map { it.key })
+
+        val collapsed = visibleResponseProcessRows(rows, processEnd, expanded = false, lastNodeIndex = nodes.lastIndex)
+        assertEquals(contentRows.takeLast(2), collapsed)
+    }
+
+    @Test
+    fun crossingGroupKeepsItsOwnFoldOwnerAndOutsideGroupKeepsItsOverride() {
+        val nodes = tools(6)
+        val covered = MarkdownGroupedItem.Group(0, 3, "covered")
+        val crossing = MarkdownGroupedItem.Group(4, 7, "crossing")
+        val outside = MarkdownGroupedItem.Group(8, 11, "outside")
+        val rows = buildThinkToolsRows(
+            listOf(covered, crossing, outside), nodes,
+            mapOf("covered" to false, "crossing" to true, "outside" to false), coveredThroughIndex = 5,
+        ) { group ->
+            assertTrue(group == crossing || group == outside)
+            ThinkToolsGroupInfo(group, 2, 0, autoExpand = true)
+        }
+
+        val collapsed = visibleResponseProcessRows(rows, 5, expanded = false, lastNodeIndex = nodes.lastIndex)
+        assertEquals(listOf(crossing to true, outside to false),
+            collapsed.filterIsInstance<ThinkToolsRow.Header>().map { it.info.group to it.expanded })
+        assertEquals((4..7).toList(), collapsed.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
     }
 
     @Test

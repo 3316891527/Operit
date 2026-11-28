@@ -7,4 +7,6 @@
     <string name="tool_timing_running">실행 중</string>
     <string name="tool_timing_stopped">중지됨</string>
     <string name="tool_timing_searches">검색 %1$d회</string>
+    <string name="tool_timing_group_completed">이 그룹의 도구 완료</string>
+    <string name="tool_timing_inline">%1$s%2$s</string>
 </resources>

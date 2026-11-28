@@ -3,7 +3,6 @@ package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.
 import com.ai.assistance.operit.ui.common.markdown.ResponseProcessExpansionState
 import com.ai.assistance.operit.ui.common.markdown.ResponseActivityHeader
 import com.ai.assistance.operit.ui.common.markdown.responseProcessKey
-import com.ai.assistance.operit.ui.common.markdown.responseProcessItemVisible
 import com.ai.assistance.operit.ui.common.markdown.completedProcessEnd
 import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
@@ -68,6 +67,7 @@ import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeInd
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalToolTimingIndex
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.isVisibleChatMarkdownNode
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.thinkToolsGroupTitle
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.visibleResponseProcessRows
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.stream.rememberRevisableTextStream
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
@@ -220,7 +220,7 @@ internal fun rememberChatTimelineEntries(
                     val expansionSnapshot = overrides.toMap()
                     val rows = remember(
                         split, groups, nodes, grouper, mode, expansionSnapshot, timingSnapshot, timingLive,
-                        showThinkingProcess, showStatusTags, isWaifuProcess,
+                        showThinkingProcess, showStatusTags, isWaifuProcess, processEnd,
                     ) {
                         if (isWaifuProcess) {
                             buildWaifuProcessRows(nodes, expansionSnapshot["waifu-process"] ?: true, showThinkingProcess)
@@ -229,6 +229,7 @@ internal fun rememberChatTimelineEntries(
                                 groups, nodes, expansionSnapshot,
                                 showThinkingProcess = showThinkingProcess,
                                 showStatusTags = showStatusTags,
+                                coveredThroughIndex = processEnd,
                             ) { group ->
                                 grouper.describeGroup(
                                     group, nodes,
@@ -243,16 +244,7 @@ internal fun rememberChatTimelineEntries(
                         state, nodes, visibleNodes, grouper, mode, rows, cardStore,
                         processEnd, processId, processExpanded, message.waitDurationMs, message.outputDurationMs,
                     ) {
-                        // Preserve original node indices, card ownership and small lazy rows.
-                        val shownRows = rows.filter { row ->
-                            val end = when (row) {
-                                is ThinkToolsRow.Header -> row.info.group.endIndexInclusive
-                                is ThinkToolsRow.Content -> row.index
-                                is ThinkToolsRow.WaifuHeader -> nodes.lastIndex
-                                is ThinkToolsRow.WaifuTool -> row.call.resultIndex ?: row.call.index
-                            }
-                            responseProcessItemVisible(end, processEnd, processExpanded)
-                        }
+                        val shownRows = visibleResponseProcessRows(rows, processEnd, processExpanded, nodes.lastIndex)
                         when {
                             visibleNodes.isEmpty() -> emptyList()
                             processEnd >= 0 -> listOf(

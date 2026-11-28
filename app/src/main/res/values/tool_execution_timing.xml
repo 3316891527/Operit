@@ -7,4 +7,6 @@
     <string name="tool_timing_running">正在执行</string>
     <string name="tool_timing_stopped">已停止</string>
     <string name="tool_timing_searches">%1$d次搜索</string>
+    <string name="tool_timing_group_completed">本组工具已完成</string>
+    <string name="tool_timing_inline">%1$s%2$s</string>
 </resources>

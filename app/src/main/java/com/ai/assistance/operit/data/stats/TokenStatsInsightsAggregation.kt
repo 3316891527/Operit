@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.stats
 
+import com.ai.assistance.operit.data.model.TokenRequestLogEntity
 import com.ai.assistance.operit.data.model.TokenStatsModelEntity
 import com.ai.assistance.operit.data.model.TokenUsageRecordEntity
 
@@ -139,6 +140,10 @@ internal class InsightsAccumulator(private val params: TokenStatsQueryParams) {
     private val statuses = linkedMapOf<String, Long>()
     private val sums = LongArray(5)
     private val known = LongArray(5)
+    private var completeCacheInputRequests = 0L
+    private var missingCacheInputRequests = 0L
+    private var cacheReadTokens = 0.0
+    private var cacheInputTokens = 0.0
     private var amount = 0.0
     private var unknownCost = 0L
     private val native = linkedMapOf<com.ai.assistance.operit.data.collects.PricingCurrency, Double>()
@@ -157,6 +162,20 @@ internal class InsightsAccumulator(private val params: TokenStatsQueryParams) {
                 }
             }
         }
+        // 无日志的历史事实仍是成功用量，但不能据此推断请求状态。诊断日志不进入缓存样本。
+        if (count > 0L && row.hasUsageFact && (row.status == null || row.status == TokenRequestLogEntity.SUCCESS)) {
+            val uncached = row.uncachedInputTokens
+            val cached = row.cachedInputTokens
+            val write = row.cacheWriteTokens
+            if (uncached != null && uncached >= 0L && cached != null && cached >= 0L && write != null && write >= 0L) {
+                completeCacheInputRequests = TokenCostCalculator.saturatedAdd(completeCacheInputRequests, count)
+                // 批次用量已是合计，不乘所含请求数；转为浮点再累加，避免大额 Token 在分子和分母饱和失真。
+                cacheReadTokens += cached.toDouble()
+                cacheInputTokens += uncached.toDouble() + cached.toDouble() + write.toDouble()
+            } else {
+                missingCacheInputRequests = TokenCostCalculator.saturatedAdd(missingCacheInputRequests, count)
+            }
+        }
         amount += row.cost.knownAmount
         unknownCost = TokenCostCalculator.saturatedAdd(unknownCost, row.cost.unknownContributionCount)
         row.cost.originalCurrencyAmounts.forEach { (currency, value) -> native[currency] = (native[currency] ?: 0.0) + value }
@@ -164,6 +183,8 @@ internal class InsightsAccumulator(private val params: TokenStatsQueryParams) {
     fun result(): TokenStatsInsightsTotals {
         fun component(index: Int) = TokenStatsTokenAggregate(sums[index], known[index], (requests - known[index]).coerceAtLeast(0L), requests)
         return TokenStatsInsightsTotals(requests, facts, unconfirmed, historical, component(0), component(1), component(2), component(3), component(4),
-            TokenStatsCostSummary(params.targetCurrency, amount, unknownCost, requests, params.manualRate, native.toMap()), statuses.toMap(), unknownStatus)
+            TokenStatsCostSummary(params.targetCurrency, amount, unknownCost, requests, params.manualRate, native.toMap()), statuses.toMap(), unknownStatus,
+            cacheReadCoverage = TokenStatsCacheReadCoverage(completeCacheInputRequests, missingCacheInputRequests, cacheReadTokens, cacheInputTokens),
+        )
     }
 }

@@ -61,9 +61,9 @@ internal fun toolTimingTitle(
         stringResource(R.string.tool_timing_elapsed, formatElapsedDuration(millis))
     }
     val status = when {
-        summary.complete -> R.string.tool_timing_completed
+        summary.complete -> R.string.tool_timing_group_completed
         summary.stopped -> R.string.tool_timing_stopped
-        thoughtCount > 0 -> R.string.tool_timing_running
+        summary.ticking() || thoughtCount > 0 -> R.string.tool_timing_running
         else -> R.string.tool_call_block
     }
     val title = if (thoughtCount > 0) {
@@ -72,4 +72,19 @@ internal fun toolTimingTitle(
         stringResource(R.string.tool_timing_simple, stringResource(status), summary.calls.size, elapsed)
     }
     return if (searchCount > 0) title + " • " + stringResource(R.string.tool_timing_searches, searchCount) else title
+}
+/** 单项状态与工具名称同排，不重复显示分组的调用次数。 */
+@Composable
+internal fun toolCallTimingLabel(summary: ToolTimingSummary): String {
+    val millis = rememberToolElapsedMillis(summary)
+    val elapsed = if (millis == null) "" else {
+        stringResource(R.string.tool_timing_elapsed, formatElapsedDuration(millis))
+    }
+    val status = when {
+        summary.complete -> R.string.tool_timing_completed
+        summary.stopped -> R.string.tool_timing_stopped
+        summary.ticking() -> R.string.tool_timing_running
+        else -> R.string.tool_call_block
+    }
+    return stringResource(R.string.tool_timing_inline, stringResource(status), elapsed)
 }

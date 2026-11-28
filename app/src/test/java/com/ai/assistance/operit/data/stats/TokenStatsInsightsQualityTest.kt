@@ -42,19 +42,37 @@ class TokenStatsInsightsQualityTest {
     }
 
     @Test
-    fun unavailableRatiosStayUnknownButKnownZerosAreValid() {
+    fun cacheRateDoesNotInferCoverageFromOldTotals() {
         val known = TokenStatsTokenAggregate(100L, 1L, 0L, 1L)
         val zero = known.copy(knownSum = 0L)
         val totals = TokenStatsInsightsTotals(
-            1L, 1L, 0L, 0L, known, zero, zero, zero, known, row.cost, mapOf("FAILED" to 1L), 0L,
+            1L, 1L, 0L, 0L, known, zero, zero, zero, known, row.cost, mapOf("SUCCESS" to 1L), 0L,
         )
-        assertEquals(0.0, requireNotNull(tokenStatsCacheReadRatio(totals)), 0.0)
-        assertEquals(0.0, requireNotNull(tokenStatsSuccessRatio(totals)), 0.0)
-        assertNull(tokenStatsCacheReadRatio(totals.copy(uncachedInput = zero)))
-        assertNull(tokenStatsCacheReadRatio(totals.copy(cacheWrite = zero.copy(unknownEventCount = 1L))))
-        assertNull(tokenStatsSuccessRatio(totals.copy(requests = 0L, statusCounts = emptyMap())))
-        assertNull(tokenStatsSuccessRatio(totals.copy(statusCounts = emptyMap(), unknownStatusRequests = 1L)))
-        assertNull(tokenStatsSuccessRatio(totals.copy(statusCounts = mapOf("UNKNOWN" to 1L))))
+        assertNull(totals.cacheReadCoverage?.ratio)
+    }
+
+    @Test
+    fun availabilityDistinguishesZeroRateFromNoDenominator() {
+        val params = TokenStatsQueryParams(PricingCurrency.CNY, manualRate = 7.0)
+        fun totals(vararg rows: TokenStatsRequestRow): TokenStatsInsightsTotals =
+            InsightsAccumulator(params).apply { rows.forEach { add(it) } }.result()
+
+        val noInput = requireNotNull(totals(row).cacheReadCoverage)
+        assertEquals(1L, noInput.completeRequests)
+        assertNull(noInput.ratio)
+        val zeroHitRow = row.copy(uncachedInputTokens = 100L, totalInputTokens = 100L, totalTokens = 120L)
+        val zeroHits = requireNotNull(totals(zeroHitRow).cacheReadCoverage)
+        assertEquals(0.0, requireNotNull(zeroHits.ratio), 0.0)
+        val missing = requireNotNull(totals(row.copy(cachedInputTokens = null)).cacheReadCoverage)
+        assertEquals(1L, missing.missingRequests)
+        assertNull(missing.ratio)
+
+        val unknown = tokenStatsSuccessCoverage(totals(row.copy(status = null), row.copy(status = "UNKNOWN")))
+        assertEquals(2L, unknown.unknownStatusRequests)
+        assertNull(unknown.ratio)
+        val completed = tokenStatsSuccessCoverage(totals(row.copy(status = "COMPLETED")))
+        assertEquals(1L, completed.knownStatusRequests)
+        assertEquals(0.0, requireNotNull(completed.ratio), 0.0)
     }
 
     private fun assertLevels(kind: TokenStatsRatioKind, vararg cases: Pair<Double?, TokenStatsRatioLevel>) {

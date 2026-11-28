@@ -40,7 +40,7 @@ class LiveToolTimingAndroidTest {
                 val records = rememberMessageToolExecutions(message)
                 val summary = checkNotNull(ToolTimingIndex.parse(listOf(node), records, live = true).tool(0))
                 val millis = rememberToolElapsedMillis(summary)
-                val label = if (waifu) waifuElapsedLabel(summary) else toolTimingTitle(summary)
+                val label = if (waifu) waifuElapsedLabel(summary) else toolCallTimingLabel(summary)
                 SideEffect { observed.set(millis to label) }
                 Text(label)
             }

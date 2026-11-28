@@ -7,4 +7,6 @@
     <string name="token_stats_design_quality_samples">%1$s amostras</string>
     <string name="token_stats_design_quality_note">Cada métrica usa suas próprias amostras válidas, sem mínimo. P95 é o item ⌈0.95 × amostras⌉ após ordenar. TPS é a média de tokens de saída ÷ (duração total − latência do primeiro token) das solicitações bem-sucedidas. Campos históricos ausentes são excluídos.</string>
     <string name="token_stats_design_formula_currency">Moeda dos preços: %1$s</string>
+    <string name="token_stats_design_cache_coverage">Uso bem-sucedido: %1$s com detalhamento completo · %2$s sem detalhamento válido</string>
+    <string name="token_stats_design_success_coverage">%1$s amostras válidas · %2$s com status desconhecido</string>
 </resources>

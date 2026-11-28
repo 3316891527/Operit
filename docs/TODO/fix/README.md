@@ -1,5 +1,7 @@
 # 缺陷、崩溃与性能修复
 
+- [工具状态同排、过程折叠与统计样本覆盖](tool-status-layout-and-stat-coverage/index.md)
+
 - [Token 统计运行质量、计价与配置显示修补](token-statistics-quality-pricing/index.md)
 
 - [硅基流动音频格式、请求重试与临时错误显示](voice-input-audio-retry/index.md)

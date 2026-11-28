@@ -7,4 +7,6 @@
     <string name="tool_timing_running">În execuție</string>
     <string name="tool_timing_stopped">Oprit</string>
     <string name="tool_timing_searches">%1$d căutări</string>
+    <string name="tool_timing_group_completed">Instrumente finalizate</string>
+    <string name="tool_timing_inline">%1$s%2$s</string>
 </resources>

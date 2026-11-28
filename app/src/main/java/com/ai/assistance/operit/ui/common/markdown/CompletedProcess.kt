@@ -36,5 +36,28 @@ internal fun completedProcessEnd(
 internal fun responseProcessItemVisible(itemEnd: Int, processEnd: Int, expanded: Boolean): Boolean =
     processEnd < 0 || expanded || itemEnd > processEnd
 
+/** 总用时只接管完整覆盖的组，原索引继续用于卡片标识和 XML 子流。 */
+internal fun flattenGroupsCoveredByResponseProcess(
+    groups: List<MarkdownGroupedItem>,
+    nodes: List<MarkdownNodeStable>,
+    processEnd: Int,
+): List<MarkdownGroupedItem> {
+    if (processEnd < 0) return groups
+    return buildList {
+        for (item in groups) {
+            if (item is MarkdownGroupedItem.Group && item.endIndexInclusive <= processEnd) {
+                for (index in item.startIndex.coerceAtLeast(0)..item.endIndexInclusive.coerceAtMost(nodes.lastIndex)) {
+                    // 原分组只渲染 XML 成员，跳过吸收进组范围的空白。
+                    if (nodes[index].type == MarkdownProcessorType.XML_BLOCK) {
+                        add(MarkdownGroupedItem.Single(index))
+                    }
+                }
+            } else {
+                add(item)
+            }
+        }
+    }
+}
+
 internal fun responseProcessKey(timestamp: Long, variant: Int): String =
     "single-process-$timestamp/$variant"

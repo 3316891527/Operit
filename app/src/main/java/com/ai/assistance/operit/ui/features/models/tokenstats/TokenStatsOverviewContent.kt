@@ -134,27 +134,33 @@ private fun StatsOverviewMetrics(totals: TokenStatsInsightsTotals, unit: TokenSt
     val inputParts = listOf(totals.uncachedInput, totals.cachedInput, totals.cacheWrite)
     val input = inputParts.fold(0L) { sum, part -> TokenCostCalculator.saturatedAdd(sum, part.knownSum) }
     val inputText = if (inputParts.all { it.isFullyKnown }) formatTokenCount(input, unit) else "—"
-    val cacheRate = tokenStatsCacheReadRatio(totals)
-    val success = totals.statusCounts["SUCCESS"] ?: 0L
+    val cacheCoverage = totals.cacheReadCoverage
+    val cacheRate = cacheCoverage?.ratio
+    val successCoverage = tokenStatsSuccessCoverage(totals)
+    val successRate = successCoverage.ratio
     val failed = totals.statusCounts["FAILED"] ?: 0L
-    val cancelled = totals.statusCounts["CANCELLED"] ?: 0L
-    val successRate = tokenStatsSuccessRatio(totals)
+    val cacheNote = if (cacheCoverage == null) stringResource(R.string.token_insights_not_recorded)
+    else stringResource(
+        R.string.token_stats_design_cache_coverage,
+        overviewCount(cacheCoverage.completeRequests), overviewCount(cacheCoverage.missingRequests),
+    )
+    val successNote = stringResource(
+        R.string.token_stats_design_success_coverage,
+        overviewCount(successCoverage.knownStatusRequests), overviewCount(successCoverage.unknownStatusRequests),
+    )
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatsOverviewMetric("cube", stringResource(R.string.token_stats_design_total_tokens), overviewTokens(totals.totalTokens, unit),
                 stringResource(R.string.token_stats_design_input_output, inputText, overviewTokens(totals.output, unit)), Modifier.weight(1f))
             StatsOverviewMetric("list", stringResource(R.string.token_stats_design_model_requests), overviewCount(totals.requests),
-                if (totals.unknownStatusRequests > 0L) stringResource(R.string.token_insights_unknown_status) + " " + overviewCount(totals.unknownStatusRequests)
-                else stringResource(R.string.token_stats_design_success_failed, overviewCount(success), overviewCount(failed)), Modifier.weight(1f))
+                if (successCoverage.unknownStatusRequests > 0L) stringResource(R.string.token_insights_unknown_status) + " " + overviewCount(successCoverage.unknownStatusRequests)
+                else stringResource(R.string.token_stats_design_success_failed, overviewCount(successCoverage.successfulRequests), overviewCount(failed)), Modifier.weight(1f))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatsOverviewMetric("spark", stringResource(R.string.token_stats_design_cache_rate), overviewRatioText(cacheRate),
-                stringResource(R.string.token_stats_design_cache_basis), Modifier.weight(1f),
-                tokenStatsRatioLevel(cacheRate, TokenStatsRatioKind.CACHE_READ))
+                cacheNote, Modifier.weight(1f).fillMaxHeight(), tokenStatsRatioLevel(cacheRate, TokenStatsRatioKind.CACHE_READ))
             StatsOverviewMetric("check", stringResource(R.string.token_stats_design_success_rate), overviewRatioText(successRate),
-                if (successRate == null) stringResource(R.string.token_insights_not_recorded)
-                else stringResource(R.string.token_stats_design_cancelled_count, overviewCount(cancelled)), Modifier.weight(1f),
-                tokenStatsRatioLevel(successRate, TokenStatsRatioKind.REQUEST_SUCCESS))
+                successNote, Modifier.weight(1f).fillMaxHeight(), tokenStatsRatioLevel(successRate, TokenStatsRatioKind.REQUEST_SUCCESS))
         }
     }
 }
@@ -184,7 +190,8 @@ private fun StatsOverviewMetric(
             null -> p.ink
         }
         StatsText(value, Modifier.padding(top = 7.dp), size = 23, color = valueColor, weight = FontWeight.Medium, maxLines = 1)
-        StatsText(note, Modifier.padding(top = 5.dp).heightIn(min = 27.dp), size = 9, color = p.muted, maxLines = 2)
+        StatsText(note, Modifier.padding(top = 5.dp).heightIn(min = 27.dp), size = 9, color = p.muted,
+            maxLines = if (level == null) 2 else Int.MAX_VALUE)
     }
 }
 
