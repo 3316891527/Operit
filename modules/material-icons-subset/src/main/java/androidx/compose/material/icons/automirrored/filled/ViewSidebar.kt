@@ -14,25 +14,19 @@
  * limitations under the License.
  */
 
-package androidx.compose.material.icons.filled
+package androidx.compose.material.icons.automirrored.filled
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.ui.graphics.vector.ImageVector
-import kotlin.Deprecated
 
-@Deprecated(
-    "Use the AutoMirrored version at Icons.AutoMirrored.Filled.ViewSidebar",
-    ReplaceWith( "Icons.AutoMirrored.Filled.ViewSidebar",
-            "androidx.compose.material.icons.automirrored.filled.ViewSidebar"),
-)
-public val Icons.Filled.ViewSidebar: ImageVector
+public val Icons.AutoMirrored.Filled.ViewSidebar: ImageVector
     get() {
         if (_viewSidebar != null) {
             return _viewSidebar!!
         }
-        _viewSidebar = materialIcon(name = "Filled.ViewSidebar") {
+        _viewSidebar = materialIcon(name = "AutoMirrored.Filled.ViewSidebar", autoMirror = true) {
             materialPath {
                 moveTo(16.0f, 20.0f)
                 horizontalLineTo(2.0f)

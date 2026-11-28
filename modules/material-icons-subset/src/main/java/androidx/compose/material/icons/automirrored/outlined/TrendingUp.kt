@@ -14,25 +14,19 @@
  * limitations under the License.
  */
 
-package androidx.compose.material.icons.outlined
+package androidx.compose.material.icons.automirrored.outlined
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.ui.graphics.vector.ImageVector
-import kotlin.Deprecated
 
-@Deprecated(
-    "Use the AutoMirrored version at Icons.AutoMirrored.Outlined.TrendingUp",
-    ReplaceWith( "Icons.AutoMirrored.Outlined.TrendingUp",
-            "androidx.compose.material.icons.automirrored.outlined.TrendingUp"),
-)
-public val Icons.Outlined.TrendingUp: ImageVector
+public val Icons.AutoMirrored.Outlined.TrendingUp: ImageVector
     get() {
         if (_trendingUp != null) {
             return _trendingUp!!
         }
-        _trendingUp = materialIcon(name = "Outlined.TrendingUp") {
+        _trendingUp = materialIcon(name = "AutoMirrored.Outlined.TrendingUp", autoMirror = true) {
             materialPath {
                 moveTo(16.0f, 6.0f)
                 lineToRelative(2.29f, 2.29f)

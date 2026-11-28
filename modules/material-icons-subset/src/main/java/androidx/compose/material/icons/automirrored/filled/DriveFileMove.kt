@@ -14,25 +14,20 @@
  * limitations under the License.
  */
 
-package androidx.compose.material.icons.filled
+package androidx.compose.material.icons.automirrored.filled
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.ui.graphics.vector.ImageVector
-import kotlin.Deprecated
 
-@Deprecated(
-    "Use the AutoMirrored version at Icons.AutoMirrored.Filled.DriveFileMove",
-    ReplaceWith( "Icons.AutoMirrored.Filled.DriveFileMove",
-            "androidx.compose.material.icons.automirrored.filled.DriveFileMove"),
-)
-public val Icons.Filled.DriveFileMove: ImageVector
+public val Icons.AutoMirrored.Filled.DriveFileMove: ImageVector
     get() {
         if (_driveFileMove != null) {
             return _driveFileMove!!
         }
-        _driveFileMove = materialIcon(name = "Filled.DriveFileMove") {
+        _driveFileMove = materialIcon(name = "AutoMirrored.Filled.DriveFileMove", autoMirror =
+                true) {
             materialPath {
                 moveTo(20.0f, 6.0f)
                 horizontalLineToRelative(-8.0f)

@@ -14,25 +14,19 @@
  * limitations under the License.
  */
 
-package androidx.compose.material.icons.filled
+package androidx.compose.material.icons.automirrored.filled
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.ui.graphics.vector.ImageVector
-import kotlin.Deprecated
 
-@Deprecated(
-    "Use the AutoMirrored version at Icons.AutoMirrored.Filled.Login",
-    ReplaceWith( "Icons.AutoMirrored.Filled.Login",
-            "androidx.compose.material.icons.automirrored.filled.Login"),
-)
-public val Icons.Filled.Login: ImageVector
+public val Icons.AutoMirrored.Filled.Login: ImageVector
     get() {
         if (_login != null) {
             return _login!!
         }
-        _login = materialIcon(name = "Filled.Login") {
+        _login = materialIcon(name = "AutoMirrored.Filled.Login", autoMirror = true) {
             materialPath {
                 moveTo(11.0f, 7.0f)
                 lineTo(9.6f, 8.4f)

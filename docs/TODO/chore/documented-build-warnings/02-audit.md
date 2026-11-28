@@ -34,6 +34,8 @@ ColorScheme 新角色保持旧构造的 Color.Unspecified，序列化格式不�
 
 终端子模块仅迁移设置返回图标，来源为 [OperitTerminalCore 配套 PR](https://github.com/3316891527/OperitTerminalCore/pull/4)，主应用固定到提交 13e7e9139dcf2c34ea9de357014bb7675f81f918。
 
+AutoMirrored 导入同时需要同步仓内 Material 图标子集。使用 `tools/icons/sync_material_icons.py` 从固定 SHA-256 的 1.7.8 官方源码重新生成：静态扩展图标由 332 个变为 298 个，新增 14 个镜像版本，删除 48 个当前主应用与终端源码均不再引用的旧版本。core 图标目录与 2132 个动态 Filled 名称保持不变。
+
 ## 保留项
 
 - 仅提示 Deprecated in Java、没有明确迁移步骤的 Android / Java / ExoPlayer 调用
@@ -54,6 +56,8 @@ ColorScheme 新角色保持旧构造的 Color.Unspecified，序列化格式不�
 ## 已完成的静态核验
 
 204 条逐项源码对账通过。127 个 Kotlin 文件进行 Tree-sitter 解析，修改前后均为 18 处基线解析诊断，没有新增；这不等同于 Kotlin 编译或类型检查。Python 生成器 AST、严格 UTF-8 和差异空白检查通过。
+
+图标子集引用检查通过；全部 298 个保留的扩展源码与已校验的官方源码逐字节一致，动态图标数据与 core 清单均未变化。
 
 本地没有编译、构建或运行测试；未为机械 API 替换增加与实现重复的测试。提交后运行仓库卫生、本地化和 Markdown 链接门禁；远端 assembleDebug、JVM 回归与仪器测试 APK 编译单独登记结果，不持续轮询。设备上的截图、复制粘贴和标签页过渡效果仍待验收。
 
