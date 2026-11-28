@@ -7,7 +7,6 @@ import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertD
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeIndex
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalToolTimingIndex
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalInsideToolGroup
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.toolTimingTitle
 import com.ai.assistance.operit.ui.common.markdown.lazy.rememberMarkdownCardValue
 import android.webkit.WebView
@@ -1153,7 +1152,8 @@ class CustomXmlRenderer(
             return
         }
         Column(modifier = modifier.fillMaxWidth()) {
-            if (!LocalInsideToolGroup.current && timing != null) {
+            // 分组汇总不代替单项计时，展开工具组时也要看见仍在执行的耗时。
+            if (timing != null) {
                 Text(
                     toolTimingTitle(timing),
                     style = MaterialTheme.typography.bodySmall,

@@ -6,7 +6,7 @@ import com.ai.assistance.operit.core.chat.protocol.MessageSectionCodec
 
 /** Boundaries are canonical display prefixes, never offsets into the raw replay stream. */
 internal class SteeredTranscript {
-    private data class Boundary(val displayPrefix: String, val nextTimestamp: Long)
+    private data class Boundary(val displayPrefix: String, val nextTimestamp: Long, val toolCallCount: Int)
 
     /**
      * Only the newest boundary is ever read, so older prefixes are dropped as newer ones arrive.
@@ -32,7 +32,7 @@ internal class SteeredTranscript {
     fun release() {
         segmentStream?.close()
         segmentStream = null
-        boundary = boundary?.let { Boundary("", it.nextTimestamp) }
+        boundary = boundary?.let { Boundary("", it.nextTimestamp, 0) }
         released = boundary != null
     }
 
@@ -48,7 +48,8 @@ internal class SteeredTranscript {
         if (rootTimestamp == null) rootTimestamp = assistantTimestamp
         require(rootTimestamp == assistantTimestamp)
         require(boundary?.let { displayPrefix.startsWith(it.displayPrefix) } != false)
-        boundary = Boundary(displayPrefix, nextTimestamp)
+        val toolCallCount = MessageSectionCodec.parse(displayPrefix).count { it is MessageSection.ToolCall }
+        boundary = Boundary(displayPrefix, nextTimestamp, toolCallCount)
         segmentStream?.close()
         segmentStream = SteeredSegmentStream()
     }
@@ -60,42 +61,38 @@ internal class SteeredTranscript {
             inputTokens = 0, outputTokens = 0, cachedInputTokens = 0,
             waitDurationMs = 0, outputDurationMs = 0, completedAt = 0,
         ) else input
-        val lastBoundary = boundary ?: return listOf(message)
+        val lastBoundary = boundary
+        if (lastBoundary == null) {
+            val hasTiming = message.toolTimingState != null || message.toolTimingStartIndex != 0
+            return listOf(if (message.contentStream == null && hasTiming) message.freezeToolTimings() else message)
+        }
         if (message.timestamp != rootTimestamp) return listOf(message)
         if (released) return emptyList()
-        val result = mutableListOf<ChatMessage>()
-        // onTurnInput persists each segment before sealing it. Replaying sealed rows here
-        // would push old pages back into the visible window on every streaming snapshot.
-        val start = lastBoundary.displayPrefix.length
-        val timestamp = lastBoundary.nextTimestamp
-        // A collector may have captured a snapshot before sealing; it cannot overwrite the
-        // new segment with that stale text.
-        if (message.content.startsWith(lastBoundary.displayPrefix)) {
-            val suffix = message.content.substring(start)
-            segmentStream?.update(suffix)
-            if (message.contentStream == null) segmentStream?.close()
-            // This fork stores parsed sections and tool timing snapshots alongside content.
-            // Project them with the suffix so a repeated tool call cannot inherit an earlier call's timing.
-            val sections = MessageSectionCodec.parse(suffix)
-            val sourceCalls = message.resolvedSections().filterIsInstance<MessageSection.ToolCall>()
-            var callIndex = sourceCalls.size - sections.count { it is MessageSection.ToolCall }
-            var projectedCallIndex = 0
-            val projectedSections = sections.map { section ->
-                if (section is MessageSection.ToolCall) {
-                    val source = sourceCalls[callIndex++]
-                    check(source.name == section.name && source.raw == section.raw)
-                    // 后缀独立保存和显示，工具编号必须从当前消息的零开始，避免耗时丢失或串给别的调用。
-                    val localIndex = projectedCallIndex++
-                    section.copy(execution = source.execution?.copy(callIndex = localIndex))
-                } else section
+        // 已封存的分段不再投影；转向之前捕获的旧快照也不能覆盖当前分段。
+        if (!message.content.startsWith(lastBoundary.displayPrefix)) return emptyList()
+
+        val suffix = message.content.substring(lastBoundary.displayPrefix.length)
+        val streaming = message.contentStream != null
+        segmentStream?.update(suffix)
+        if (!streaming) segmentStream?.close()
+
+        // 只投影源消息已有的快照；实时记录留在同一个整轮 holder，避免正文不变时计时冻结。
+        val savedCalls = message.sections.filterIsInstance<MessageSection.ToolCall>()
+        var localCallIndex = 0
+        val projectedSections = MessageSectionCodec.parse(suffix).map { section ->
+            if (section !is MessageSection.ToolCall) section else {
+                val local = localCallIndex++
+                val saved = savedCalls.getOrNull(lastBoundary.toolCallCount + local)
+                    ?.takeIf { it.raw == section.raw }
+                section.copy(execution = saved?.execution?.copy(callIndex = local))
             }
-            result += message.copy(
-                content = suffix, timestamp = timestamp,
-                sections = projectedSections,
-                toolTimingState = null,
-                contentStream = if (message.contentStream != null) segmentStream?.stream else null,
-            )
         }
-        return result
+        val projected = message.copy(
+            content = suffix, timestamp = lastBoundary.nextTimestamp,
+            sections = projectedSections,
+            toolTimingStartIndex = message.toolTimingStartIndex + lastBoundary.toolCallCount,
+            contentStream = if (streaming) segmentStream?.stream else null,
+        )
+        return listOf(if (streaming) projected else projected.freezeToolTimings())
     }
 }

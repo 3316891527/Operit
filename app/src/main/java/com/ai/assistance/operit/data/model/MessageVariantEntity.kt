@@ -46,6 +46,7 @@ data class MessageVariantEntity(
             content = MessageSectionCodec.render(parsed),
             sections = parsed,
             toolTimingState = null,
+            toolTimingStartIndex = 0,
             roleName = roleName.ifBlank { baseMessage.roleName },
             selectedVariantIndex = variantIndex,
             variantCount = variantCount,

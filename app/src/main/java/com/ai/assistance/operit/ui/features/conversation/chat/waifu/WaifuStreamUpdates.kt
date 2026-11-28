@@ -259,42 +259,47 @@ internal class WaifuSegmentMessageStore<T>(
     private val reviseMessage: ((T, String) -> T)? = null,
     private val publishPreview: suspend (T) -> Unit = {},
     private val publishRevision: suspend (T) -> Unit = {},
+    private val prepareMessage: (message: T, previous: T?) -> T = { message, _ -> message },
 ) {
     private var interruptNextSpeech = false
     private var hasPreview = false
+
+    private fun putMessage(index: Int, message: T): T =
+        prepareMessage(message, messages.getOrNull(index - 1)).also {
+            if (index == messages.size) messages += it else messages[index] = it
+        }
+
+    private fun putTail(content: String): T = if (hasPreview) {
+        putMessage(messages.lastIndex, checkNotNull(reviseMessage)(messages.last(), content))
+    } else {
+        putMessage(messages.size, createMessage(content))
+    }
 
     suspend fun apply(update: WaifuSegmentUpdate) {
         when (update) {
             is WaifuSegmentUpdate.Append -> {
                 val interruptSpeech = messages.isEmpty() || hasPreview || interruptNextSpeech
-                val message = if (hasPreview) {
-                    checkNotNull(reviseMessage)(messages.last(), update.content).also {
-                        messages[messages.lastIndex] = it
-                    }
-                } else {
-                    createMessage(update.content).also { messages += it }
-                }
-                appendMessage(message, interruptSpeech)
+                appendMessage(putTail(update.content), interruptSpeech)
                 hasPreview = false
                 interruptNextSpeech = false
             }
             is WaifuSegmentUpdate.Preview -> {
-                val message = if (hasPreview) {
-                    checkNotNull(reviseMessage)(messages.last(), update.content).also {
-                        messages[messages.lastIndex] = it
-                    }
-                } else {
-                    check(messages.isEmpty())
-                    createMessage(update.content).also { messages += it }
-                }
+                check(hasPreview || messages.isEmpty())
+                val message = putTail(update.content)
                 hasPreview = true
                 publishPreview(message)
             }
             is WaifuSegmentUpdate.Revise -> {
                 require(update.index in messages.indices)
-                val message = checkNotNull(reviseMessage)(messages[update.index], update.content)
-                messages[update.index] = message
-                publishRevision(message)
+                val message = putMessage(update.index, checkNotNull(reviseMessage)(messages[update.index], update.content))
+                val changed = mutableListOf(message)
+                // 前段增减工具会移动后续索引；更新依据是当前已发列表，不是曾经出现过的正文。
+                for (index in update.index + 1 until messages.size) {
+                    val previousProjection = messages[index]
+                    val projection = putMessage(index, previousProjection)
+                    if (projection != previousProjection) changed += projection
+                }
+                changed.forEach { publishRevision(it) }
             }
             is WaifuSegmentUpdate.Retain -> {
                 require(update.count in 0..messages.size)

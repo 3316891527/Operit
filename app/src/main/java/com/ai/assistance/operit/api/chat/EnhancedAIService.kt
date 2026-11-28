@@ -18,6 +18,8 @@ import android.os.Build
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.core.chat.protocol.ConversationMarkupManager
+import com.ai.assistance.operit.core.chat.protocol.MessageSectionCodec
+import com.ai.assistance.operit.data.model.MessageSection
 import com.ai.assistance.operit.core.chat.runtime.ConversationRoundManager
 import com.ai.assistance.operit.core.chat.context.ConversationService
 import com.ai.assistance.operit.core.chat.filebinding.FileBindingService
@@ -2166,6 +2168,10 @@ class EnhancedAIService private constructor(context: Context) {
             }
 
             if (truncatedToolRecovery != null) {
+                // 作废调用仍留在显示正文中，保留其位置，防止下一批耗时串到未执行的卡片。
+                context.toolCallCount.addAndGet(
+                    MessageSectionCodec.parse(finalContent).count { it is MessageSection.ToolCall },
+                )
                 if (disableWarning) {
                     AppLogger.w(
                         TAG,
