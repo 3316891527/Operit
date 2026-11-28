@@ -71,7 +71,6 @@
     <string name="token_stats_design_p95_duration">P95 total duration</string>
     <string name="token_stats_design_average_cost">Average priced request cost</string>
     <string name="token_stats_design_output_speed">Output speed · successful request average</string>
-    <string name="token_stats_design_quality_note">Duration covers the entire model request. First-token latency only includes requests with that field.</string>
     <string name="token_stats_design_model_ranking">Model cost ranking</string>
     <string name="token_stats_design_all_models">All models</string>
     <string name="token_stats_design_config_tokens">%1$d configurations · %2$s tokens</string>
@@ -87,7 +86,6 @@
     <string name="token_stats_design_formula_title">How the cost is calculated</string>
     <string name="token_stats_design_edit_configuration_price">Edit this configuration price</string>
     <string name="token_stats_design_first_token">First token latency</string>
-    <string name="token_stats_design_formula_currency">Unit: %1$s · time multiplier × long context multiplier</string>
     <string name="token_stats_design_formula_exchange">Exchange rate: %1$s %2$s/%3$s</string>
     <string name="token_stats_design_formula_total">Total: %1$s</string>
     <string name="token_stats_design_filter_search">Search filter options</string>

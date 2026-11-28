@@ -1,6 +1,10 @@
 package com.ai.assistance.operit.data.stats
 
-import org.junit.Assert.*
+import com.ai.assistance.operit.data.collects.PricingCurrency
+import com.ai.assistance.operit.ui.features.models.tokenstats.TokenStatsUiState
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TokenStatsConfigurationVisibilityTest {
@@ -24,8 +28,8 @@ class TokenStatsConfigurationVisibilityTest {
             ))
     }
 
-    @Test fun deletedConfigurationsStayVisibleUntilExplicitlyCleared() {
-        assertTrue(isTokenStatsConfigurationVisible(deletedId, setOf(currentId), emptySet()))
+    @Test fun deletedConfigurationsAreHiddenBeforeCleanup() {
+        assertFalse(isTokenStatsConfigurationVisible(deletedId, setOf(currentId), emptySet()))
         val hidden = invalidTokenStatsConfigurationIds(listOf(deletedId), setOf(currentId))
         assertFalse(isTokenStatsConfigurationVisible(deletedId, setOf(currentId), hidden))
     }
@@ -34,7 +38,7 @@ class TokenStatsConfigurationVisibilityTest {
         val hidden = invalidTokenStatsConfigurationIds(listOf(deletedId, currentId), setOf(currentId))
         val januaryConfigurations = listOf(deletedId, currentId, "")
         val februaryConfigurations = listOf(currentId, deletedId, deletedId)
-        assertEquals(listOf(currentId, ""), januaryConfigurations.filter {
+        assertEquals(listOf(currentId), januaryConfigurations.filter {
             isTokenStatsConfigurationVisible(it, setOf(currentId), hidden)
         })
         assertEquals(listOf(currentId), februaryConfigurations.filter {
@@ -44,24 +48,54 @@ class TokenStatsConfigurationVisibilityTest {
         assertEquals(listOf(currentId, deletedId, deletedId), februaryConfigurations)
     }
 
-    @Test fun restoredConfigurationIsVisibleEvenWhenItsIdWasPreviouslyHidden() {
+    @Test fun restoredConfigurationRemainsHiddenIfItsIdWasPreviouslyHidden() {
         assertFalse(isTokenStatsConfigurationVisible(deletedId, emptySet(), setOf(deletedId)))
-        assertTrue(isTokenStatsConfigurationVisible(deletedId, setOf(deletedId), setOf(deletedId)))
+        assertFalse(isTokenStatsConfigurationVisible(deletedId, setOf(deletedId), setOf(deletedId)))
     }
 
-    @Test fun unassignedLegacyUsageIsAlwaysVisibleAndCannotBeCleared() {
+    @Test fun unassignedLegacyUsageIsNeverVisibleAndHasNoIdToHide() {
         for (id in listOf("", " ")) {
-            assertTrue(isTokenStatsConfigurationVisible(id, emptySet(), setOf(id)))
+            assertFalse(isTokenStatsConfigurationVisible(id, setOf(id), emptySet()))
         }
         assertTrue(invalidTokenStatsConfigurationIds(listOf("", "  "), emptySet()).isEmpty())
     }
 
-    @Test fun newlyDeletedConfigurationRemainsUntilTheNextCleanup() {
+    @Test fun newlyDeletedConfigurationIsAlsoHiddenWithoutCleanup() {
         val hidden = setOf(deletedId)
-        assertTrue(isTokenStatsConfigurationVisible(currentId, emptySet(), hidden))
+        assertFalse(isTokenStatsConfigurationVisible(currentId, emptySet(), hidden))
         val moreHidden = hidden + invalidTokenStatsConfigurationIds(listOf(currentId, deletedId), emptySet())
         assertFalse(isTokenStatsConfigurationVisible(currentId, emptySet(), moreHidden))
         assertFalse(isTokenStatsConfigurationVisible(deletedId, emptySet(), moreHidden))
+    }
+
+    @Test fun listRowsAndFilterOptionsExcludeHiddenIdentitiesWithoutChangingTotals() {
+        val tokens = TokenStatsTokenAggregate(123L, 1L, 0L, 1L)
+        val totals = TokenStatsInsightsTotals(
+            requests = 5L, usageFactRequests = 5L, unconfirmedUsageRequests = 0L,
+            historicalAggregateRequests = 1L, uncachedInput = tokens, cachedInput = tokens,
+            cacheWrite = tokens, output = tokens, totalTokens = tokens,
+            cost = TokenStatsCostSummary(PricingCurrency.CNY, 0.01, 0L, 5L, 7.0, emptyMap()),
+            statusCounts = emptyMap(), unknownStatusRequests = 1L,
+        )
+        val current = TokenStatsInsightsConfiguration(currentId, "OPENAI", "model-a", totals)
+        val another = current.copy(model = "model-b")
+        val rows = listOf(current, another, current.copy(configId = ""),
+            current.copy(configId = deletedId), current.copy(configId = detachedId))
+        val overview = TokenStatsInsightsOverview(
+            totals = totals, costComposition = TokenStatsInsightsCostComposition(0.01, 0.0, 0.0, 0.0, 0.0, 0.0),
+            models = emptyList(), configurations = rows, functions = emptyList(),
+            peakPeriods = emptyList(), buckets = emptyList(), granularity = TokenStatsInsightsGranularity.DAILY,
+            comparison = null,
+        )
+        val state = TokenStatsUiState(
+            overview = overview, catalog = overview,
+            configurationNames = mapOf(currentId to "可见配置", deletedId to "已隐藏配置"),
+            hiddenConfigurationIds = setOf(deletedId),
+        )
+        assertEquals(listOf(current, another), state.visibleConfigurations)
+        assertEquals(listOf(currentId), state.visibleConfigurationFilterIds)
+        assertEquals(rows, state.overview?.configurations)
+        assertEquals(totals, state.overview?.totals)
     }
 
     @Test fun cleanupWithOnlyLiveConfigurationsDoesNotHideAnything() {

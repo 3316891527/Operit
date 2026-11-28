@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 /** User-owned price settings for one provider/model identity. */
 @Entity(
@@ -32,4 +33,6 @@ data class TokenStatsModelEntity(
     val longContextCachedInputMultiplier: Double? = null,
     val longContextCacheWriteMultiplier: Double? = null,
     val longContextOutputMultiplier: Double? = null,
+    @ColumnInfo(defaultValue = "1.0")
+    val billingMultiplier: Double = 1.0,
 )

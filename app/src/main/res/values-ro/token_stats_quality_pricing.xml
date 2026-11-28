@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="token_stats_billing_multiplier">Multiplicator de facturare</string>
+    <string name="token_stats_billing_multiplier_note">Implicit: 1. Valoarea 0.1 facturează 10% din costul de bază. Se aplică o singură dată subtotalului pentru tokenuri și cereri.</string>
+    <string name="token_stats_formula_billing_multiplier">Subtotal × %1$s (multiplicator)</string>
+    <string name="token_stats_request_tps">TPS (tokenuri de ieșire/s)</string>
+    <string name="token_stats_design_quality_samples">%1$s eșantioane</string>
+    <string name="token_stats_design_quality_note">Fiecare indicator folosește propriile eșantioane valide, fără un minim. P95 este elementul ⌈0.95 × număr⌉ după sortare. TPS este media tokenurilor de ieșire ÷ (durata totală − latența primului token) pentru cererile reușite. Câmpurile istorice lipsă sunt excluse.</string>
+    <string name="token_stats_design_formula_currency">Moneda prețurilor: %1$s</string>
+</resources>

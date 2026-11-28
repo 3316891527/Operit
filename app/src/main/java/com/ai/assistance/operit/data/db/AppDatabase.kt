@@ -30,7 +30,7 @@ import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import java.util.UUID
 
-private const val APP_DATABASE_VERSION = 31
+private const val APP_DATABASE_VERSION = 32
 
 /** 应用数据库，包含聊天表和消息表 */
 @Database(
@@ -115,6 +115,16 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+
+        /** v31 → v32：增加统一计费倍率，不改写既有价格和用量。 */
+        internal val MIGRATION_31_32 = object : Migration(31, 32) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `token_stats_models` " +
+                        "ADD COLUMN `billingMultiplier` REAL NOT NULL DEFAULT 1.0"
+                )
+            }
+        }
 
         /** v26 → v27：新增消息翻译缓存，保留已有聊天及统计数据。 */
         internal val MIGRATION_26_27 =
@@ -760,7 +770,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_27_28,
                     MIGRATION_28_29,
                     MIGRATION_29_30,
-                    MIGRATION_30_31
+                    MIGRATION_30_31,
+                    MIGRATION_31_32,
                 )
                 .build()
 

@@ -91,6 +91,7 @@ class TokenUsageRepository private constructor(
                         snapshot.prices.forEach { price ->
                             val current = dao.getStatsModel("", price.provider, price.model)
                                 ?: TokenStatsModelEntity("", price.provider, price.model)
+                            // 旧偏好没有统一倍率；复制现有行时须保留 Room 已保存的倍率。
                             dao.upsertStatsModel(
                                 current.copy(
                                     billingMode = price.settings.billingMode?.name,

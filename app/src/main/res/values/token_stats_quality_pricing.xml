@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="token_stats_billing_multiplier">计费倍率</string>
+    <string name="token_stats_billing_multiplier_note">默认 1；0.1 表示按原价的 10% 计费。倍率作用于分项合计，支持按 Token 和按次计费。</string>
+    <string name="token_stats_formula_billing_multiplier">分项小计 × %1$s（计费倍率）</string>
+    <string name="token_stats_request_tps">TPS（输出 Token/s）</string>
+    <string name="token_stats_design_quality_samples">%1$s 个样本</string>
+    <string name="token_stats_design_quality_note">各指标独立统计有效样本，不设最低样本数。P95 取排序后第 ⌈0.95 × 样本数⌉ 项。TPS 为成功请求的输出 Token ÷（完整耗时 − 首字延迟），再取平均。未记录的历史字段不参与对应指标。</string>
+    <string name="token_stats_design_formula_currency">计价币种：%1$s</string>
+</resources>

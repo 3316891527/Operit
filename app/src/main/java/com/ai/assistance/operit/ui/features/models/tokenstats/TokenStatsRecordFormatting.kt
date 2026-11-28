@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 internal fun insightsMoney(amount: Double, currency: PricingCurrency): String =
-    String.format(Locale.getDefault(), "%s%,.4f", currency.symbol, amount)
+    String.format(Locale.getDefault(), "%s%,.8f", currency.symbol, amount)
 
 @Composable
 internal fun insightsCost(cost: TokenStatsCostSummary): String = when {
